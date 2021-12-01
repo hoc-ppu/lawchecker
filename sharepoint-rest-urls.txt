@@ -1,0 +1,11 @@
+Get all added names entries that are currently on the page:
+https://hopuk.sharepoint.com/sites/bct-ppu/_api/web/lists/GetByTitle('Added%20Names')/items?$filter=Checked_x003f_%20eq%20%27false%27
+
+
+Get all added names entries on a certain date (example below returns all that were created on 19th Nov):
+https://hopuk.sharepoint.com/sites/bct-ppu/_api/web/lists/getbytitle('Added Names')/items?$filter=Created ge datetime'2021-11-19T00:00:00.000Z' and Created le datetime'2021-11-20T00:00:00.000Z'
+
+
+N.B. both of the above return 100 items max, further info:
+https://docs.microsoft.com/en-us/sharepoint/dev/sp-add-ins/working-with-lists-and-list-items-with-rest
+https://docs.microsoft.com/en-us/sharepoint/dev/sp-add-ins/use-odata-query-operations-in-sharepoint-rest-requests
