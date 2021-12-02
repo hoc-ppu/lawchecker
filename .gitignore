@@ -6,7 +6,8 @@
 # ignore .vscode project setting
 .vscode/
 
-
+# we will not include saxonstuff as it most of it has to be built from source
+python/saxonstuff/*
 
 
 ################################
