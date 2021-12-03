@@ -71,7 +71,7 @@
                                     <xsl:analyze-string select="." regex="(NS|Ns|ns|New Schedule|New Schedules|New schedule|New schedules):?\s?([0-9]{{1,3}})\s?(&#x2d;|&#x2014;|&#x2015;|&#x2010;|&#x2011;|&#xad;|&#x2012;|&#x2013;|&#x2212;| to )\s?(NS|ns|Ns)?([0-9]{{1,3}})">
                                         <xsl:matching-substring>
                                             <xsl:for-each select="xs:integer(regex-group(2)) to xs:integer(regex-group(5))">
-                                                    <amd-no><xsl:value-of select="concat('NC', .)"/></amd-no>
+                                                    <amd-no><xsl:value-of select="concat('NS', .)"/></amd-no>
                                             </xsl:for-each>
                                         </xsl:matching-substring>
                                         
@@ -80,7 +80,7 @@
                                 
                                 <!-- Range of amdts preceded by "Amendment" etc -->
                                 <xsl:when test="matches(., '(A|Amendment|Amendments|Amdt|Amdts)')">
-                                    <xsl:analyze-string select="." regex="(A|Amendment|Amendments):?\s?([0-9]{{1,3}})\s?(&#x2d;|&#x2014;|&#x2015;|&#x2010;|&#x2011;|&#xad;|&#x2012;|&#x2013;|&#x2212;|to)\s?(A|Amendment|Amendments)?([0-9]{{1,3}})">
+                                    <xsl:analyze-string select="." regex="(A|Amendment|Amendments):?\s?([0-9]{{1,3}})\s?(&#x2d;|&#x2014;|&#x2015;|&#x2010;|&#x2011;|&#xad;|&#x2012;|&#x2013;|&#x2212;|to)\s?(A|Amendment|Amendments)?\s?([0-9]{{1,3}})">
                                         <xsl:matching-substring>
                                             <xsl:for-each select="xs:integer(regex-group(2)) to xs:integer(regex-group(5))">
                                                     <amd-no><xsl:value-of select="."/></amd-no>
@@ -100,14 +100,21 @@
                             </xsl:choose>
                         </xsl:when><!-- end amendment ranges -->
                         
-                        <!-- When amendments are preceded by "A" -->
+                        <!-- When amendments are preceded by "A" etc. -->
                         <xsl:when test="matches(., '(A|Amendment|Amendments):?\s?[0-9]{1,3}')">
                             <xsl:analyze-string select="." regex="(A|Amendment|Amendments):?\s?([0-9]{{1,3}})">
                                 <xsl:matching-substring>
                                     <amd-no><xsl:value-of select="regex-group(2)"/></amd-no>
                                 </xsl:matching-substring>
                             </xsl:analyze-string>
-                            
+                        </xsl:when>
+                        
+                        <xsl:when test="matches(., '(New Clause |New clause )([0-9]{1,3})')">
+                            <xsl:analyze-string select="." regex="(New Clause |New clause |new clause )([0-9]{{1,3}})">
+                                <xsl:matching-substring>
+                                    <amd-no><xsl:value-of select="concat('NC', regex-group(2))"/></amd-no>
+                                </xsl:matching-substring>
+                            </xsl:analyze-string>
                         </xsl:when>
                         
                         <xsl:when test=".=''"/>
@@ -158,7 +165,7 @@
                         </xsl:for-each>
                     </xsl:when>
                     <xsl:otherwise>
-                        <name><xsl:value-of select="."/></name>
+                        <name><xsl:value-of select="normalize-space(.)"/></name>
                     </xsl:otherwise>
                 </xsl:choose>
                 
