@@ -1,0 +1,333 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root xmlns:saxon="http://saxon.sf.net/">
+    <item>
+        <dashboard-id>1411</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>NC5</original-string>
+            <matched-numbers>
+                <amd-no>NC5</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc/>
+        </numbers>
+        <names-to-add>
+            <original-string>Alicia Kearns Chris Green Royston Smith Chris Bryant Sir Desmond Swayne Tom Tugendhat Neil Coyle Munira Wilson Tim Farron Christine Jardine</original-string>
+            <matched-names>
+                <name>Alicia Kearns</name>
+                <name>Chris Green</name>
+                <name>Royston Smith</name>
+                <name>Chris Bryant</name>
+                <name>Sir Desmond Swayne</name>
+                <name>Tom Tugendhat</name>
+                <name>Neil Coyle</name>
+                <name>Munira Wilson</name>
+                <name>Tim Farron</name>
+                <name>Christine Jardine</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1411">
+            <p>nc5 - done up to Swayne</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1412</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>Amendment 16 and NCs 15, 16 and 17</original-string>
+            <matched-numbers>
+                <amd-no>16</amd-no>
+                <amd-no>NC15</amd-no>
+                <amd-no>NC16</amd-no>
+                <amd-no>NC17</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc>Amendment and NCs, and</unmatched-numbers-etc>
+        </numbers>
+        <names-to-add>
+            <original-string>Alison Thewliss</original-string>
+            <matched-names>
+                <name>Alison Thewliss</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1412">
+            <p>16, nc15-17 done up to Thewliss</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1413</dashboard-id>
+        <bill>Elections</bill>
+        <numbers>
+            <original-string>Amendment 2</original-string>
+            <matched-numbers>
+                <amd-no>2</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc>Amendment</unmatched-numbers-etc>
+        </numbers>
+        <names-to-add>
+            <original-string>Philip Davies</original-string>
+            <matched-names>
+                <name>Philip Davies</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1413">
+            <p>2 - done up to P Davies</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1414</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>NC2</original-string>
+            <matched-numbers>
+                <amd-no>NC2</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc/>
+        </numbers>
+        <names-to-add>
+            <original-string>Kate Osamor</original-string>
+            <matched-names>
+                <name>Kate Osamor</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1414">
+            <p>nc2 done up to Osamor</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1415</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>NC4</original-string>
+            <matched-numbers>
+                <amd-no>NC4</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc/>
+        </numbers>
+        <names-to-add>
+            <original-string>Janet Daby Ian Paisley Bob Blackman Julian Lewis Daniel Kawczynski David Jones Daisy Cooper</original-string>
+            <matched-names>
+                <name>Janet Daby</name>
+                <name>Ian Paisley</name>
+                <name>Bob Blackman</name>
+                <name>Julian Lewis</name>
+                <name>Daniel Kawczynski</name>
+                <name>David Jones</name>
+                <name>Daisy Cooper</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1415">
+            <p>nc4 done up to D Cooper</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1416</dashboard-id>
+        <bill>Finance (No.2) CWH</bill>
+        <numbers>
+            <original-string>NC7</original-string>
+            <matched-numbers>
+                <amd-no>NC7</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc/>
+        </numbers>
+        <names-to-add>
+            <original-string>Mohammad Yasin</original-string>
+            <matched-names>
+                <name>Mohammad Yasin</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1416">
+            <p>nc7 - done to Yasin</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1417</dashboard-id>
+        <bill>Finance (No.2) CWH</bill>
+        <numbers>
+            <original-string>NC8</original-string>
+            <matched-numbers>
+                <amd-no>NC8</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc/>
+        </numbers>
+        <names-to-add>
+            <original-string>Richard Burgon</original-string>
+            <matched-names>
+                <name>Richard Burgon</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+    </item>
+    <item>
+        <dashboard-id>1418</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>9, 10, 11</original-string>
+            <matched-numbers>
+                <amd-no>9</amd-no>
+                <amd-no>10</amd-no>
+                <amd-no>11</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc>,,</unmatched-numbers-etc>
+        </numbers>
+        <names-to-add>
+            <original-string>1. Alistair Carmichael (to be listed first) 2. Ed Davey (to be listed second) 3. Daisy Cooper (to be listed third) 4. Christine Jardine 5. Layla Moran 6. Wendy Chamberlain 7. Jamie Stone 8. Sarah Olney 9. Tim Farron 10. Wera Hobhouse 11. Munira Wilson 12. Sarah Green</original-string>
+            <matched-names>
+                <name>1. Alistair Carmichael (to be listed first)</name>
+                <name>2. Ed Davey (to be listed second)</name>
+                <name>3. Daisy Cooper (to be listed third)</name>
+                <name>4. Christine Jardine</name>
+                <name>5. Layla Moran</name>
+                <name>6. Wendy Chamberlain</name>
+                <name>7. Jamie Stone</name>
+                <name>8. Sarah Olney</name>
+                <name>9. Tim Farron</name>
+                <name>10. Wera Hobhouse</name>
+                <name>11. Munira Wilson</name>
+                <name>12. Sarah Green</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1418">
+            <p>Query with names, S. Adolfo is investigating.</p>
+            <p>Mr Alistair Carmichael was a duplicate in all amdts 9,10 &amp; 11</p>
+            <p>12 names added</p>
+            <p/>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1419</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>NC18</original-string>
+            <matched-numbers>
+                <amd-no>NC18</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc/>
+        </numbers>
+        <names-to-add>
+            <original-string>Esther McVey Mark Jenkinson Mrs Pauline Latham Chris Green Philip Davies Andrew Rosindell Sir Robert Syms Chris Loder Andrew Bridgen Richard Drax Craig Mackinlay Sir Desmond Swayne Henry Smith Mr Peter Bone Nigel Mills</original-string>
+            <matched-names>
+                <name>Esther McVey</name>
+                <name>Mark Jenkinson</name>
+                <name>Mrs Pauline Latham</name>
+                <name>Chris Green</name>
+                <name>Philip Davies</name>
+                <name>Andrew Rosindell</name>
+                <name>Sir Robert Syms</name>
+                <name>Chris Loder</name>
+                <name>Andrew Bridgen</name>
+                <name>Richard Drax</name>
+                <name>Craig Mackinlay</name>
+                <name>Sir Desmond Swayne</name>
+                <name>Henry Smith</name>
+                <name>Mr Peter Bone</name>
+                <name>Nigel Mills</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1419">
+            <p>Up to Swayne</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1420</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>NC19</original-string>
+            <matched-numbers>
+                <amd-no>NC19</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc/>
+        </numbers>
+        <names-to-add>
+            <original-string>Sir Desmond Swayne</original-string>
+            <matched-names>
+                <name>Sir Desmond Swayne</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1420">
+            <p>up to Swayne</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1421</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>NC7</original-string>
+            <matched-numbers>
+                <amd-no>NC7</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc/>
+        </numbers>
+        <names-to-add>
+            <original-string>Bernard Jenkin Diane Abbott Wera Hobhouse</original-string>
+            <matched-names>
+                <name>Bernard Jenkin</name>
+                <name>Diane Abbott</name>
+                <name>Wera Hobhouse</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+        <comments dashboard-id="1421">
+            <p>Up to Hobhouse</p>
+        </comments>
+    </item>
+    <item>
+        <dashboard-id>1422</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>NC46, 14, 15</original-string>
+            <matched-numbers>
+                <amd-no>NC46</amd-no>
+                <amd-no>14</amd-no>
+                <amd-no>15</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc>,,</unmatched-numbers-etc>
+        </numbers>
+        <names-to-add>
+            <original-string>Stephen Farry</original-string>
+            <matched-names>
+                <name>Stephen Farry</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+    </item>
+    <item>
+        <dashboard-id>1423</dashboard-id>
+        <bill>Nationality and Borders</bill>
+        <numbers>
+            <original-string>NC12, NC13</original-string>
+            <matched-numbers>
+                <amd-no>NC12</amd-no>
+                <amd-no>NC13</amd-no>
+            </matched-numbers>
+            <unmatched-numbers-etc>, </unmatched-numbers-etc>
+        </numbers>
+        <names-to-add>
+            <original-string>Ian Byrne Richard Burgon John McDonnell Kate Osborne Diane Abbott Beth Winter Nadia Whittome Ian Mearns Dan Carden Andy McDonald Grahame Morris Jeremy Corbyn Tahir Ali Clive Lewis</original-string>
+            <matched-names>
+                <name>Ian Byrne</name>
+                <name>Richard Burgon</name>
+                <name>John McDonnell</name>
+                <name>Kate Osborne</name>
+                <name>Diane Abbott</name>
+                <name>Beth Winter</name>
+                <name>Nadia Whittome</name>
+                <name>Ian Mearns</name>
+                <name>Dan Carden</name>
+                <name>Andy McDonald</name>
+                <name>Grahame Morris</name>
+                <name>Jeremy Corbyn</name>
+                <name>Tahir Ali</name>
+                <name>Clive Lewis</name>
+            </matched-names>
+        </names-to-add>
+        <names-to-remove>None.</names-to-remove>
+    </item>
+</root>
