@@ -9,6 +9,9 @@
 # we will not include saxonstuff as it most of it has to be built from source
 python/saxonstuff/*
 
+# changed pyinstaller build folder
+python/pyinBuild/
+
 # ignore any .exes created
 *.exe
 
