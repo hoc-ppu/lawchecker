@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>435</width>
-    <height>224</height>
+    <width>527</width>
+    <height>292</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -71,9 +71,15 @@
         </item>
         <item alignment="Qt::AlignHCenter">
          <widget class="QPushButton" name="rub_btn">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+            <horstretch>1</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
           <property name="maximumSize">
            <size>
-            <width>256</width>
+            <width>264</width>
             <height>16777215</height>
            </size>
           </property>

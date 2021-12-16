@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(435, 224)
+        MainWindow.resize(527, 292)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -39,7 +39,12 @@ class Ui_MainWindow(object):
         spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem1)
         self.rub_btn = QtWidgets.QPushButton(self.AddedNamesReport)
-        self.rub_btn.setMaximumSize(QtCore.QSize(256, 16777215))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.rub_btn.sizePolicy().hasHeightForWidth())
+        self.rub_btn.setSizePolicy(sizePolicy)
+        self.rub_btn.setMaximumSize(QtCore.QSize(400, 16777215))
         self.rub_btn.setObjectName("rub_btn")
         self.verticalLayout_2.addWidget(self.rub_btn, 0, QtCore.Qt.AlignHCenter)
         spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
