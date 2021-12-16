@@ -18,13 +18,13 @@
         <html>
             <head>
                 <title><xsl:value-of select="concat(current-date(), ' Added Names')"/></title>
-                <style>html {font-family:"Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;background-color:#ebe9e8;word-wrap:normal;white-space:normal;} body {width:70%;background-color:#ffffff;margin-left:30px;margin:auto;overflow-wrap: break-word;padding-bottom:20px;} .header {background-color:#373151;color:#ffffff;} .number-summary-count {margin-bottom:20px} .amendment {margin-bottom:20px;margin-left:20px;border:2px solid #ebe9e8;padding-left:10px;width:30%;min-width:200px;padding-bottom:10px} .bill-title {color:black;background-color:#ffffff;padding-left:20px;} hr {color:#006e46;} .main-heading {padding-left:20px;padding-top:20px;}.main-summary {padding:0 0 10px 20px} .num-info {border-bottom: 1px dotted #ebe9e8;} .bill-reminder {text-align:right;color:#4d4d4d;font-size:10px;padding-right:5px;}</style>
+                <style>html {font-family:"Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;background-color:#ebe9e8;word-wrap:normal;white-space:normal;} body {width:70%;background-color:#ffffff;margin-left:30px;margin:auto;overflow-wrap: break-word;padding-bottom:20px;} .header {background-color:#373151;color:#ffffff;} .number-summary-count {padding-left:20px;margin-bottom:20px} .amendment {margin-bottom:20px;margin-left:20px;border:2px solid #ebe9e8;padding-left:10px;width:30%;min-width:200px;padding-bottom:10px} .bill-title {color:black;background-color:#ffffff;padding-left:20px;} hr {color:#006e46;} .main-heading {padding-left:20px;padding-top:20px;}.main-summary {padding:0 0 10px 20px} .num-info {border-bottom: 1px dotted #ebe9e8;} .bill-reminder {text-align:right;color:#4d4d4d;font-size:10px;padding-right:5px;} .check-box {text-align:right;padding-top:10px;padding-right:20px;border-top:1px dotted #ebe9e8;}</style>
             </head>
             <body>
                 <!-- Header section with main heading and selection of bills -->
                 <div class="header">
                     <div class="main-heading">
-                        <h1>Added Names report <br></br><xsl:value-of select="format-dateTime(current-dateTime(),'[FNn] [D1] [MNn], [H1]:[m01]')"/></h1>
+                        <h1>Added Names report <br></br><xsl:value-of select="downloaded"/></h1>
                     </div>
                     <div class="main-summary">
                         <xsl:choose>
@@ -62,22 +62,24 @@
                         <h1 class="bill-title"><xsl:value-of select="current-grouping-key()"/></h1>
                         
                         <!-- Summary of amendment numbers affected -->
-                        <!--<div class="number-summary">
-                            <!-\-<h2><xsl:text>Amendment numbers with added/removed names</xsl:text></h2>-\->
-                            <div class="number-summary-count"><p>Amendments in this paper with names added/removed:<b><xsl:value-of select="count(distinct-values(current-group()/descendant::matched-numbers/amd-no))"/></b></p></div>
-                            <div class="number-summary-list">
+                        <div class="number-summary">
+                            <!--<h2><xsl:text>Amendment numbers with added/removed names</xsl:text></h2>-->
+                            <div class="number-summary-count"><p>Amendments in this paper with names added/removed: <b><xsl:value-of select="count(distinct-values(current-group()/descendant::matched-numbers/amd-no))"/></b></p></div>
+                            <!--<div class="number-summary-list">
                                 <p>Amendment numbers affected:</p>
                                 <p><xsl:value-of select="distinct-values(current-group()/descendant::matched-numbers/amd-no)" separator=", "/></p>
-                            </div>
-                        </div>-->
+                            </div>-->
+                        </div>
                         
                         <!--## AMDT NO ##-->
                         <xsl:for-each-group select="current-group()/descendant::matched-numbers" group-by="amd-no">
                              
                             <div class="amendment">
+                                
                                 <div class="bill-reminder">
                                     <xsl:value-of select="$bill-grouping-key"/>
                                 </div>
+                                
                                 <div class="num-info">
                                     
                                     <h2 class="amendment-number">
@@ -134,7 +136,8 @@
                                         <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-remove/descendant::name">
                                             <div class="name">
                                                 <span>
-                                                    <a title="{concat('Dashboard ID:', ancestor::names-to-remove/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-remove/preceding-sibling::dashboard-id)}"><xsl:value-of select="."/></a></span>
+                                                    <a title="{concat('Dashboard ID:', ancestor::names-to-add/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-add/preceding-sibling::dashboard-id)}" style="text-decoration: none;color:black"><xsl:value-of select="."/></a>
+                                                </span>
                                             </div>
                                         </xsl:for-each>
                                         
@@ -152,8 +155,12 @@
                                         </xsl:for-each>
                                     </div>
                                 </xsl:if>
-                                
                                
+                               <!-- Check box as aide memoire for those checking the paper -->
+                                <div class="check-box">
+                                    <input type="checkbox"/>
+                                    <label>Checked</label>
+                                </div>
                                 
                             </div><!-- End of amendment div -->
                             
