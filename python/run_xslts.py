@@ -1,16 +1,32 @@
 #!/usr/bin/env python3
 
-import argparse
 import os
 from pathlib import Path
 import sys
+from typing import Optional
 
 
+sys.path.append(str(Path(__file__).parent / 'pythonsaxon')) # add saxonstuff to pythonpath
+# print(sys.path)
 
-# print(BASE_PATH)
+# 3rd party saxon imports
+import nodekind  # type: ignore
+import saxonc
 
-# add saxonstuff to pythonpath
-sys.path.append(str(Path(__file__).parent / 'pythonsaxon'))
+
+# conditional imports
+if len(sys.argv) > 1:
+    USE_GUI = False
+    # comand line only imports
+    import argparse
+else:
+    USE_GUI = True
+    # GUI only imports
+    from PyQt5 import QtWidgets
+    # from PyQt5 import QtCore
+    getOpenFileName = QtWidgets.QFileDialog.getOpenFileName
+
+    from ui.addedNames import Ui_MainWindow
 
 # we also need to set an envoroment variable
 # I think this is for accessing:
@@ -19,78 +35,114 @@ sys.path.append(str(Path(__file__).parent / 'pythonsaxon'))
     # saxon-data directory
 os.environ["SAXONC_HOME"] = str(Path(Path(__file__).parent / 'saxonstuff').resolve())
 print(os.environ.get("SAXONC_HOME", None))
-# os.environ["SAXONC_HOME"] = r"C:\Users\markj\projects\added-names\python\saxonstuff"
-
-print(sys.path)
-
-# 3rd party imports
-# from pythonsaxon import nodekind  # type: ignore
-import nodekind  # type: ignore
-import saxonc
 
 
-# xsl_1_Path        = BASE_PATH.parent / 'XSLT' / 'added-names-spo-rest.xsl'
-# xsl_2_Path        = BASE_PATH.parent / 'XSLT' / 'post-processing-html.xsl'
-
-# input_Path        = BASE_PATH.parent / 'XML' / '2021-11-19_added-names.xml'
-# intermidiate_Path = BASE_PATH.parent / 'XML' / 'intermidiate-from-python.xml'
-
-# out_html_Path     = BASE_PATH / 'output-from-python.html'
-
-# print(f'{xsl_1_Path=}')
-# print(f'{xsl_2_Path=}')
-# print(f'{input_Path=}')
-# print(f'{intermidiate_Path=}')
-# print(f'{out_html_Path=}')
+XSL_1_NAME = 'added-names-spo-rest.xsl'
+XSL_2_NAME = 'post-processing-html.xsl'
 
 
-# def dir_path(string):
-#     if Path.is_dir(string):
-#         return string
-#     else:
-#         raise NotADirectoryError(string)
-
-
-def dir_path(path):
-    if Path(path).is_dir():
-        return path
-    else:
-        raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
-
+if hasattr(sys, '_MEIPASS'):  # if we are using the bundled app
+    XSL_1_PATH = Path(sys._MEIPASS) / 'XSLT' / XSL_1_NAME
+    XSL_2_PATH = Path(sys._MEIPASS) / 'XSLT' / XSL_2_NAME
+else:
+    XSL_1_PATH = Path(__file__).parent.parent / 'XSLT' / XSL_1_NAME
+    XSL_2_PATH = Path(__file__).parent.parent / 'XSLT' / XSL_2_NAME
 
 
 def main():
+
+    cli_args = sys.argv
+    if USE_GUI:
+        gui(cli_args)  # graphical version
+    else:
+        cli(cli_args)  # command line version
+
+
+def cli(cli_args):
     # do cmd line version
+
+    def dir_path(path):
+        # get directory
+        if Path(path).is_dir():
+            return path
+        else:
+            raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
+
+
     parser = argparse.ArgumentParser(
         description='Create an HTML report of added names from XML downloaded form the Dashboard')
 
     parser.add_argument('file', metavar='XML File', type=open,
                         help='File path to the XML you wish to process. '
-                             'If there are spaces in the path you must use quotes.')
+                             'Use quotes if there are spaces.')
 
-    parser.add_argument('XSLTs', metavar='XSLT Folder', type=dir_path,
+    parser.add_argument('--xslts', metavar='XSLT Folder', type=dir_path,
                         help='Path to the folder containg the XSLTs wish to run. '
-                             'If there are spaces in the path you must use quotes.')
+                             'Use quotes if there are spaces.')
 
 
-    args = parser.parse_args(sys.argv[1:])
+    args = parser.parse_args(cli_args[1:])
     # print(args)
 
     input_Path = Path(args.file.name)
 
-    xsl_1_Path = Path(args.XSLTs) / 'added-names-spo-rest.xsl'
-    xsl_2_Path = Path(args.XSLTs) / 'post-processing-html.xsl'
+    if args.xslts:
+        xsl_1_Path = Path(args.xslts) / XSL_1_NAME
+        xsl_2_Path = Path(args.xslts) / XSL_2_NAME
+    else:
+        xsl_1_Path = XSL_1_PATH
+        xsl_2_Path = XSL_2_PATH
+
+    run_xslts(input_Path, xsl_1_Path, xsl_2_Path)
+
+
+
+def gui(args):
+ 
+    class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
+        def __init__(self, *args, obj=None, **kwargs):
+            super(MainWindow, self).__init__(*args, **kwargs)
+            self.setupUi(self)
+
+            self.dash_xml_file = ''  # will be the xml file path
+
+            self.xmlFile_btn.clicked.connect(self.open_dash_xml_file)
+
+            self.rub_btn.clicked.connect(self.run)
+
+        def open_dash_xml_file(self):
+            self.dash_xml_file, _ = getOpenFileName(self, 'Open file', str(Path.home()))
+
+        def run(self):
+
+            if self.dash_xml_file and Path(self.dash_xml_file).resolve().exists():
+                xsl_1_Path = XSL_1_PATH
+                xsl_2_Path = XSL_2_PATH
+                input_Path = Path(self.dash_xml_file).resolve()
+                run_xslts(input_Path, xsl_1_Path, xsl_2_Path)
+            else:
+                print('No XML file selected.')
+    
+    # use gui version
+    app = QtWidgets.QApplication(args)
+
+    # window = QtWidgets.QMainWindow()
+    window = MainWindow()
+    window.show()
+
+    app.exec_()
+
+    
+
+def run_xslts(input_Path: Path, xsl_1_Path: Path, xsl_2_Path: Path):
 
     intermidiate_Path = input_Path.with_name('intermidiate-from-python.xml').resolve()
-
     out_html_Path     = input_Path.with_name('output-from-python.html').resolve()
 
-    print(out_html_Path.resolve())
-
-
-
     with saxonc.PySaxonProcessor(license=False) as proc:
+
         print(proc.version)
+        # print(f'{input_Path=}\n{xsl_1_Path=}\n{xsl_2_Path=}\n{intermidiate_Path=}\n{out_html_Path=}')
 
         # 1st XSLT
         xsltproc = proc.new_xslt_processor()
@@ -120,6 +172,8 @@ def main():
         xsltproc2.set_output_file(str(out_html_Path))
 
         xsltproc2.transform_to_file()
+
+        print(f'Created: {out_html_Path}')
 
         print('Done.')
 
