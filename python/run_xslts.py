@@ -88,6 +88,11 @@ def cli(cli_args):
                         help='Path to the folder containg the XSLTs wish to run. '
                              'Use quotes if there are spaces.')
 
+    parser.add_argument('--marshal-dir', metavar='FM XML Folder', type=_dir_path,
+                        help='Optional Path to the folder containg the XML files '
+                             '(from FrameMaker) that you wish to use to marshal '
+                             'the report. Use quotes if there are spaces.')
+
 
     args = parser.parse_args(cli_args[1:])
     # print(args)
@@ -100,8 +105,13 @@ def cli(cli_args):
     else:
         xsl_1_Path = XSL_1_PATH
         xsl_2_Path = XSL_2_PATH
+    
+    if args.marshal_dir:
+        marshal_dir = args.marshal_dir
+    else:
+        marshal_dir = None
 
-    run_xslts(input_Path, xsl_1_Path, xsl_2_Path)
+    run_xslts(input_Path, xsl_1_Path, xsl_2_Path, xslt_parameter=marshal_dir)
 
 
 
@@ -150,7 +160,12 @@ def gui(args):
 
     
 
-def run_xslts(input_Path: Path, xsl_1_Path: Path, xsl_2_Path: Path):
+def run_xslts(input_Path: Path, xsl_1_Path: Path, xsl_2_Path: Path, xslt_parameter: Optional[str]):
+
+    if xslt_parameter:
+        # assume a windows path so switch \ for /
+        # also add file:/// to begining
+        xslt_parameter = f'file:///{xslt_parameter.replace("\\", "/")}'
 
     # check xsl paths are valid
     try:
@@ -203,6 +218,9 @@ def run_xslts(input_Path: Path, xsl_1_Path: Path, xsl_2_Path: Path):
         xsltproc2.set_jit_compilation(True)
 
         tempfilepath = str(out_html_Path)
+
+        if xslt_parameter:
+            xsltproc2.set_parameter('marsh-path', xslt_parameter)
 
         xsltproc2.set_output_file(tempfilepath)
 
