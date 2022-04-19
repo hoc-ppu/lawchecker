@@ -6,7 +6,6 @@
     xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
     xmlns:georss="http://www.georss.org/georss"
     xmlns:gml="http://www.opengis.net/gml"
-    xmlns:saxon="http://saxon.sf.net/"
     xml:base="https://hopuk.sharepoint.com/sites/bct-ppu/_api/"
     exclude-result-prefixes="xs m d georss gml"
     xpath-default-namespace="http://www.w3.org/2005/Atom"
@@ -14,7 +13,7 @@
     
     <!-- saxon:next-in-chain="post-processing-html.xsl" -->
     
-    <xsl:output method="xml" encoding="UTF-8" />
+    <xsl:output method="xml" encoding="UTF-8"/>
     
     <xsl:template match="/">
         <root>
@@ -49,9 +48,10 @@
             <original-string><xsl:value-of select="normalize-space(.)"/></original-string>
             <!-- Matching amendment numbers using tokenize... -->
             <matched-numbers>
-                <xsl:for-each select="tokenize(., '(\n|,|;| and | &amp; )')">
+                <xsl:for-each select="tokenize(., '(\n|,|;| and | &amp; |\+)')">
                     <xsl:choose>
                         <!--<xsl:when test="matches(., '')"/>-->
+                        <!-- The test below needs updating so text containing hyphen like characters is not always treated as a range (i.e. copy the regex from the contained analyze-string elements) -->
                         <xsl:when test="matches(., '(&#x2d;|&#x2014;|&#x2015;|&#x2010;|&#x2011;|&#xad;|&#x2012;|&#x2013;|&#x2212;| to )')">
                             <xsl:choose>
                                 <!-- Double check test regex and analyze-string regex -->
@@ -104,7 +104,7 @@
                         </xsl:when><!-- end amendment ranges -->
                         
                         <!-- When amendments are preceded by "A" etc. -->
-                        <xsl:when test="matches(., '(A|Amendment|Amendments|Amdt|amdt):?\s?[0-9]{1,3}')">
+                        <xsl:when test="matches(., '(Amendment|Amendments|Amdt|amdt|A):?\s?[0-9]{1,3}')">
                             <xsl:analyze-string select="." regex="(A|Amendment|Amendments|Amdt|amdt):?\s?([0-9]{{1,3}})">
                                 <xsl:matching-substring>
                                     <amd-no><xsl:value-of select="regex-group(2)"/></amd-no>
@@ -113,7 +113,7 @@
                         </xsl:when>
                         
                         <!-- When NCs are preceded by "NC" etc. -->
-                        <xsl:when test="matches(., '(NC|New Clause|New clause|new clause):?\s?([0-9]{1,3})')">
+                        <xsl:when test="matches(., '(New Clause|New clause|new clause|NC|Nc|nc):?\s?([0-9]{1,3})')">
                             <xsl:analyze-string select="." regex="(NC|New Clause|New clause|new clause)\s?([0-9]{{1,3}})">
                                 <xsl:matching-substring>
                                     <amd-no><xsl:value-of select="concat('NC', regex-group(2))"/></amd-no>
@@ -122,7 +122,7 @@
                             </xsl:analyze-string>
                         </xsl:when>
                         
-                        <xsl:when test="matches(.,'(NS|New Schedule|New schedule|new schedule):?\s?([0-9]{1,3})')">
+                        <xsl:when test="matches(.,'(New Schedule|New schedule|new schedule|NS|Ns|ns):?\s?([0-9]{1,3})')">
                             <xsl:analyze-string select="." regex="(NS|New Schedule|New schedule|new schedule):?\s?([0-9]{{1,3}})">
                                 <xsl:matching-substring>
                                     <amd-no><xsl:value-of select="concat('NS', regex-group(2))"/></amd-no>
