@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'ui/addedNames.ui'
+# Form implementation generated from reading ui file 'python/ui/addedNames.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.6
 #
@@ -14,7 +14,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(527, 292)
+        MainWindow.resize(521, 421)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.centralwidget)
@@ -50,6 +50,25 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.addLayout(self.gridLayout)
         spacerItem = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
         self.verticalLayout_2.addItem(spacerItem)
+        self.frame = QtWidgets.QFrame(self.AddedNamesReport)
+        self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.frame.setObjectName("frame")
+        self.gridLayout_2 = QtWidgets.QGridLayout(self.frame)
+        self.gridLayout_2.setObjectName("gridLayout_2")
+        self.pushButton = QtWidgets.QPushButton(self.frame)
+        self.pushButton.setObjectName("pushButton")
+        self.gridLayout_2.addWidget(self.pushButton, 1, 1, 1, 1)
+        self.label = QtWidgets.QLabel(self.frame)
+        self.label.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.label.setObjectName("label")
+        self.gridLayout_2.addWidget(self.label, 1, 0, 1, 1)
+        self.label_2 = QtWidgets.QLabel(self.frame)
+        self.label_2.setObjectName("label_2")
+        self.gridLayout_2.addWidget(self.label_2, 0, 0, 1, 1)
+        self.verticalLayout_2.addWidget(self.frame)
+        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_2.addItem(spacerItem1)
         self.run_btn = QtWidgets.QPushButton(self.AddedNamesReport)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.MinimumExpanding, QtWidgets.QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(1)
@@ -59,8 +78,8 @@ class Ui_MainWindow(object):
         self.run_btn.setMaximumSize(QtCore.QSize(264, 16777215))
         self.run_btn.setObjectName("run_btn")
         self.verticalLayout_2.addWidget(self.run_btn, 0, QtCore.Qt.AlignHCenter)
-        spacerItem1 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
-        self.verticalLayout_2.addItem(spacerItem1)
+        spacerItem2 = QtWidgets.QSpacerItem(20, 40, QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Expanding)
+        self.verticalLayout_2.addItem(spacerItem2)
         self.tabWidget.addTab(self.AddedNamesReport, "")
         self.CheckFM = QtWidgets.QWidget()
         self.CheckFM.setObjectName("CheckFM")
@@ -80,6 +99,9 @@ class Ui_MainWindow(object):
         self.instruction_label.setText(_translate("MainWindow", "The above button should open the added names dashboard in a web browser.  You must download and save the XML to your computer and then use the below button to allow this app to read the XML file."))
         self.select_label.setText(_translate("MainWindow", "Select dashboard XML:"))
         self.xmlFile_btn.setText(_translate("MainWindow", "Open File"))
+        self.pushButton.setText(_translate("MainWindow", "Select Folder"))
+        self.label.setText(_translate("MainWindow", "TextLabel:"))
+        self.label_2.setText(_translate("MainWindow", "Another longer Label"))
         self.run_btn.setText(_translate("MainWindow", "Create Added Names Report"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.AddedNamesReport), _translate("MainWindow", "Added Names Report"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CheckFM), _translate("MainWindow", "Check names in FM"))
