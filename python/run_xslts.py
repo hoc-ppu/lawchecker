@@ -165,7 +165,8 @@ def run_xslts(input_Path: Path, xsl_1_Path: Path, xsl_2_Path: Path, xslt_paramet
     if xslt_parameter:
         # assume a windows path so switch \ for /
         # also add file:/// to begining
-        xslt_parameter = f'file:///{xslt_parameter.replace("\\", "/")}'
+        xslt_parameter = xslt_parameter.replace("\\", "/")
+        xslt_parameter = f'file:///{xslt_parameter}'
 
     # check xsl paths are valid
     try:
