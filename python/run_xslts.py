@@ -3,7 +3,9 @@
 import os
 from pathlib import Path
 import sys
+# from tempfile import mkstemp
 from typing import Optional
+import webbrowser
 
 
 sys.path.append(str(Path(__file__).parent / 'pythonsaxon')) # add saxonstuff to pythonpath
@@ -36,17 +38,23 @@ else:
 os.environ["SAXONC_HOME"] = str(Path(Path(__file__).parent / 'saxonstuff').resolve())
 print(os.environ.get("SAXONC_HOME", None))
 
+DASH_XML_URL = "https://hopuk.sharepoint.com/sites/bct-ppu/_api/web/lists/" \
+               "GetByTitle('Added%20Names')/items?$filter=Checked_x003f_%20eq%20%27false%27"
 
 XSL_1_NAME = 'added-names-spo-rest.xsl'
 XSL_2_NAME = 'post-processing-html.xsl'
 
-
-if hasattr(sys, '_MEIPASS'):  # if we are using the bundled app
-    XSL_1_PATH = Path(sys._MEIPASS) / 'XSLT' / XSL_1_NAME
-    XSL_2_PATH = Path(sys._MEIPASS) / 'XSLT' / XSL_2_NAME
+# path to folder contining the XSLT files
+if hasattr(sys, 'executable') and hasattr(sys, '_MEIPASS'):
+    # we are using the bundled app
+    XSL_FOLDER = Path(sys.executable).parent / 'XSLT'
 else:
-    XSL_1_PATH = Path(__file__).parent.parent / 'XSLT' / XSL_1_NAME
-    XSL_2_PATH = Path(__file__).parent.parent / 'XSLT' / XSL_2_NAME
+    # assume running as python script via usual interpreter
+    XSL_FOLDER = Path(__file__).parent / 'XSLT'
+
+
+XSL_1_PATH = XSL_FOLDER / XSL_1_NAME
+XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
 
 
 def main():
@@ -61,7 +69,7 @@ def main():
 def cli(cli_args):
     # do cmd line version
 
-    def dir_path(path):
+    def _dir_path(path):
         # get directory
         if Path(path).is_dir():
             return path
@@ -76,7 +84,7 @@ def cli(cli_args):
                         help='File path to the XML you wish to process. '
                              'Use quotes if there are spaces.')
 
-    parser.add_argument('--xslts', metavar='XSLT Folder', type=dir_path,
+    parser.add_argument('--xslts', metavar='XSLT Folder', type=_dir_path,
                         help='Path to the folder containg the XSLTs wish to run. '
                              'Use quotes if there are spaces.')
 
@@ -106,10 +114,15 @@ def gui(args):
 
             self.dash_xml_file = ''  # will be the xml file path
 
+            self.openBrowser_btn.clicked.connect(self.open_browser)
+
             self.xmlFile_btn.clicked.connect(self.open_dash_xml_file)
 
-            self.rub_btn.clicked.connect(self.run)
+            self.run_btn.clicked.connect(self.run)
 
+        
+        def open_browser(self):
+            webbrowser.open(DASH_XML_URL)
         def open_dash_xml_file(self):
             self.dash_xml_file, _ = getOpenFileName(self, 'Open file', str(Path.home()))
 
@@ -119,7 +132,10 @@ def gui(args):
                 xsl_1_Path = XSL_1_PATH
                 xsl_2_Path = XSL_2_PATH
                 input_Path = Path(self.dash_xml_file).resolve()
-                run_xslts(input_Path, xsl_1_Path, xsl_2_Path)
+                try:
+                    run_xslts(input_Path, xsl_1_Path, xsl_2_Path)
+                except Exception as e:
+                    QtWidgets.QMessageBox.critical(window, 'Error', str(e))
             else:
                 print('No XML file selected.')
     
@@ -136,8 +152,25 @@ def gui(args):
 
 def run_xslts(input_Path: Path, xsl_1_Path: Path, xsl_2_Path: Path):
 
+    # check xsl paths are valid
+    try:
+        xsl_1_Path = xsl_1_Path.absolute().resolve(strict=True)
+        xsl_2_Path = xsl_2_Path.absolute().resolve(strict=True)
+    except FileNotFoundError as e:
+        err_txt = f'The following required XSLT files are missing:\n\n{xsl_1_Path}\n\n{xsl_2_Path}' \
+                  '\n\nUsually you should have two XSL files in a folder called \'XSLT\'' \
+                  ' and that folder should be in the same folder as this program.'
+        print('Error:', err_txt)
+        if USE_GUI:
+            # this can be caught in the GUI code and the Error message displayed in a GUI window
+            raise Exception(err_txt) from e
+        return
+ 
+
     intermidiate_Path = input_Path.with_name('intermidiate-from-python.xml').resolve()
     out_html_Path     = input_Path.with_name('output-from-python.html').resolve()
+
+    # _, tempfilepath = mkstemp(suffix='.html', prefix='Dashboard')
 
     with saxonc.PySaxonProcessor(license=False) as proc:
 
@@ -169,11 +202,18 @@ def run_xslts(input_Path: Path, xsl_1_Path: Path, xsl_2_Path: Path):
 
         xsltproc2.set_jit_compilation(True)
 
-        xsltproc2.set_output_file(str(out_html_Path))
+        tempfilepath = str(out_html_Path)
+
+        xsltproc2.set_output_file(tempfilepath)
 
         xsltproc2.transform_to_file()
 
-        print(f'Created: {out_html_Path}')
+        print(f'Created: {tempfilepath}')
+
+        if os.name == 'posix':
+            webbrowser.open('file://' + tempfilepath)
+        else:
+            webbrowser.open(tempfilepath)
 
         print('Done.')
 
