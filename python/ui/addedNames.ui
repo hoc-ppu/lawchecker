@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>521</width>
-    <height>421</height>
+    <width>519</width>
+    <height>434</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -47,7 +47,7 @@
           <item row="1" column="0" colspan="2">
            <widget class="QLabel" name="instruction_label">
             <property name="text">
-             <string>The above button should open the added names dashboard in a web browser.  You must download and save the XML to your computer and then use the below button to allow this app to read the XML file.</string>
+             <string>The above button should open the added names dashboard in a web browser.  Once opened,  you must download and save the XML to your computer. Then open that XML file using the button below.</string>
             </property>
             <property name="wordWrap">
              <bool>true</bool>
@@ -92,11 +92,11 @@
            <enum>QFrame::StyledPanel</enum>
           </property>
           <property name="frameShadow">
-           <enum>QFrame::Raised</enum>
+           <enum>QFrame::Plain</enum>
           </property>
           <layout class="QGridLayout" name="gridLayout_2">
            <item row="1" column="1">
-            <widget class="QPushButton" name="pushButton">
+            <widget class="QPushButton" name="fm_xml_btn">
              <property name="text">
               <string>Select Folder</string>
              </property>
@@ -105,17 +105,20 @@
            <item row="1" column="0">
             <widget class="QLabel" name="label">
              <property name="text">
-              <string>TextLabel:</string>
+              <string>Select marshalling XML folder:</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
              </property>
             </widget>
            </item>
-           <item row="0" column="0">
+           <item row="0" column="0" colspan="2">
             <widget class="QLabel" name="label_2">
              <property name="text">
-              <string>Another longer Label</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Optional&lt;/p&gt;&lt;p&gt;If you want the amendments in the report to appear in the same order as they appear in the paper(s),  place XML from FrameMaker in a folder and select it with the button below.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="wordWrap">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
