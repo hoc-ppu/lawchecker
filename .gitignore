@@ -8,9 +8,14 @@
 
 # we will not include saxonstuff as it most of it has to be built from source
 python/saxonstuff/*
+python/pythonsaxon/*
+
+# dont need the intermidiate stuff so much
+intermidiate-from-python.xml
 
 # changed pyinstaller build folder
 python/pyinBuild/
+
 
 # ignore any .exes created
 *.exe
