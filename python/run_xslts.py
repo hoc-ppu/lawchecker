@@ -8,13 +8,12 @@ from tempfile import mkdtemp
 from typing import Optional
 import webbrowser
 
-
-sys.path.append(str(Path(__file__).parent / 'pythonsaxon'))  # add saxonstuff to pythonpath
+# sys.path.append(str(Path(__file__).parent / 'pythonsaxon'))  # add saxonstuff to pythonpath
 # print(sys.path)
 
 # 3rd party saxon imports
-import nodekind  # type: ignore
-import saxonc
+# import nodekind  # type: ignore
+import saxonche
 
 
 USE_GUI = True
@@ -55,6 +54,8 @@ if hasattr(sys, 'executable') and hasattr(sys, '_MEIPASS'):
 else:
     # assume running as python script via usual interpreter
     XSL_FOLDER = Path(__file__).parent / 'XSLT'
+    if not XSL_FOLDER.exists():
+        XSL_FOLDER = Path(__file__).parent.parent / 'XSLT'
 
 
 XSL_1_PATH = XSL_FOLDER / XSL_1_NAME
@@ -253,43 +254,32 @@ def run_xslts(input_Path: Path,
     intermidiate_Path = input_Path.with_name('intermidiate-from-python.xml').resolve()
     out_html_Path     = input_Path.with_name('output-from-python.html').resolve()
 
-    with saxonc.PySaxonProcessor(license=False) as proc:
+    with saxonche.PySaxonProcessor(license=False) as proc:
 
         # proc.set_configuration_property('ALLOWED_PROTOCOLS', 'all')
-        # proc.set_configuration_property('-ext', 'true')
-        # proc.set_configuration_property('-relocate','true')
 
         print(proc.version)
         # print(f'{input_Path=}\n{xsl_1_Path=}\n{xsl_2_Path=}\n{intermidiate_Path=}\n{out_html_Path=}')
 
+        input_path = str(input_Path)
+        intermidiate_path = str(intermidiate_Path)
+        outfilepath = str(out_html_Path)
 
         # --- 1st XSLT ---
-        xsltproc = proc.new_xslt_processor()
+        xsltproc = proc.new_xslt30_processor()
 
-        document = proc.parse_xml(xml_file_name=str(input_Path))
+        # document = proc.parse_xml(xml_file_name=str(input_Path))
+        # xsltproc.set_source_node(xdm_node=document)
 
-        xsltproc.set_source(xdm_node=document)
-
-        xsltproc.compile_stylesheet(stylesheet_file=str(xsl_1_Path))
-
+        executable = xsltproc.compile_stylesheet(stylesheet_file=str(xsl_1_Path))
         # xsltproc.set_jit_compilation(True)
-
-        xsltproc.set_output_file(str(intermidiate_Path))
-
-        xsltproc.transform_to_file()
+        executable.transform_to_file(source_file=input_path, output_file=intermidiate_path)
 
 
         # --- 2nd XSLT ---
-        xsltproc2 = proc.new_xslt_processor()
+        xsltproc2 = proc.new_xslt30_processor()
 
-        document2 = proc.parse_xml(xml_file_name=str(intermidiate_Path))
-        xsltproc2.set_source(xdm_node=document2)
-
-        xsltproc2.compile_stylesheet(stylesheet_file=str(xsl_2_Path))
-
-        # xsltproc2.set_jit_compilation(True)
-
-        outfilepath = str(out_html_Path)
+        executable2 = xsltproc2.compile_stylesheet(stylesheet_file=str(xsl_2_Path))
 
         if parameter:
             # get path to temp folder containing copied FM XML (with doctype removed)
@@ -298,11 +288,10 @@ def run_xslts(input_Path: Path,
             parameter_str = temp_fm_xml_files(parameter)
 
             param = proc.make_string_value(parameter_str)
-            xsltproc2.set_parameter(XSLT_MARSHAL_PARAM_NAME, param)
 
-        xsltproc2.set_output_file(outfilepath)
+            executable2.set_parameter(XSLT_MARSHAL_PARAM_NAME, param)
 
-        xsltproc2.transform_to_file()
+        executable2.transform_to_file(source_file=str(intermidiate_Path), output_file=outfilepath)
 
         # --- finished transforms ---
 
