@@ -1,6 +1,10 @@
 # added-names
 
-Follow the [instructions](https://www.saxonica.com/saxon-c/documentation11/index.html#!starting/installingpython) to install python-saxon.
+To install saxon first try
+```shell
+pip install saxonche
+```
+If that doesn't work try following the [instructions](https://www.saxonica.com/saxon-c/documentation12/index.html#!starting/installingpython) to install python-saxon.
 
 To create the .exe
 ```shell
