@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from datetime import datetime
 import os
 import re
 from pathlib import Path
@@ -26,7 +27,7 @@ if len(sys.argv) > 1:
 else:
     # GUI only imports
     from PyQt5 import QtWidgets
-    # from PyQt5 import QtCore
+    from PyQt5 import QtCore
 
     from ui.addedNames import Ui_MainWindow
 
@@ -36,8 +37,8 @@ else:
     # libsaxon[EDITION].dylib - Saxon/C library
     # rt directory - Excelsior JET runtime which handles VM calls
     # saxon-data directory
-os.environ["SAXONC_HOME"] = str(Path(Path(__file__).parent / 'saxonstuff').resolve())
-print(os.environ.get("SAXONC_HOME", None))
+# os.environ["SAXONC_HOME"] = str(Path(Path(__file__).parent / 'saxonstuff').resolve())
+# print(os.environ.get("SAXONC_HOME", None))
 
 XSLT_MARSHAL_PARAM_NAME = 'marsh-path'
 
@@ -47,19 +48,27 @@ DASH_XML_URL = "***REMOVED***" \
 XSL_1_NAME = 'added-names-spo-rest.xsl'
 XSL_2_NAME = 'post-processing-html.xsl'
 
+LAWMAKER_XML_FOLDER_NAME = 'Lawmaker_XML_Files'
+DASHBOARD_DATA_FOLDER_NAME = 'Dashboard_Data'
+
 # path to folder containing the XSLT files
 if hasattr(sys, 'executable') and hasattr(sys, '_MEIPASS'):
     # we are using the bundled app
-    XSL_FOLDER = Path(sys.executable).parent / 'XSLT'
+    PARENT_FOLDER = Path(sys.executable).parent
 else:
     # assume running as python script via usual interpreter
-    XSL_FOLDER = Path(__file__).parent / 'XSLT'
-    if not XSL_FOLDER.exists():
-        XSL_FOLDER = Path(__file__).parent.parent / 'XSLT'
+    PARENT_FOLDER = Path(__file__).parent
+    if not PARENT_FOLDER.joinpath('XSLT').exists():
+        PARENT_FOLDER = Path(__file__).parent.parent
 
+XSL_FOLDER = PARENT_FOLDER / 'XSLT'
+
+REPORTS_FOLDER = PARENT_FOLDER / '_Reports'
 
 XSL_1_PATH = XSL_FOLDER / XSL_1_NAME
 XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
+
+WORKING_FOLDER: Optional[Path] = None
 
 
 def main():
@@ -69,6 +78,7 @@ def main():
         gui(cli_args)  # graphical version
     else:
         cli(cli_args)  # command line version
+
 
 
 def cli(cli_args):
@@ -93,9 +103,9 @@ def cli(cli_args):
                         help='Path to the folder containing the XSLTs wish to run. '
                              'Use quotes if there are spaces.')
 
-    parser.add_argument('--marshal-dir', metavar='FM XML Folder', type=_dir_path,
+    parser.add_argument('--marshal-dir', metavar='LM XML Folder', type=_dir_path,
                         help='Optional Path to the folder containing the XML files '
-                             '(from FrameMaker) that you wish to use to marshal '
+                             '(from LawMaker) that you wish to use to marshal '
                              'the report. Use quotes if there are spaces.')
 
 
@@ -131,34 +141,67 @@ def gui(args):
 
             self.dash_xml_file = ''  # will be the xml file path
 
-            self.fm_xml_folder = ''  # will be the fm xml folder path
+            self.lm_xml_folder = ''  # will be the lm xml folder path
+
+            self.workingFolderDateEdit.setDate(QtCore.QDate.currentDate())
+            self.createWorkingFolderBtn.clicked.connect(self.create_working_folder)
 
             self.openBrowser_btn.clicked.connect(self.open_browser)
 
             self.xmlFile_btn.clicked.connect(self.open_dash_xml_file)
 
-            self.fm_xml_btn.clicked.connect(self.open_fm_xml_folder)
+            self.fm_xml_btn.clicked.connect(self.open_lm_xml_folder)
 
             self.run_btn.clicked.connect(self.run)
+
+            self.dated_folder_Path: Optional[Path] = None
+
+
+        def create_working_folder(self):
+            date_obj = self.workingFolderDateEdit.date().toPyDate()
+            formatted_date = date_obj.strftime("%Y-%m-%d")
+
+            try:
+                self.dated_folder_Path = REPORTS_FOLDER.joinpath(formatted_date)
+                self.dated_folder_Path.mkdir(parents=True, exist_ok=True)
+                QtWidgets.QMessageBox.information(window, 'Info', f'Working folder is:  {self.dated_folder_Path}')
+
+                global WORKING_FOLDER
+                WORKING_FOLDER = self.dated_folder_Path
+
+                # create subfolders for dashboard XML (and intermediate)
+                # as well as lawmaker XML
+                lawmaker_xml = self.dated_folder_Path.joinpath(LAWMAKER_XML_FOLDER_NAME)
+                lawmaker_xml.mkdir(parents=True, exist_ok=True)
+                dashboard_data = self.dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER_NAME)
+                dashboard_data.mkdir(parents=True, exist_ok=True)
+
+            except Exception as e:
+                QtWidgets.QMessageBox.critical(window, 'Error', f'Could not create folder {repr(e)}')
+
 
 
         def open_browser(self):
             webbrowser.open(DASH_XML_URL)
 
         def open_dash_xml_file(self):
+            if self.dated_folder_Path is not None:
+                default_location = self.dated_folder_Path
+            else:
+                default_location = PARENT_FOLDER
             self.dash_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
-                self, 'Open file', str(XSL_FOLDER.parent))
+                self, 'Open file', str(default_location))
 
-        def open_fm_xml_folder(self):
-            self.fm_xml_folder = QtWidgets.QFileDialog.getExistingDirectory(
-                self, 'Select Folder')
+        def open_lm_xml_folder(self):
+            self.lm_xml_folder = QtWidgets.QFileDialog.getExistingDirectory(
+                self, 'Select Folder', str(self.dated_folder_Path))
 
         def run(self):
 
-            fm_xml_folder_Path: Optional[Path] = None
+            lm_xml_folder_Path: Optional[Path] = None
 
-            if self.fm_xml_folder:
-                fm_xml_folder_Path = Path(self.fm_xml_folder)
+            if self.lm_xml_folder:
+                lm_xml_folder_Path = Path(self.lm_xml_folder)
 
             if self.dash_xml_file and Path(self.dash_xml_file).resolve().exists():
                 xsl_1_Path = XSL_1_PATH
@@ -168,7 +211,7 @@ def gui(args):
                     run_xslts(input_Path,
                               xsl_1_Path,
                               xsl_2_Path,
-                              parameter=fm_xml_folder_Path)
+                              parameter=lm_xml_folder_Path)
                 except Exception as e:
                     QtWidgets.QMessageBox.critical(window, 'Error', str(e))
             else:
@@ -184,49 +227,74 @@ def gui(args):
     app.exec_()
 
 
-def temp_fm_xml_files(parameter: Path) -> str:
-    """Process FM XML files to remove docstring and save resultant files in a
-    temp file. Return the parameter str in the form 'file:///C:/.../...'"""
+# def temp_fm_xml_files(parameter: Path) -> str:
+#     """Process FM XML files to remove docstring and save resultant files in a
+#     temp file. Return the parameter str in the form 'file:///C:/.../...'"""
 
-    # lets also turn it into an absolute path
-    parameter_abs = parameter.absolute()
+#     # lets also turn it into an absolute path
+#     parameter_abs = parameter.absolute()
 
-    # now let's go through all the XML files in the folder and remove the doctypes
-    fm_xml_files = list(parameter_abs.glob('*.xml'))
+#     # now let's go through all the XML files in the folder and remove the doctypes
+#     fm_xml_files = list(parameter_abs.glob('*.xml'))
 
-    # create a temporary directory
-    temp_dir = mkdtemp(prefix='XML_from_FM')
+#     # create a temporary directory
+#     temp_dir = mkdtemp(prefix='XML_from_FM')
 
-    # loop through XML files
-    for file in fm_xml_files:
-        with open(file, 'r', encoding='utf-8') as f:
-            file_lines = f.readlines()
+#     # loop through XML files
+#     for file in fm_xml_files:
+#         with open(file, 'r', encoding='utf-8') as f:
+#             file_lines = f.readlines()
 
-        root_start = 0  # line the root element starts at
-        # remove anything before the root element
-        for i, line in enumerate(file_lines):
-            line_content = line.strip()
-            if re.match(r'<[A-Za-z0-9._]', line_content):
-                # found root
-                root_start = i
-                break
+#         root_start = 0  # line the root element starts at
+#         # remove anything before the root element
+#         for i, line in enumerate(file_lines):
+#             line_content = line.strip()
+#             if re.match(r'<[A-Za-z0-9._]', line_content):
+#                 # found root
+#                 root_start = i
+#                 break
 
-        # create new tempfile
-        # tempfile, tempfilepath = mkstemp(suffix='.xml', prefix='FM')
-        # output html to tempfile
-        temp_tile_Path = Path(temp_dir, file.name)
-        with open(temp_tile_Path, 'w', encoding='UTF-8') as fi:
-            fi.writelines(file_lines[root_start:])
-        print(f'Created: {temp_tile_Path}')
+#         # create new tempfile
+#         # tempfile, tempfilepath = mkstemp(suffix='.xml', prefix='FM')
+#         # output html to tempfile
+#         temp_tile_Path = Path(temp_dir, file.name)
+#         with open(temp_tile_Path, 'w', encoding='UTF-8') as fi:
+#             fi.writelines(file_lines[root_start:])
+#         print(f'Created: {temp_tile_Path}')
 
 
-    # assume a windows path so switch \ for / and add
-    # file:/// to beginning as this is how XSLT likes it
-    parameter_str = temp_dir.replace("\\", "/")
-    parameter_str = f'file:///{parameter_str}'
-    print(f'parameter_str: {parameter_str}')
+#     # assume a windows path so switch \ for / and add
+#     # file:/// to beginning as this is how XSLT likes it
+#     parameter_str = temp_dir.replace("\\", "/")
+#     parameter_str = f'file:///{parameter_str}'
+#     print(f'parameter_str: {parameter_str}')
 
-    return(parameter_str)
+#     return(parameter_str)
+
+
+def extract_date(input_Path: Path) -> str:
+    """Extract date form input XML from SharePoint"""
+
+    with open(input_Path) as f:
+        input_xml_str = f.read()
+
+    print(f'input_xml_str length is: {len(input_xml_str)}')
+    # get the updated date
+    match = re.search(r'(<updated>)([A-Z0-9:+-]+)(</updated>)', input_xml_str)
+    date_str = ''
+    if match:
+        print('match found')
+        date_str = match.group(2)
+        print(f'{date_str=}')
+
+    try:
+        dt = datetime.strptime(date_str[:19], '%Y-%m-%dT%H:%M:%S')
+        formated_date = dt.strftime("%Y-%m-%d__%H-%M")
+    except Exception as e:
+        print(repr(e))
+        formated_date = ''
+
+    return formated_date
 
 
 
@@ -234,6 +302,11 @@ def run_xslts(input_Path: Path,
               xsl_1_Path: Path,
               xsl_2_Path: Path,
               parameter: Optional[Path] = None):
+
+    print(f'{input_Path=}')
+    print(f'{xsl_1_Path=}')
+    print(f'{xsl_2_Path=}')
+    print(f'{parameter=}')
 
     try:
         # check xsl paths are valid
@@ -251,8 +324,33 @@ def run_xslts(input_Path: Path,
         return
 
 
-    intermidiate_Path = input_Path.with_name('intermidiate-from-python.xml').resolve()
-    out_html_Path     = input_Path.with_name('output-from-python.html').resolve()
+    formated_date = extract_date(input_Path)
+
+    intermediate_file_name = f"{formated_date}_intermediate.xml"
+    input_file_resave_name = f"{formated_date}_input_from_SP.xml"
+    output_file_name = f"Added_Names_Report.html"
+
+
+    # intermidiate_Path = input_Path.with_name('intermidiate-from-python.xml').resolve()
+    # out_html_Path     = input_Path.with_name('output-from-python.html').resolve()
+    if WORKING_FOLDER is None:
+        dated_folder_Path = REPORTS_FOLDER.joinpath(formated_date).resolve()
+    else:
+        dated_folder_Path = WORKING_FOLDER.resolve()
+    dated_folder_Path.mkdir(parents=True, exist_ok=True)
+    xml_folder_Path = dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER_NAME)
+    xml_folder_Path.mkdir(parents=True, exist_ok=True)
+
+    intermidiate_Path = xml_folder_Path.joinpath(intermediate_file_name)
+    out_html_Path     = dated_folder_Path.joinpath(output_file_name)
+
+    print(f'{intermidiate_Path=}')
+    print(f'{out_html_Path=}')
+
+    # resave the input file
+    resave_Path = xml_folder_Path.joinpath(input_file_resave_name)
+    with open(resave_Path, 'w') as f:
+        f.write(input_Path.read_text())
 
     with saxonche.PySaxonProcessor(license=False) as proc:
 
@@ -282,11 +380,18 @@ def run_xslts(input_Path: Path,
         executable2 = xsltproc2.compile_stylesheet(stylesheet_file=str(xsl_2_Path))
 
         if parameter:
+            # get path to folder containing LawMaker XML file(s)
+            # and pass this to XSLT processor as a parameter.
+            # This is for for marshelling.
+
+
             # get path to temp folder containing copied FM XML (with doctype removed)
             # and pass this to XSLT processor as a parameter.
             # This is for for marshelling.
-            parameter_str = temp_fm_xml_files(parameter)
+            # parameter_str = temp_fm_xml_files(parameter)
+            # param = proc.make_string_value(parameter_str)
 
+            parameter_str = str(parameter)
             param = proc.make_string_value(parameter_str)
 
             executable2.set_parameter(XSLT_MARSHAL_PARAM_NAME, param)
