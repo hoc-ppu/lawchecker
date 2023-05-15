@@ -2,24 +2,31 @@
 <xsl:stylesheet
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN"
+    xmlns:akn="http://docs.oasis-open.org/legaldocml/ns/akn/3.0"
     exclude-result-prefixes="xs"
     version="2.0">
-    
+
     <xsl:output method="html" encoding="UTF-8" omit-xml-declaration="yes" version="5"/>
-    
-    
+
+
     <xsl:param name="marsh-path"/>
+
     <!--<xsl:variable name="todays-papers" select="collection('../XML/FrameMakerXML?select=*.xml')/Amendments.Commons"/>-->
     <!--<xsl:variable name="todays-papers" select="collection('file:///C:/added-names/XML/FrameMakerXML?select=*.xml')/Amendments.Commons"/>-->
-    <xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))/Amendments.Commons"/>
-    
-    
-    
+    <!--<xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))/Amendments.Commons"/>-->
+    <!--<xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))/akomaNtoso"/>-->
+    <xsl:variable name="todays-papers" select="collection('file:///Users/mark/projects/added-names/XML/LawmakerXML?select=*.xml')"/>
+
+
     <!-- MNIS data for name checks -->
     <xsl:variable name="mnis-name" select="document('http://data.parliament.uk/membersdataplatform/services/mnis/members/query/House=Commons%7CIsEligible=true/')/Members"/>
-    
-    
+
+
     <xsl:template match="root">
+        <xsl:message>
+            <xsl:value-of select="$marsh-path"/>
+        </xsl:message>
         <html>
             <head>
                 <title><xsl:value-of select="concat(current-date(), ' Added Names')"/></title>
@@ -40,7 +47,7 @@
                                 <p><xsl:text>Only one paper has added names today:</xsl:text></p>
                             </xsl:otherwise>
                         </xsl:choose>
-                        
+
                         <ul>
                             <xsl:for-each-group select="item" group-by="bill">
                                 <li><a href="{concat('#',lower-case(replace(current-grouping-key(), ' ', '-')))}" style="color:white"><xsl:value-of select="current-grouping-key()"/></a></li>
@@ -48,37 +55,48 @@
                         </ul>
                     </div>
                 </div>
-                
+
                 <xsl:for-each-group select="item" group-by="bill">
                     <xsl:variable name="bill-grouping-key" select="current-grouping-key()"/>
                     <xsl:variable name="current-group-var" select="current-group()"/>
                     <!--## BILL ##-->
                     <div class="bill" id="{lower-case(replace(current-grouping-key(), ' ', '-'))}">
-                        
+
                         <!-- Add bill title as heading -->
                         <h1 class="bill-title"><xsl:value-of select="current-grouping-key()"/></h1>
-                        
+
                         <!-- Summary of amendment numbers affected -->
                         <div class="number-summary">
                             <div class="number-summary-count"><p>Amendments in this paper with names added/removed: <b><xsl:value-of select="count(distinct-values(current-group()/descendant::matched-numbers/amd-no))"/></b></p></div>
                         </div>
-                        
+
                         <!--## AMDT NO ##-->
                         <!-- Amendments that can be displayed in marshalled order -->
                         <!-- For each amendment number in the matching FrameMaker XML file... -->
-                        <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']">
-                            
+                        <!-- <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
+                        <!--<xsl:message><xsl:value-of select="$bill-grouping-key"/></xsl:message>
+                        <xsl:message><xsl:value-of select="$todays-papers"/></xsl:message>-->
+                        <!--<xsl:message><xsl:value-of select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]"/></xsl:message>-->
+                        <!-- For each amendment number in the matching Lawmaker XML file... -->
+                        <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]">
+
+
+
+
+
                             <xsl:variable name="current-amdt" select="."/>
                             
+                            <!--<xsl:message><xsl:value-of select="$current-amdt"/></xsl:message>-->
+
                             <!-- ...group all the added names items that match the amendment number and put them in div[@class='amendment'] -->
                             <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no[.=upper-case($current-amdt)]">
-                                    
+
                                 <div class="amendment">
-                                        
+
                                         <div class="bill-reminder">
                                             <xsl:value-of select="$bill-grouping-key"/>
                                         </div>
-                                        
+
                                         <div class="num-info">
                                             <h2 class="amendment-number">
                                                 <xsl:choose>
@@ -92,7 +110,7 @@
                                                 </xsl:choose>
                                             </h2>
                                         </div>
-                                            
+
                                         <!--## NAMES TO ADD ##-->
                                         <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-add/matched-names/name) > 0">
                                             <div class="names-to-add">
@@ -123,8 +141,8 @@
                                                 </xsl:for-each>
                                             </div>
                                         </xsl:if>
-                                            
-                                            
+
+
                                         <!--### NAMES TO REMOVE ###-->
                                         <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-remove/matched-names/name) > 0">
                                             <div class="names-to-remove">
@@ -135,10 +153,10 @@
                                                             <a title="{concat('Dashboard ID:', ancestor::names-to-remove/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-remove/preceding-sibling::dashboard-id)}"><xsl:value-of select="."/></a></span>
                                                     </div>
                                                 </xsl:for-each>
-                                                
+
                                             </div>
                                         </xsl:if>
-                                            
+
                                          <!--### COMMENTS ###-->
                                         <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::comments/p) > 0">
                                             <div class="comments">
@@ -157,22 +175,30 @@
                                             <input type="checkbox"/>
                                             <label>Checked</label>
                                         </div>
-                                    
+
                                     </div><!-- End of amendment div -->
                                 </xsl:for-each-group>
-                            
+
                         </xsl:for-each><!-- End marshalled order amendments -->
-                        
+
+
                         <!-- Amendments that could not be matched/put in marshalled order -->
                         <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no">
                             <xsl:choose>
-                                <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>
+                                
+                                
+                                <!--<xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>-->
+                                <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]"></xsl:when>
+                                
+                                
+                               
+                               
                                 <xsl:otherwise>
                                     <div class="amendment">
                                         <div class="bill-reminder">
                                             <xsl:value-of select="$bill-grouping-key"/>
                                         </div>
-                                        
+
                                         <div class="num-info">
                                             <h2 class="amendment-number">
                                                 <xsl:choose>
@@ -187,7 +213,7 @@
                                                 <span style="font-family:Segoe UI Symbol;color:red;font-weight:normal;padding-left:10px" title="This amendment is not shown in marshalled order. It may be that the amendment has been withdrawn, it is newly tabled or no XML was supplied to determine marshalled order">&#9888;</span>
                                             </h2>
                                         </div>
-                                            
+
                                         <!--## NAMES TO ADD ##-->
                                         <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-add/matched-names/name) > 0">
                                             <div class="names-to-add">
@@ -218,8 +244,8 @@
                                                 </xsl:for-each>
                                             </div>
                                         </xsl:if>
-                                            
-                                            
+
+
                                         <!--### NAMES TO REMOVE ###-->
                                         <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-remove/matched-names/name) > 0">
                                             <div class="names-to-remove">
@@ -230,10 +256,10 @@
                                                             <a title="{concat('Dashboard ID:', ancestor::names-to-remove/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-remove/preceding-sibling::dashboard-id)}"><xsl:value-of select="."/></a></span>
                                                     </div>
                                                 </xsl:for-each>
-                                                
+
                                             </div>
                                         </xsl:if>
-                                            
+
                                          <!--### COMMENTS ###-->
                                         <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::comments/p) > 0">
                                             <div class="comments">
@@ -257,7 +283,7 @@
                                 </xsl:otherwise>
                             </xsl:choose>
                         </xsl:for-each-group>
-                       
+
                     </div>
                 </xsl:for-each-group>
             </body>
