@@ -9,14 +9,13 @@
 
     <xsl:output method="html" encoding="UTF-8" omit-xml-declaration="yes" version="5"/>
 
-
+    <!-- Input parameter specified when transformation is run -->
+    <!-- this is for a path (uri) to the folder where the XML from Lawmaker is saved -->
+    <!-- for marshaling -->
     <xsl:param name="marsh-path"/>
 
-    <!--<xsl:variable name="todays-papers" select="collection('../XML/FrameMakerXML?select=*.xml')/Amendments.Commons"/>-->
-    <!--<xsl:variable name="todays-papers" select="collection('file:///C:/added-names/XML/FrameMakerXML?select=*.xml')/Amendments.Commons"/>-->
-    <!--<xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))/Amendments.Commons"/>-->
     <xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))"/>
-    <!--<xsl:variable name="todays-papers" select="collection('file:///Users/mark/projects/added-names/XML/LawmakerXML?select=*.xml')"/>-->
+    <!-- FramMaker of the above: <xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))/Amendments.Commons"/> -->
 
 
     <!-- MNIS data for name checks -->
@@ -24,9 +23,8 @@
 
 
     <xsl:template match="root">
-        <xsl:message>
-            <xsl:value-of select="$marsh-path"/>
-        </xsl:message>
+
+        <!-- <xsl:message><xsl:value-of select="$marsh-path"/></xsl:message> -->
         <html>
             <head>
                 <title><!--<xsl:value-of select="concat(current-date(), ' Added Names')"/>-->Added Names Report</title>
@@ -72,20 +70,12 @@
 
                         <!--## AMDT NO ##-->
                         <!-- Amendments that can be displayed in marshalled order -->
-                        <!-- For each amendment number in the matching FrameMaker XML file... -->
-                        <!-- <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
-                        <!--<xsl:message><xsl:value-of select="$bill-grouping-key"/></xsl:message>
-                        <xsl:message><xsl:value-of select="$todays-papers"/></xsl:message>-->
-                        <!--<xsl:message><xsl:value-of select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]"/></xsl:message>-->
                         <!-- For each amendment number in the matching Lawmaker XML file... -->
                         <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]">
-
-
-
-
+                        <!--FrameMaker version of above: <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
 
                             <xsl:variable name="current-amdt" select="."/>
-                            
+
                             <!--<xsl:message><xsl:value-of select="$current-amdt"/></xsl:message>-->
 
                             <!-- ...group all the added names items that match the amendment number and put them in div[@class='amendment'] -->
@@ -185,14 +175,10 @@
                         <!-- Amendments that could not be matched/put in marshalled order -->
                         <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no">
                             <xsl:choose>
-                                
-                                
-                                <!--<xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>-->
                                 <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]"></xsl:when>
-                                
-                                
-                               
-                               
+
+                                <!--FrameMaker version of above: <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>-->
+
                                 <xsl:otherwise>
                                     <div class="amendment">
                                         <div class="bill-reminder">
