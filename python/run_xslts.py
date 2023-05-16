@@ -5,15 +5,12 @@ import os
 import re
 from pathlib import Path
 import sys
-from tempfile import mkdtemp
+import traceback
 from typing import Optional
 import webbrowser
 
-# sys.path.append(str(Path(__file__).parent / 'pythonsaxon'))  # add saxonstuff to pythonpath
-# print(sys.path)
 
 # 3rd party saxon imports
-# import nodekind  # type: ignore
 import saxonche
 
 
@@ -31,14 +28,6 @@ else:
 
     from ui.addedNames import Ui_MainWindow
 
-
-# we also need to set an environment variable
-# I think this is for accessing:
-    # libsaxon[EDITION].dylib - Saxon/C library
-    # rt directory - Excelsior JET runtime which handles VM calls
-    # saxon-data directory
-# os.environ["SAXONC_HOME"] = str(Path(Path(__file__).parent / 'saxonstuff').resolve())
-# print(os.environ.get("SAXONC_HOME", None))
 
 XSLT_MARSHAL_PARAM_NAME = 'marsh-path'
 
@@ -59,7 +48,7 @@ else:
     # assume running as python script via usual interpreter
     PARENT_FOLDER = Path(__file__).parent
     if not PARENT_FOLDER.joinpath('XSLT').exists():
-        PARENT_FOLDER = Path(__file__).parent.parent
+        PARENT_FOLDER = PARENT_FOLDER.parent
 
 XSL_FOLDER = PARENT_FOLDER / 'XSLT'
 
@@ -214,6 +203,7 @@ def gui(args):
                               parameter=lm_xml_folder_Path)
                 except Exception as e:
                     QtWidgets.QMessageBox.critical(window, 'Error', str(e))
+                    print(traceback.print_exc(file=sys.stdout))
             else:
                 print('No XML file selected.')
 
@@ -225,51 +215,6 @@ def gui(args):
     window.show()
 
     app.exec_()
-
-
-# def temp_fm_xml_files(parameter: Path) -> str:
-#     """Process FM XML files to remove docstring and save resultant files in a
-#     temp file. Return the parameter str in the form 'file:///C:/.../...'"""
-
-#     # lets also turn it into an absolute path
-#     parameter_abs = parameter.absolute()
-
-#     # now let's go through all the XML files in the folder and remove the doctypes
-#     fm_xml_files = list(parameter_abs.glob('*.xml'))
-
-#     # create a temporary directory
-#     temp_dir = mkdtemp(prefix='XML_from_FM')
-
-#     # loop through XML files
-#     for file in fm_xml_files:
-#         with open(file, 'r', encoding='utf-8') as f:
-#             file_lines = f.readlines()
-
-#         root_start = 0  # line the root element starts at
-#         # remove anything before the root element
-#         for i, line in enumerate(file_lines):
-#             line_content = line.strip()
-#             if re.match(r'<[A-Za-z0-9._]', line_content):
-#                 # found root
-#                 root_start = i
-#                 break
-
-#         # create new tempfile
-#         # tempfile, tempfilepath = mkstemp(suffix='.xml', prefix='FM')
-#         # output html to tempfile
-#         temp_tile_Path = Path(temp_dir, file.name)
-#         with open(temp_tile_Path, 'w', encoding='UTF-8') as fi:
-#             fi.writelines(file_lines[root_start:])
-#         print(f'Created: {temp_tile_Path}')
-
-
-#     # assume a windows path so switch \ for / and add
-#     # file:/// to beginning as this is how XSLT likes it
-#     parameter_str = temp_dir.replace("\\", "/")
-#     parameter_str = f'file:///{parameter_str}'
-#     print(f'parameter_str: {parameter_str}')
-
-#     return(parameter_str)
 
 
 def extract_date(input_Path: Path) -> str:
@@ -359,9 +304,10 @@ def run_xslts(input_Path: Path,
         print(proc.version)
         # print(f'{input_Path=}\n{xsl_1_Path=}\n{xsl_2_Path=}\n{intermidiate_Path=}\n{out_html_Path=}')
 
-        input_path = str(input_Path)
-        intermidiate_path = str(intermidiate_Path)
-        outfilepath = str(out_html_Path)
+        # need to be as uri in case there are spaces in the path
+        input_path = input_Path.as_uri()
+        intermidiate_path = intermidiate_Path.as_uri()
+        outfilepath = out_html_Path.as_uri()
 
         # --- 1st XSLT ---
         xsltproc = proc.new_xslt30_processor()
@@ -384,14 +330,7 @@ def run_xslts(input_Path: Path,
             # and pass this to XSLT processor as a parameter.
             # This is for for marshelling.
 
-
-            # get path to temp folder containing copied FM XML (with doctype removed)
-            # and pass this to XSLT processor as a parameter.
-            # This is for for marshelling.
-            # parameter_str = temp_fm_xml_files(parameter)
-            # param = proc.make_string_value(parameter_str)
-
-            parameter_str = str(parameter)
+            parameter_str = parameter.as_uri()  # uri works best with Saxon
             param = proc.make_string_value(parameter_str)
 
             executable2.set_parameter(XSLT_MARSHAL_PARAM_NAME, param)
