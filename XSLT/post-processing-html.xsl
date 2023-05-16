@@ -15,8 +15,8 @@
     <!--<xsl:variable name="todays-papers" select="collection('../XML/FrameMakerXML?select=*.xml')/Amendments.Commons"/>-->
     <!--<xsl:variable name="todays-papers" select="collection('file:///C:/added-names/XML/FrameMakerXML?select=*.xml')/Amendments.Commons"/>-->
     <!--<xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))/Amendments.Commons"/>-->
-    <!--<xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))/akomaNtoso"/>-->
-    <xsl:variable name="todays-papers" select="collection('file:///Users/mark/projects/added-names/XML/LawmakerXML?select=*.xml')"/>
+    <xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))"/>
+    <!--<xsl:variable name="todays-papers" select="collection('file:///Users/mark/projects/added-names/XML/LawmakerXML?select=*.xml')"/>-->
 
 
     <!-- MNIS data for name checks -->
@@ -29,7 +29,7 @@
         </xsl:message>
         <html>
             <head>
-                <title><xsl:value-of select="concat(current-date(), ' Added Names')"/></title>
+                <title><!--<xsl:value-of select="concat(current-date(), ' Added Names')"/>-->Added Names Report</title>
                 <style>html {font-family:"Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;background-color:#ebe9e8;word-wrap:normal;white-space:normal;} body {width:70%;background-color:#ffffff;margin-left:30px;margin:auto;overflow-wrap: break-word;padding-bottom:20px;} .header {background-color:#373151;color:#ffffff;} .number-summary-count {padding-left:20px;margin-bottom:20px} .amendment {margin-bottom:20px;margin-left:20px;border:2px solid #ebe9e8;padding-left:10px;width:80%;min-width:200px;padding-bottom:10px} .bill-title {color:black;background-color:#ffffff;padding-left:20px;} hr {color:#006e46;} .main-heading {padding-left:20px;padding-top:20px;}.main-summary {padding:0 0 10px 20px} .num-info {border-bottom: 1px dotted #ebe9e8;} .bill-reminder {text-align:right;color:#4d4d4d;font-size:10px;padding-right:5px;} .check-box {text-align:right;padding-top:10px;padding-right:20px;border-top:1px dotted #ebe9e8;}</style>
             </head>
             <body>
