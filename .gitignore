@@ -17,6 +17,7 @@ output-from-python.html
 
 # changed pyinstaller build folder
 python/pyinBuild/
+BuildJunk/
 
 
 # ignore any .exes created
