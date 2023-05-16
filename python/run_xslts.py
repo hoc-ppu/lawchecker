@@ -242,6 +242,27 @@ def extract_date(input_Path: Path) -> str:
     return formated_date
 
 
+def check_xsl_paths(*xsls: Path) -> bool:
+
+    for xsl_Path in xsls:
+        try:
+            # check xsl paths are valid
+            xsl_Path = xsl_Path.resolve(strict=True)
+            xsl_2_Path = xsl_2_Path.absolute().resolve(strict=True)
+        except FileNotFoundError as e:
+            err_txt = ('The following required XSLT file is missing:'
+                    f'\n\n{xsl_Path}'
+                    '\n\nUsually you should have two XSL files in a folder called \'XSLT\''
+                    ' and that folder should be in the same folder as this program.')
+            print('Error:', err_txt)
+            if USE_GUI:
+                # this can be caught in the GUI code and the Error message displayed in a GUI window
+                raise Exception(err_txt) from e
+            return False
+    
+    return True
+
+
 
 def run_xslts(input_Path: Path,
               xsl_1_Path: Path,
@@ -253,21 +274,9 @@ def run_xslts(input_Path: Path,
     print(f'{xsl_2_Path=}')
     print(f'{parameter=}')
 
-    try:
-        # check xsl paths are valid
-        xsl_1_Path = xsl_1_Path.absolute().resolve(strict=True)
-        xsl_2_Path = xsl_2_Path.absolute().resolve(strict=True)
-    except FileNotFoundError as e:
-        err_txt = ('The following required XSLT files are missing:'
-                   f'\n\n{xsl_1_Path}\n\n{xsl_2_Path}'
-                   '\n\nUsually you should have two XSL files in a folder called \'XSLT\''
-                   ' and that folder should be in the same folder as this program.')
-        print('Error:', err_txt)
-        if USE_GUI:
-            # this can be caught in the GUI code and the Error message displayed in a GUI window
-            raise Exception(err_txt) from e
+    xsls_exist = check_xsl_paths(xsl_1_Path, xsl_1_Path)
+    if  not xsls_exist:
         return
-
 
     formated_date = extract_date(input_Path)
 
@@ -276,13 +285,12 @@ def run_xslts(input_Path: Path,
     output_file_name = f"Added_Names_Report.html"
 
 
-    # intermidiate_Path = input_Path.with_name('intermidiate-from-python.xml').resolve()
-    # out_html_Path     = input_Path.with_name('output-from-python.html').resolve()
     if WORKING_FOLDER is None:
         dated_folder_Path = REPORTS_FOLDER.joinpath(formated_date).resolve()
     else:
-        dated_folder_Path = WORKING_FOLDER.resolve()
+        dated_folder_Path = WORKING_FOLDER.resolve()  # working folder selected in UI
     dated_folder_Path.mkdir(parents=True, exist_ok=True)
+
     xml_folder_Path = dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER_NAME)
     xml_folder_Path.mkdir(parents=True, exist_ok=True)
 
@@ -299,10 +307,7 @@ def run_xslts(input_Path: Path,
 
     with saxonche.PySaxonProcessor(license=False) as proc:
 
-        # proc.set_configuration_property('ALLOWED_PROTOCOLS', 'all')
-
         print(proc.version)
-        # print(f'{input_Path=}\n{xsl_1_Path=}\n{xsl_2_Path=}\n{intermidiate_Path=}\n{out_html_Path=}')
 
         # need to be as uri in case there are spaces in the path
         input_path = input_Path.as_uri()
@@ -312,11 +317,7 @@ def run_xslts(input_Path: Path,
         # --- 1st XSLT ---
         xsltproc = proc.new_xslt30_processor()
 
-        # document = proc.parse_xml(xml_file_name=str(input_Path))
-        # xsltproc.set_source_node(xdm_node=document)
-
         executable = xsltproc.compile_stylesheet(stylesheet_file=str(xsl_1_Path))
-        # xsltproc.set_jit_compilation(True)
         executable.transform_to_file(source_file=input_path, output_file=intermidiate_path)
 
 
