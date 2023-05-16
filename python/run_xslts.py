@@ -223,14 +223,13 @@ def extract_date(input_Path: Path) -> str:
     with open(input_Path) as f:
         input_xml_str = f.read()
 
-    print(f'input_xml_str length is: {len(input_xml_str)}')
+    # print(f'input_xml_str length is: {len(input_xml_str)}')
     # get the updated date
     match = re.search(r'(<updated>)([A-Z0-9:+-]+)(</updated>)', input_xml_str)
     date_str = ''
     if match:
-        print('match found')
         date_str = match.group(2)
-        print(f'{date_str=}')
+        print(f'Date extracted from input xml (from SharePoint) {date_str}')
 
     try:
         dt = datetime.strptime(date_str[:19], '%Y-%m-%dT%H:%M:%S')
@@ -307,7 +306,7 @@ def run_xslts(input_Path: Path,
 
     with saxonche.PySaxonProcessor(license=False) as proc:
 
-        print(proc.version)
+        # print(proc.version)
 
         # need to be as uri in case there are spaces in the path
         input_path = input_Path.as_uri()
