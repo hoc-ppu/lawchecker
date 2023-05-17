@@ -37,8 +37,8 @@ DASH_XML_URL = "***REMOVED***" \
 XSL_1_NAME = 'added-names-spo-rest.xsl'
 XSL_2_NAME = 'post-processing-html.xsl'
 
-LAWMAKER_XML_FOLDER_NAME = 'Lawmaker_XML_Files'
-DASHBOARD_DATA_FOLDER_NAME = 'Dashboard_Data'
+XML_FOLDER = 'Amendment_Paper_XML'
+DASHBOARD_DATA_FOLDER = 'Dashboard_Data'
 
 # path to folder containing the XSLT files
 if hasattr(sys, 'executable') and hasattr(sys, '_MEIPASS'):
@@ -94,7 +94,7 @@ def cli(cli_args):
 
     parser.add_argument('--marshal-dir', metavar='LM XML Folder', type=_dir_path,
                         help='Optional Path to the folder containing the XML files '
-                             '(from LawMaker) that you wish to use to marshal '
+                             '(from LawMaker or FrameMaker) that you wish to use to marshal '
                              'the report. Use quotes if there are spaces.')
 
 
@@ -159,10 +159,10 @@ def gui(args):
                 WORKING_FOLDER = self.dated_folder_Path
 
                 # create subfolders for dashboard XML (and intermediate)
-                # as well as lawmaker XML
-                lawmaker_xml = self.dated_folder_Path.joinpath(LAWMAKER_XML_FOLDER_NAME)
+                # as well as lawmaker/framemaker XML
+                lawmaker_xml = self.dated_folder_Path.joinpath(XML_FOLDER)
                 lawmaker_xml.mkdir(parents=True, exist_ok=True)
-                dashboard_data = self.dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER_NAME)
+                dashboard_data = self.dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER)
                 dashboard_data.mkdir(parents=True, exist_ok=True)
 
             except Exception as e:
@@ -175,7 +175,7 @@ def gui(args):
 
         def open_dash_xml_file(self):
             if self.dated_folder_Path is not None:
-                default_location = self.dated_folder_Path
+                default_location = self.dated_folder_Path / DASHBOARD_DATA_FOLDER
             else:
                 default_location = PARENT_FOLDER
             self.dash_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -217,6 +217,42 @@ def gui(args):
     app.exec_()
 
 
+def remove_docstring(parameter: Path):
+    """Process FM XML files to remove docstring and overwrite original"""
+
+    print('hi')
+
+    # lets also turn it into an absolute path
+    parameter_abs = parameter.resolve()
+
+    # now let's go through all the XML files in the folder and remove the doctypes
+    fm_xml_files = list(parameter_abs.glob('*.xml'))
+
+    # loop through XML files
+    for file in fm_xml_files:
+        print(file.name)
+        with open(file, 'r', encoding='utf-8') as f:
+            file_lines = f.readlines()
+
+        root_start = 0  # line the root element starts at
+        # remove anything before the root element
+        for i, line in enumerate(file_lines):
+            line_content = line.strip()
+            if re.match(r'<[A-Za-z0-9._]', line_content):
+                # found root
+                root_start = i
+                break
+
+        # if LawMaker XML we expect the root to be akomaNtoso
+        # in which case completely ignore
+        if file_lines[root_start].find('akomaNtoso') != -1:
+            continue
+
+        # try to overwrite file
+        with open(file, 'w', encoding='UTF-8') as fi:
+            fi.writelines(file_lines[root_start:])
+
+
 def extract_date(input_Path: Path) -> str:
     """Extract date form input XML from SharePoint"""
 
@@ -247,7 +283,7 @@ def check_xsl_paths(*xsls: Path) -> bool:
         try:
             # check xsl paths are valid
             xsl_Path = xsl_Path.resolve(strict=True)
-            xsl_2_Path = xsl_2_Path.absolute().resolve(strict=True)
+
         except FileNotFoundError as e:
             err_txt = ('The following required XSLT file is missing:'
                     f'\n\n{xsl_Path}'
@@ -258,7 +294,7 @@ def check_xsl_paths(*xsls: Path) -> bool:
                 # this can be caught in the GUI code and the Error message displayed in a GUI window
                 raise Exception(err_txt) from e
             return False
-    
+
     return True
 
 
@@ -290,7 +326,7 @@ def run_xslts(input_Path: Path,
         dated_folder_Path = WORKING_FOLDER.resolve()  # working folder selected in UI
     dated_folder_Path.mkdir(parents=True, exist_ok=True)
 
-    xml_folder_Path = dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER_NAME)
+    xml_folder_Path = dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER)
     xml_folder_Path.mkdir(parents=True, exist_ok=True)
 
     intermidiate_Path = xml_folder_Path.joinpath(intermediate_file_name)
@@ -326,25 +362,22 @@ def run_xslts(input_Path: Path,
         executable2 = xsltproc2.compile_stylesheet(stylesheet_file=str(xsl_2_Path))
 
         if parameter:
-            # get path to folder containing LawMaker XML file(s)
+            # get path to folder containing /FrameMaker XML file(s)
             # and pass this to XSLT processor as a parameter.
             # This is for for marshelling.
-
+            remove_docstring(parameter)
             parameter_str = parameter.as_uri()  # uri works best with Saxon
             param = proc.make_string_value(parameter_str)
 
             executable2.set_parameter(XSLT_MARSHAL_PARAM_NAME, param)
 
-        executable2.transform_to_file(source_file=str(intermidiate_Path), output_file=outfilepath)
+        executable2.transform_to_file(source_file=intermidiate_path, output_file=outfilepath)
 
         # --- finished transforms ---
 
-        print(f'Created: {outfilepath}')
+        print(f'Created: {out_html_Path}')
 
-        if os.name == 'posix':
-            webbrowser.open('file://' + outfilepath)
-        else:
-            webbrowser.open(outfilepath)
+        webbrowser.open(outfilepath)
 
         print('Done.')
 

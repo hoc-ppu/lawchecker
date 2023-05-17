@@ -71,7 +71,7 @@
                         <!--## AMDT NO ##-->
                         <!-- Amendments that can be displayed in marshalled order -->
                         <!-- For each amendment number in the matching Lawmaker XML file... -->
-                        <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]">
+                        <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum] | $todays-papers/Amendments.Commons[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']">
                         <!--FrameMaker version of above: <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
 
                             <xsl:variable name="current-amdt" select="."/>
@@ -175,9 +175,11 @@
                         <!-- Amendments that could not be matched/put in marshalled order -->
                         <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no">
                             <xsl:choose>
+                                <!-- ignore amendments that have already been marshalled from *LawMaker* -->
                                 <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]"></xsl:when>
 
-                                <!--FrameMaker version of above: <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>-->
+                                <!-- ignore amendments that have already been marshalled from *FrameMaker*  -->
+                                <xsl:when test="current-grouping-key() = $todays-papers/Amendments.Commons[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>
 
                                 <xsl:otherwise>
                                     <div class="amendment">
