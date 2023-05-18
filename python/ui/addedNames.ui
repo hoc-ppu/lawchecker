@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>525</width>
-    <height>600</height>
+    <width>515</width>
+    <height>766</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,6 +15,19 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>40</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
     <item>
      <widget class="QFrame" name="frame_2">
       <property name="frameShape">
@@ -24,23 +37,6 @@
        <enum>QFrame::Plain</enum>
       </property>
       <layout class="QGridLayout" name="gridLayout_3">
-       <item row="0" column="0" colspan="2">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Optional&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Ideally you should create a dated folder in &lt;span style=&quot; font-weight:700;&quot;&gt;PPU - Scripts &amp;gt; added_names_report &amp;gt; _Reports&lt;/span&gt;. To do that (if neccesarry change the date and then) click, 'Create Folder'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QDateEdit" name="workingFolderDateEdit">
-         <property name="calendarPopup">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
@@ -58,6 +54,13 @@
          </property>
         </widget>
        </item>
+       <item row="1" column="1">
+        <widget class="QDateEdit" name="workingFolderDateEdit">
+         <property name="calendarPopup">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
@@ -68,21 +71,28 @@
          </property>
         </widget>
        </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Optional&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Ideally you should create a dated folder in &lt;span style=&quot; font-weight:700;&quot;&gt;PPU - Scripts &amp;gt; added_names_report &amp;gt; _Reports&lt;/span&gt;. To do that click, 'Create Folder'.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0" colspan="2">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Note: This button will also create subfolders, Dashboard_Data and Amendment_Paper_XML. Ideally save data downloaded form Shaprepoint in Dashboard_Data and save Amendment paper XML in Amendment_Paper_XML (see below).</string>
+         </property>
+         <property name="wordWrap">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
-    </item>
-    <item>
-     <spacer name="verticalSpacer_4">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
     </item>
     <item>
      <widget class="QWidget" name="widget" native="true">
@@ -92,7 +102,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="get_label">
            <property name="text">
-            <string>Get dashboard XML:</string>
+            <string>Get dashboard data:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -102,7 +112,7 @@
          <item row="3" column="0">
           <widget class="QLabel" name="select_label">
            <property name="text">
-            <string>Select dashboard XML:</string>
+            <string>Select dashboard data:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -126,7 +136,7 @@
          <item row="1" column="0" colspan="2">
           <widget class="QLabel" name="instruction_label">
            <property name="text">
-            <string>The above button should open the added names dashboard in a web browser.  Once opened,  you must download and save the XML to your computer (ideally within the dated folder created above). Then open that XML file using the button below.</string>
+            <string>The above button should open the added names dashboard data in a web browser.  Once opened,  you must download and save the XML to your computer (ideally within the folder created above). Then open that XML/text file using the button below.</string>
            </property>
            <property name="wordWrap">
             <bool>true</bool>
@@ -137,19 +147,6 @@
        </item>
       </layout>
      </widget>
-    </item>
-    <item>
-     <spacer name="verticalSpacer">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
     </item>
     <item>
      <widget class="QFrame" name="frame">
@@ -180,7 +177,7 @@
        <item row="0" column="0" colspan="2">
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Optional&lt;/span&gt;&lt;/p&gt;&lt;p&gt;If you want the amendments in the report to appear in the same order as they appear in the paper(s)*: save the XML file(s) for the paper(s) (downloaded from &lt;a href=&quot;https://lawmaker.legislation.gov.uk/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;LawMaker&lt;/span&gt;&lt;/a&gt;, or saved from FrameMaker), into a folder (Ideally in the folder created in the optional step above), and select that folder with the button below.&lt;/p&gt;&lt;p&gt;*Note: The report works with &lt;span style=&quot; font-weight:700;&quot;&gt;one&lt;/span&gt; or &lt;span style=&quot; font-weight:700;&quot;&gt;several&lt;/span&gt; papers. In either case the XML file(s) need to be in a folder and you need to select that folder. Do not try to select a single XML file. Both LM and FM XML files can be used for marshalling.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Optional&lt;/span&gt;&lt;/p&gt;&lt;p&gt;If you want the amendments in the report marshalling: save the XML file(s) for the paper(s) (downloaded from &lt;a href=&quot;https://lawmaker.legislation.gov.uk/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;LawMaker&lt;/span&gt;&lt;/a&gt;, or saved from FrameMaker) into a folder (ideally within the folder created above) and select that folder with the button below.&lt;/p&gt;&lt;p&gt;Note: The marshalling feature works with &lt;span style=&quot; font-weight:700;&quot;&gt;one&lt;/span&gt; or &lt;span style=&quot; font-weight:700;&quot;&gt;several&lt;/span&gt; papers. In either case the XML file(s) need to be saved in a folder and you need to select that folder. Do not try to select a single XML file. Both LM and FM XML files can be used for marshalling.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -192,19 +189,6 @@
        </item>
       </layout>
      </widget>
-    </item>
-    <item>
-     <spacer name="verticalSpacer_3">
-      <property name="orientation">
-       <enum>Qt::Vertical</enum>
-      </property>
-      <property name="sizeHint" stdset="0">
-       <size>
-        <width>20</width>
-        <height>40</height>
-       </size>
-      </property>
-     </spacer>
     </item>
     <item alignment="Qt::AlignHCenter">
      <widget class="QPushButton" name="run_btn">
