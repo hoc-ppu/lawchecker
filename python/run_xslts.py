@@ -137,6 +137,10 @@ def gui(args):
             super(MainWindow, self).__init__(*args, **kwargs)
             self.setupUi(self)
 
+            if sys.platform == "darwin":
+                # annoyingly sizing works differently on macOS and windows
+                self.resize(self.size().width(), 740)  # fit widgets on mac
+
             self.dash_xml_file = ""  # will be the xml file path
 
             self.lm_xml_folder = ""  # will be the lm xml folder path
