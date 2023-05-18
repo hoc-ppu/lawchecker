@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>515</width>
-    <height>766</height>
+    <height>540</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -177,7 +177,7 @@
        <item row="0" column="0" colspan="2">
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Optional&lt;/span&gt;&lt;/p&gt;&lt;p&gt;If you want the amendments in the report marshalling: save the XML file(s) for the paper(s) (downloaded from &lt;a href=&quot;https://lawmaker.legislation.gov.uk/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;LawMaker&lt;/span&gt;&lt;/a&gt;, or saved from FrameMaker) into a folder (ideally within the folder created above) and select that folder with the button below.&lt;/p&gt;&lt;p&gt;Note: The marshalling feature works with &lt;span style=&quot; font-weight:700;&quot;&gt;one&lt;/span&gt; or &lt;span style=&quot; font-weight:700;&quot;&gt;several&lt;/span&gt; papers. In either case the XML file(s) need to be saved in a folder and you need to select that folder. Do not try to select a single XML file. Both LM and FM XML files can be used for marshalling.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Optional&lt;/span&gt;&lt;/p&gt;&lt;p&gt;If you want the amendments in the report marshalling: save the XML file(s) for the paper(s) (downloaded from &lt;a href=&quot;https://lawmaker.legislation.gov.uk/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;LawMaker&lt;/span&gt;&lt;/a&gt;, or saved from FrameMaker) into a folder (ideally within the folder created above). Select that folder with the button below.&lt;/p&gt;&lt;p&gt;Note: The marshalling feature works with &lt;span style=&quot; font-weight:700;&quot;&gt;one&lt;/span&gt; or &lt;span style=&quot; font-weight:700;&quot;&gt;several&lt;/span&gt; papers. In either case the XML file(s) need to be saved in a folder and you need to select that folder. Do not try to select a single XML file. Both LM and FM XML files can be used for marshalling.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
