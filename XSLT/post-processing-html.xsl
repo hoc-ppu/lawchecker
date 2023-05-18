@@ -71,7 +71,7 @@
                         <!--## AMDT NO ##-->
                         <!-- Amendments that can be displayed in marshalled order -->
                         <!-- For each amendment number in the matching Lawmaker XML file... -->
-                        <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum] | $todays-papers/Amendments.Commons[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']">
+                        <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum] | $todays-papers/Amendments.Commons[normalize-space(replace(descendant::STText, ', As Amended', '')) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']">
                         <!--FrameMaker version of above: <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
 
                             <xsl:variable name="current-amdt" select="."/>
@@ -179,7 +179,7 @@
                                 <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]"></xsl:when>
 
                                 <!-- ignore amendments that have already been marshalled from *FrameMaker*  -->
-                                <xsl:when test="current-grouping-key() = $todays-papers/Amendments.Commons[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>
+                                <xsl:when test="current-grouping-key() = $todays-papers/Amendments.Commons[normalize-space(replace(descendant::STText, ', As Amended', '')) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>
 
                                 <xsl:otherwise>
                                     <div class="amendment">
