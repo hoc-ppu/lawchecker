@@ -103,7 +103,7 @@ def cli(cli_args):
 
     parser.add_argument(
         "--marshal-dir",
-        metavar="LM XML Folder",
+        metavar="XML Folder",
         type=_dir_path,
         help="Optional Path to the folder containing the XML files "
         "(from LawMaker or FrameMaker) that you wish to use to marshal "
@@ -239,36 +239,45 @@ def gui(args):
 def remove_docstring(parameter: Path):
     """Process FM XML files to remove docstring and overwrite original"""
 
-    print("hi")
-
     # lets also turn it into an absolute path
     parameter_abs = parameter.resolve()
 
-    # now let's go through all the XML files in the folder and remove the doctypes
+    # get all xml files in folder
     fm_xml_files = list(parameter_abs.glob("*.xml"))
 
-    # loop through XML files
+    # loop through XML files and remove the doctypes
     for file in fm_xml_files:
+
         print(file.name)
+
+        LM_XML = False
+        root_start = 0
+        file_lines = []
+
         with open(file, "r", encoding="utf-8") as f:
+
             file_lines = f.readlines()
 
-        root_start = 0  # line the root element starts at
-        # remove anything before the root element
-        for i, line in enumerate(file_lines):
-            line_content = line.strip()
-            if re.match(r"<[A-Za-z0-9._]", line_content):
-                # found root
-                root_start = i
-                break
+            for i, line in enumerate(file_lines):
 
-        # if LawMaker XML we expect the root to be akomaNtoso
-        # in which case completely ignore
-        if file_lines[root_start].find("akomaNtoso") != -1:
+                if "<akomaNtoso" in line:
+                    # if LawMaker XML we expect the root to be akomaNtoso
+                    # in which case completely ignore
+                    LM_XML = True
+                    break
+                if re.search(r"<[A-Za-z0-9._]", line):
+                    # found root
+                    root_start = i
+                    break
+
+        if LM_XML:
+            # do not do anything to LM XML
             continue
 
         # try to overwrite file
         with open(file, "w", encoding="UTF-8") as fi:
+            # need to remove FM doctype
+            # remove anything before the root element
             fi.writelines(file_lines[root_start:])
 
 
@@ -385,9 +394,8 @@ def run_xslts(
         executable2 = xsltproc2.compile_stylesheet(stylesheet_file=str(xsl_2_Path))
 
         if parameter:
-            # get path to folder containing LM/FM XML file(s)
-            # and pass this to XSLT processor as a parameter.
-            # This is for for marshelling.
+            # get path to folder containing LM/FM XML file(s) and pass this to
+            # the XSLT processor as a parameter. This is for for marshelling.
             remove_docstring(parameter)
             parameter_str = parameter.as_uri()  # uri works best with Saxon
             param = proc.make_string_value(parameter_str)
