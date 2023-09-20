@@ -1,10 +1,14 @@
 # added-names
 
-To install saxon first try
+To install dependencies
 ```shell
-pip install saxonche
+pip install -r requirements.txt
 ```
-If that doesn't work try following the [instructions](https://www.saxonica.com/saxon-c/documentation12/index.html#!starting/installingpython) to install python-saxon.
+
+If that doesn't work because of saxon try following the [instructions](https://www.saxonica.com/saxon-c/documentation12/index.html#!starting/installingpython) to install python-saxon.
+
+## Tests
+To run tests `pytest python/tests/`
 
 TODO: Add instructions to create the .exe with the new saxonche
 

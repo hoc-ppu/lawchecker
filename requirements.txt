@@ -1,0 +1,4 @@
+lxml
+PySide6
+pytest
+saxonche
