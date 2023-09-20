@@ -14,9 +14,8 @@ print(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 print(str(Path(__file__).resolve().parent.parent))
 
-import data_for_testing
-
 import check_amendments
+import data_for_testing
 
 
 @pytest.fixture
@@ -57,6 +56,14 @@ def test_render_intro(report):
     assert elements_equal(data_for_testing.intro, report.render_intro()) is True
 
 
+def test_added_and_removed_names_table(report):
+    """Test that the added and removed names are rendered correctly"""
+
+    assert elements_equal(
+        data_for_testing.added_and_removed_names_table, report.added_and_removed_names_table()
+    ) is True
+
+
 def test_meta_data_extract():
     with patch("lxml.etree.parse") as mock_parse:
         mock_parse.return_value = ElementTree(data_for_testing.intro_input)
@@ -77,7 +84,9 @@ def test_get_meta_data():
         tlcconcept = element.find(
             ".//TLCConcept[@eId='varBillTitle']", namespaces=check_amendments.NSMAP2
         )
-        tlcconcept.attrib.clear()  # remove the bill title attribute
+
+        # remove the bill title attribute
+        tlcconcept.attrib.clear()  # type: ignore
 
         mock_parse.return_value = ElementTree(element)
 
