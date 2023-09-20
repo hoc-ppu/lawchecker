@@ -12,13 +12,11 @@ from typing import Any, Generic, NamedTuple, Optional, TypeVar, cast
 
 from lxml import etree, html
 from lxml.etree import QName, _Element
-from lxml.html import builder as E
 
 import templates
 from logger import logger
 
 T = TypeVar("T")
-
 
 
 # TODO: [x] put all sections in HTML document
@@ -168,7 +166,6 @@ class SupDocument(Mapping):
         self.problem_amendments = 0
         self.amendments: list[Amendment] = []
 
-        # for amdt in cast(list[_Element], self.root.xpath("//dns:amendment", namespaces=NSMAP)):
         for amdt_xml in get_amendments(self.root):
             try:
                 amendment = Amendment(amdt_xml, self)
@@ -300,17 +297,17 @@ class Report:
         # populate the star check, name changes and changes to existing amendments
         for key, new_amdt in self.new_doc.items():
             if key not in self.old_doc:
-                # only the star check happens when there is no corespondind
+                # the star check only happens when there is no coresponding
                 # amendment in previous document
                 self.star_check(new_amdt, None)
                 continue
-            else:
-                old_amend = self.old_doc[key]
 
-                self.star_check(new_amdt, old_amend)
-                self.diff_names(new_amdt, old_amend)
-                self.diff_names_in_context(new_amdt, old_amend)
-                self.diff_amdt_content(new_amdt, old_amend)
+            old_amend = self.old_doc[key]
+
+            self.star_check(new_amdt, old_amend)
+            self.diff_names(new_amdt, old_amend)
+            self.diff_names_in_context(new_amdt, old_amend)
+            self.diff_amdt_content(new_amdt, old_amend)
 
     def make_html(self):
         """Build up HTML document with various automated checks on amendments"""
@@ -375,14 +372,12 @@ class Report:
             )
 
         card = templates.Card("Added and removed amendments")
-        card.secondary_info.extend([E.P(added_content), E.P(removed_content)])
-        # self.add_element_to_output_html(card.html)
+        card.secondary_info.extend([
+            html.fromstring(f"<p>{added_content}</p>"),
+            html.fromstring(f"<p>{removed_content}</p>")
+        ])
         return card.html
 
-        # add content to HTML template
-        # self.add_elements_to_parent(
-        #     "added-removed-amdts", [E.P(removed_content), E.P(added_content)]
-        # )
 
     def added_and_removed_names_table(self) -> _Element:
 
@@ -440,7 +435,8 @@ class Report:
         names_change_context_section = html.fromstring(
             '<section class="collapsible closed">'
             '<div class="collapsible-header">'
-            '<h3><span class="arrow"> </span>Name Changes in Context <small class="text-muted"> [show]</small></h3>'
+            '<h3 class="h4"><span class="arrow"> </span>'
+            'Name Changes in Context <small class="text-muted"> [show]</small></h3>'
             "<p>Expand this section to see the same names as above but in context.</p>"
             "</div>"
             '<div class="collapsible-content" style="display: none;" id="name-changes-in-context">'
@@ -479,16 +475,6 @@ class Report:
 
         return card.html
 
-        # add content to HTML template
-        # self.add_elements_to_parent(
-        #     "added-removed-names",
-        #     [
-        #         name_changes,
-        #         names_change_context_section,
-        #         html.fromstring(no_name_changes),
-        #         # html.fromstring(name_changes),
-        #     ],
-        # )
 
     def render_stars(self) -> _Element:
         # -------------------- Star check section -------------------- #
@@ -510,8 +496,8 @@ class Report:
             )
 
         card = templates.Card("Star Check")
-        card.secondary_info.append(E.P(incorrect_stars))
-        card.tertiary_info.append(E.P(correct_stars))
+        card.secondary_info.append(html.fromstring(f"<p>{incorrect_stars}</p>"))
+        card.tertiary_info.append(html.fromstring(f"<p>{correct_stars}</p>"))
         # self.add_element_to_output_html(card.html)
         return card.html
 
@@ -529,12 +515,6 @@ class Report:
 
         return card.html
 
-        # self.add_element_to_output_html(card.html)
-
-        # add content to HTML template
-        # self.add_elements_to_parent(
-        #     "changed-amendments", html.fragments_fromstring(changed_amdts)
-        # )
 
     def star_check(self, new_amdt: Amendment, old_amdt: Optional[Amendment]):
 
@@ -591,10 +571,7 @@ class Report:
 
     def added_and_removed_amdts(self, old_doc: "SupDocument", new_doc: "SupDocument"):
 
-        """Return a tuple of sets containing the amendment numbers which have been added and removed
-
-        You should call this method on the older document and pass in the newer document as the argument
-        """
+        """Find the amendment numbers which have been added and removed"""
 
         self.removed_amdts = list(old_doc.amdt_set.difference(new_doc.amdt_set))
         self.added_amdts = list(new_doc.amdt_set.difference(old_doc.amdt_set))
@@ -605,6 +582,7 @@ class Report:
         # look for duplicate names. Only need to do this for the new_amdt.
         self.duplicate_names = find_duplicates(new_amdt.names)
 
+        # TODO: put this back in
         # if self.duplicate_names:
         #     logger.warning("Duplicate names found")
 
