@@ -2,18 +2,16 @@
 
 import argparse
 import difflib
-import logging
-import os
 import re
 import sys
 import webbrowser
 from collections.abc import Mapping
 from datetime import datetime
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from typing import Any, Generic, NamedTuple, Optional, TypeVar, cast
 
 import templates
+from logger import logger
 from lxml import etree, html
 from lxml.etree import QName, _Element
 from lxml.html import builder as E
@@ -28,7 +26,7 @@ T = TypeVar("T")
 # [x] do the star check
 # [x] read arguments from command line
 # [x] make ANR respect omit-from-report setting
-# put logger in separate file
+# [x] put logger in separate file
 # warn about problem amendments in an error section
 # error if input file is not XML
 # warn if no amendments found
@@ -114,30 +112,6 @@ get_amdt_content = XPath(
 html_diff = difflib.HtmlDiff(tabsize=6)
 
 nbsp = re.compile(r"(?<!&nbsp;)&nbsp;(?!</span>)(?!&nbsp;)")
-
-
-# --------------------------- Create logger -------------------------- #
-
-LOG_FILE_PATH = Path("logs", os.getlogin(), "check_amendments3.log").resolve()
-LOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
-
-logger = logging.getLogger("check_amendments2")
-logger.setLevel(logging.DEBUG)
-
-# create formatter for the below handlers
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-
-# create file handler which logs even debug messages
-fh = RotatingFileHandler(str(LOG_FILE_PATH), mode="a", maxBytes=1024 * 1024)
-fh.setLevel(logging.DEBUG)
-fh.setFormatter(formatter)
-logger.addHandler(fh)
-
-# console handler logs only warnings and above
-ch = logging.StreamHandler()
-ch.setLevel(logging.WARNING)
-ch.setFormatter(formatter)
-logger.addHandler(ch)
 
 
 class Amendment:
@@ -573,6 +547,11 @@ class Report:
         # )
 
     def star_check(self, new_amdt: Amendment, old_amdt: Optional[Amendment]):
+
+        """New amendments should have a black star.
+        Amendments which previously had a black star should now have a white star.
+        Amendments which previously had a white star should now have no star."""
+
         if old_amdt is None:
             # no previous document to compare against
             if new_amdt.star == "★":
@@ -621,6 +600,7 @@ class Report:
                     )
 
     def added_and_removed_amdts(self, old_doc: "SupDocument", new_doc: "SupDocument"):
+
         """Return a tuple of sets containing the amendment numbers which have been added and removed
 
         You should call this method on the older document and pass in the newer document as the argument
@@ -759,7 +739,7 @@ def main():
             encoding="utf-8",
             doctype="<!DOCTYPE html>",
         )
-        webbrowser.open(filename)
+        webbrowser.open(Path(filename).resolve().as_uri())
 
     else:
         # could do GUI version here
@@ -794,9 +774,10 @@ def find_duplicates(lst: list[str]) -> list[str]:
 
 
 def clean_whitespace(parent_element: _Element) -> _Element:
+
     """remove unwanted whitespace from parent_element and all its descendant
     elements. Note: parent_element is modified in place.
-    Also, add a newline after parent_elements which represent paragraphs"""
+    Add a newline after parent_elements (which represent paragraphs)"""
 
     for element in parent_element.iter("*"):
         tag = QName(element).localname
@@ -814,7 +795,7 @@ def clean_whitespace(parent_element: _Element) -> _Element:
             # these are inline elements, we should leave them well alone
             # I think defined here:
             # https://docs.oasis-open.org/legaldocml/akn-core/v1.0/cos01/part2-specs/schemas/akomantoso30.xsd
-            # /xsd:schema/xsd:group[@name="HTMLinline"]/xsd:choice
+            # //xsd:schema/xsd:group[@name="HTMLinline"]/xsd:choice
             continue
 
         # remove whitespace
