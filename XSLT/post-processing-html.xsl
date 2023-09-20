@@ -54,7 +54,8 @@
                     </div>
                 </div>
 
-                <xsl:for-each-group select="item" group-by="bill">
+                <xsl:for-each-group select="item[omit-from-report/text()!='true']" group-by="bill">
+                <!-- where omit from report is true nothing should be output -->
                     <xsl:variable name="bill-grouping-key" select="current-grouping-key()"/>
                     <xsl:variable name="current-group-var" select="current-group()"/>
                     <!--## BILL ##-->
