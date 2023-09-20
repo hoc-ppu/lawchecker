@@ -4,6 +4,9 @@
 .DS_Store
 ._.DS_Store
 
+# we don't need PDFs i font think
+*.pdf
+
 # ignore .vscode project setting
 .vscode/
 
@@ -13,7 +16,7 @@ python/pythonsaxon/*
 
 # dont need the intermidiate stuff so much
 intermidiate-from-python.xml
-output-from-python.html 
+output-from-python.html
 
 # changed pyinstaller build folder
 python/pyinBuild/
