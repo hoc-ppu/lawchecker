@@ -384,6 +384,44 @@ class Report:
         #     "added-removed-amdts", [E.P(removed_content), E.P(added_content)]
         # )
 
+    def added_and_removed_names_table(self) -> _Element:
+
+        if not self.name_changes:
+            return html.fromstring(
+                "<p>The following amendments have name changes: None</p>"
+            )
+
+        name_changes = templates.Table(("Ref", "Names added", "Names removed", "Totals"))
+
+        # we have a special class for this table
+        name_changes.html.classes.add("an-table")  # type: ignore
+
+        for item in self.name_changes:
+            names_added = []
+            for name in item.added:
+                names_added.append(
+                    html.fromstring(
+                        f'<span class="col-12 col-lg-6  mb-2">{name}</span>'
+                    )
+                )
+            p_names_added = etree.fromstring('<p class="row"></p>')
+            p_names_added.extend(names_added)
+
+            total_added = len(item.added)
+            total_removed = len(item.removed)
+            totals = []
+            if total_added:
+                totals.append(f"Added: {total_added}")
+            if total_removed:
+                totals.append(f"Removed: {total_removed}")
+
+            name_changes.add_row(
+                (item.num, p_names_added, ", ".join(item.removed), ", ".join(totals))
+            )
+
+        return name_changes.html
+
+
     def render_added_and_removed_names(self) -> _Element:
         # ----------- Added and removed names section ----------- #
         # build up text content
@@ -395,57 +433,7 @@ class Report:
                 f" [total with no changes: {len(self.no_name_changes)}]</p>"
             )
 
-        name_changes = html.fromstring(
-            "<p>The following amendments have name changes: None</p>"
-        )
-        if self.name_changes:
-            # name_changes = "The following amendments have name changes: "
-            name_changes = E.TABLE(
-                E.THEAD(
-                    E.TR(
-                        E.TH("Ref"),
-                        E.TH("Names added"),
-                        E.TH("Names removed"),
-                        E.TH("Totals"),
-                    )
-                )
-            )
-            tbody = E.TBODY()
-            name_changes.append(tbody)
-            name_changes.classes.update(
-                (
-                    "sticky-head",
-                    "an-table",
-                    "table-responsive-md",
-                    "table",
-                )
-            )
-
-            for item in self.name_changes:
-                names_added = []
-                for name in item.added:
-                    names_added.append(
-                        html.fromstring(
-                            f'<span class="col-12 col-lg-6  mb-2">{name}</span>'
-                        )
-                    )
-                p_names_added = etree.fromstring('<p class="row"></p>')
-                p_names_added.extend(names_added)
-                # name_changes += f"<br>{item.num}: "
-                total_added = len(item.added)
-                total_removed = len(item.removed)
-                totals = []
-                if total_added:
-                    totals.append(f"Added: {total_added}")
-                if total_removed:
-                    totals.append(f"Removed: {total_removed}")
-                tr = E.TR(
-                    E.TD(item.num),
-                    E.TD(p_names_added),
-                    E.TD(", ".join(item.removed)),
-                    E.TD(html.fromstring(f"<p>{'<br>'.join(totals)}</p>")),
-                )
-                tbody.append(tr)
+        name_changes_table = self.added_and_removed_names_table()
 
         # Name changes in context
 
@@ -477,12 +465,12 @@ class Report:
 
         names_change_context_section.find(
             ".//div[@id='name-changes-in-context']"
-        ).extend(changed_amdts)
+        ).extend(changed_amdts)  # type: ignore
 
         card = templates.Card("Added and removed names")
         card.secondary_info.extend(
             (
-                name_changes,
+                name_changes_table,
                 names_change_context_section,
             )
         )

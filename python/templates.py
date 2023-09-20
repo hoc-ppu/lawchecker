@@ -89,14 +89,27 @@ class Table:
                 '<tr><th scope="col">' + '</th><th scope="col">'.join(table_headings) + '</th></tr>'
             ))
 
-    def add_row(self, row: Iterable[str]):
+    def add_row(self, row: Iterable[str | _Element]):
 
         """Add a row to the table.
         Row should be an iterable of strings, one for each cell in the row.
         The strings should be a plain text or HTML representing the contents of the cell."""
 
         row_element = deepcopy(_table_row)
-        row_element.extend((html.fromstring(f'<td>{cell}</td>') for cell in row))
+        for cell in row:
+            if isinstance(cell, str):
+                row_element.append(html.fromstring(f'<td>{cell}</td>'))
+            elif iselement(cell):
+                if cell.tag == "td":
+                    row_element.append(cell)
+                else:
+                    td = html.fromstring('<td></td>')
+                    td.append(cell)
+                    row_element.append(td)
+            else:
+                raise ValueError("Row contains an invalid element")
+
+        # row_element.extend((html.fromstring(f'<td>{cell}</td>') for cell in row))
         self.table_body.append(row_element)
 
 
@@ -116,10 +129,10 @@ class CollapsableSection:
 
     def add_content(self, content: Optional[str] = None, content_element: Optional[etree.ElementBase] = None):
         if content is not None:
-            self.collapsible_content.append(html.fromstring(content))
+            self.collapsible_content.append(html.fromstring(content))  # type: ignore
         elif content_element is not None:
             if iselement(content_element):
-                self.collapsible_content.append(content_element)
+                self.collapsible_content.append(content_element)  # type: ignore
             else:
                 raise ValueError("content_element is not a valid lxml element")
         else:
