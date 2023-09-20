@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import sys
+import webbrowser
 from collections.abc import Mapping
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
@@ -26,18 +27,23 @@ T = TypeVar("T")
 # [x] say which documents are being compared
 # [x] do the star check
 # [x] read arguments from command line
+# [x] make ANR respect omit-from-report setting
+# put logger in separate file
 # warn about problem amendments in an error section
 # error if input file is not XML
 # warn if no amendments found
 # warn if bill titles don't match
-# open HTML file in browser
+# [x] open HTML file in browser
 # [] pytest metadata
 # Rearange total counts to be at the top
-# Put in added names GUI
+# [x] Put in added names GUI
+# [x] change to pyside6 from pyQt5
 # [x] shorten class Xpath
 # put duplicate names back in output
 # test on more example documents
-# put on GitHub
+# [x] put on GitHub
+# warn if old XML file and new XML file seem to be the wrong way around,
+# i.e. if the old file seems newer than the new  file.
 
 # think about changing 1 to A1 or Amendment 1... to make it look better in
 # Added and removed amendments. See
@@ -432,6 +438,7 @@ class Report:
             name_changes.append(tbody)
             name_changes.classes.update(
                 (
+                    "sticky-head",
                     "an-table",
                     "table-responsive-md",
                     "table",
@@ -469,7 +476,8 @@ class Report:
         names_change_context_section = html.fromstring(
             '<section class="collapsible closed">'
             '<div class="collapsible-header">'
-            '<h3><span class="arrow"> </span>Name Changes in Context</h3>'
+            '<h3><span class="arrow"> </span>Name Changes in Context <small class="text-muted"> [show]</small></h3>'
+            "<p>Expand this section to see the same names as above but in context.</p>"
             "</div>"
             '<div class="collapsible-content" style="display: none;" id="name-changes-in-context">'
             "</div>"
@@ -487,7 +495,7 @@ class Report:
             for item in self.name_changes_in_context:
                 changed_amdts.append(
                     html.fromstring(
-                        f"<div><p class='h5'>{item.num}:</p>\n{item.html_diff}\n</div>"
+                        f"<div><p class='h5 mt-4'>{item.num}:</p>\n{item.html_diff}\n</div>"
                     )
                 )
 
@@ -744,12 +752,14 @@ def main():
 
         args = parser.parse_args(sys.argv[1:])
 
+        filename = "html_diff.html"
         report = Report(args.old_doc, args.new_doc)
         report.html_tree.write(
-            "html_diff.html",
+            filename,
             encoding="utf-8",
             doctype="<!DOCTYPE html>",
         )
+        webbrowser.open(filename)
 
     else:
         # could do GUI version here
