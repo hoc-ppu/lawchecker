@@ -7,7 +7,7 @@ from lxml.etree import _Element, iselement
 _card = html.fromstring("""<section class="card">
 <div class="card-inner collapsible">
   <div class="collapsible-header">
-    <h2><span class="arrow"> </span>--headers go here--</h2>
+    <h2><span class="arrow"> </span>--headers go here--<small class="text-muted"> [hide]</small></h2>
   </div>
   <div class="collapsible-content">
     <div class="content">
@@ -22,7 +22,8 @@ _card = html.fromstring("""<section class="card">
     </div>
   </div>
 </div>
-</section>""")
+</section>
+""")
 
 _table = html.fromstring('<table class="sticky-head table-responsive-md table">'
                          '<thead></thead><tbody></tbody>'
@@ -40,7 +41,7 @@ _collapsable_section = html.fromstring("""<section class="collapsible closed">
 
 
 class Card:
-    def __init__(self, heading: str = ""):
+    def __init__(self, heading: str = "", expanded: bool = True):
         self.html = deepcopy(_card)
         heading_span = self.html.find('.//h2/span[@class="arrow"]')
         self.heading_span = cast(_Element, heading_span)
@@ -48,16 +49,30 @@ class Card:
         self.secondary_info = cast(_Element, secondary_info)
         tertiary_info = self.html.find('.//div[@class="info-inner"]')
         self.tertiary_info = cast(_Element, tertiary_info)
+        small = self.html.find('.//h2/small')
+        self.small = cast(_Element, small)
+        collapsible_content = self.html.find('.//div[@class="collapsible-content"]')
+        self.collapsible_content = cast(_Element, collapsible_content)
+
+
 
         if (
             self.heading_span is None
             or self.secondary_info is None
             or self.tertiary_info is None
+            or self.small is None
+            or self.collapsible_content is None
         ):
             raise ValueError("_card has invalid structure")
         else:
             self.heading_span.tail = heading
 
+        if expanded:
+            # content should start expanded
+            self.small.text = " [hide]"
+        else:
+            self.small.text = " [show]"
+            self.collapsible_content.set("style", "display: none;")
 
     # return card
 
