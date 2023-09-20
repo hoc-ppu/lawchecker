@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
-from datetime import datetime
-import os
 import re
-from pathlib import Path
 import sys
 import traceback
-from typing import Optional
 import webbrowser
+from datetime import datetime
+from pathlib import Path
+from typing import Optional
 
-
+import check_amendments
 # 3rd party saxon imports
 import saxonche
-
 
 USE_GUI = True
 
@@ -23,9 +21,7 @@ if len(sys.argv) > 1:
     import argparse
 else:
     # GUI only imports
-    from PyQt5 import QtWidgets
-    from PyQt5 import QtCore
-
+    from PySide6 import QtCore, QtWidgets
     from ui.addedNames import Ui_MainWindow
 
 
@@ -142,8 +138,10 @@ def gui(args):
                 self.resize(self.size().width(), 740)  # fit widgets on mac
 
             self.dash_xml_file = ""  # will be the xml file path
-
             self.lm_xml_folder = ""  # will be the lm xml folder path
+
+            self.lm_new_xml_file = ""  # the new LM XML file for the compare
+            self.lm_old_xml_file = ""  # the old LM XML file for the compare
 
             self.workingFolderDateEdit.setDate(QtCore.QDate.currentDate())
             self.createWorkingFolderBtn.clicked.connect(self.create_working_folder)
@@ -156,10 +154,16 @@ def gui(args):
 
             self.run_btn.clicked.connect(self.run)
 
+            # tab 2. compare tab
+            self.old_compare_XML_btn.clicked.connect(self.open_old_amd_xml)
+            self.new_compare_XML_btn.clicked.connect(self.open_new_amd_xml)
+            self.create_compare_btn.clicked.connect(self.create_compare)
+
             self.dated_folder_Path: Optional[Path] = None
 
+
         def create_working_folder(self):
-            date_obj = self.workingFolderDateEdit.date().toPyDate()
+            date_obj = self.workingFolderDateEdit.date().toPython()
             formatted_date = date_obj.strftime("%Y-%m-%d")
 
             try:
@@ -205,6 +209,35 @@ def gui(args):
                 self, "Select Folder", str(default_location)
             )
 
+        def open_old_amd_xml(self):
+            """Open the old amendment XML file.
+
+            This is for the comparing the amendment paper the user is working
+            on with the previous version. The Old XML file is the previous
+            version."""
+
+            default_location = PARENT_FOLDER
+
+            self.lm_old_xml_file, _  = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Open old XML file", str(default_location)
+            )
+
+        def open_new_amd_xml(self):
+            """Open the old amendment XML file.
+
+            This is for the comparing the amendment paper the user is working
+            on with the previous version. The Old XML file is the previous
+            version."""
+
+            default_location = PARENT_FOLDER
+
+            if self.dated_folder_Path is not None:
+                default_location = self.dated_folder_Path
+
+            self.lm_new_xml_file, _  = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Open old XML file", str(default_location)
+            )
+
         def run(self):
 
             lm_xml_folder_Path: Optional[Path] = None
@@ -226,6 +259,58 @@ def gui(args):
             else:
                 print("No XML file selected.")
 
+        def create_compare(self):
+            """Create the compare report."""
+
+            if not self.lm_new_xml_file:
+                QtWidgets.QMessageBox.critical(
+                    window, "Error", "No new XML file selected."
+                )
+                return
+            if not self.lm_old_xml_file:
+                QtWidgets.QMessageBox.critical(
+                    window, "Error", "No old XML file selected."
+                )
+                return
+
+            new_xml_Path = Path(self.lm_new_xml_file).resolve()
+            old_xml_Path = Path(self.lm_old_xml_file).resolve()
+
+            if not new_xml_Path.exists():
+                QtWidgets.QMessageBox.critical(
+                    window, "Error", f"New XML file does not exist: {new_xml_Path}"
+                )
+                return
+            if not old_xml_Path.exists():
+                QtWidgets.QMessageBox.critical(
+                    window, "Error", f"Old XML file does not exist: {old_xml_Path}"
+                )
+                return
+
+            if WORKING_FOLDER is None:
+                dated_folder_Path = REPORTS_FOLDER.joinpath(
+                    datetime.now().strftime("%Y-%m-%d")
+                ).resolve()
+            else:
+                dated_folder_Path = WORKING_FOLDER.resolve()  # working folder selected in UI
+            dated_folder_Path.mkdir(parents=True, exist_ok=True)
+
+            xml_folder_Path = dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER)
+            xml_folder_Path.mkdir(parents=True, exist_ok=True)
+
+            out_html_Path = dated_folder_Path.joinpath("Compare_Report.html")
+
+            report = check_amendments.Report(old_xml_Path, new_xml_Path)
+            report.html_tree.write(
+                str(out_html_Path),
+                encoding="utf-8",
+                doctype="<!DOCTYPE html>",
+
+            )
+
+            webbrowser.open(out_html_Path.as_uri())
+
+
     # use gui version
     app = QtWidgets.QApplication(args)
 
@@ -233,7 +318,7 @@ def gui(args):
     window = MainWindow()
     window.show()
 
-    app.exec_()
+    app.exec()
 
 
 def remove_docstring(parameter: Path):
@@ -341,7 +426,7 @@ def run_xslts(
     print(f"{xsl_2_Path=}")
     print(f"{parameter=}")
 
-    xsls_exist = check_xsl_paths(xsl_1_Path, xsl_1_Path)
+    xsls_exist = check_xsl_paths(xsl_1_Path, xsl_2_Path)
     if not xsls_exist:
         return
 
@@ -395,7 +480,7 @@ def run_xslts(
 
         if parameter:
             # get path to folder containing LM/FM XML file(s) and pass this to
-            # the XSLT processor as a parameter. This is for for marshelling.
+            # the XSLT processor as a parameter. This is for marshelling.
             remove_docstring(parameter)
             parameter_str = parameter.as_uri()  # uri works best with Saxon
             param = proc.make_string_value(parameter_str)
