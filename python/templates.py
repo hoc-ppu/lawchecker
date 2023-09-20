@@ -55,7 +55,6 @@ class Card:
         self.collapsible_content = cast(_Element, collapsible_content)
 
 
-
         if (
             self.heading_span is None
             or self.secondary_info is None
@@ -65,13 +64,13 @@ class Card:
         ):
             raise ValueError("_card has invalid structure")
         else:
-            self.heading_span.tail = heading
+            self.heading_span.tail = heading  # type: ignore
 
         if expanded:
             # content should start expanded
-            self.small.text = " [hide]"
+            self.small.text = " [hide]"  # type: ignore
         else:
-            self.small.text = " [show]"
+            self.small.text = " [show]"  # type: ignore
             self.collapsible_content.set("style", "display: none;")
 
     # return card
