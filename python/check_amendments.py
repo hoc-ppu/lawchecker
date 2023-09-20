@@ -10,13 +10,15 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, NamedTuple, Optional, TypeVar, cast
 
-import templates
-from logger import logger
 from lxml import etree, html
 from lxml.etree import QName, _Element
 from lxml.html import builder as E
 
+import templates
+from logger import logger
+
 T = TypeVar("T")
+
 
 
 # TODO: [x] put all sections in HTML document
