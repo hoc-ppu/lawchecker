@@ -45,7 +45,7 @@ T = TypeVar("T")
 
 # think about changing 1 to A1 or Amendment 1... to make it look better in
 # Added and removed amendments. See
-# python3 check_amendments.py LM_XML/digital_rm_rep_0825.xml LM_XML/digital_rm_rep_0906.xml
+# check_amendments.py LM_XML/digital_rm_rep_0825.xml LM_XML/digital_rm_rep_0906.xml
 
 
 HTML_TEMPLATE_FILE = "python/html_diff_template.html"
@@ -722,7 +722,7 @@ def find_duplicates(lst: list[str]) -> list[str]:
     # If the length of the set is less than the length of the list,
     # then there are duplicates
     if len(unique_items) < len(lst):
-        # Convert the set back to a list and sort it
+
         sorted_items = sorted(list(unique_items))
 
         # Create a dictionary to store the count of each item
@@ -747,23 +747,16 @@ def clean_whitespace(parent_element: _Element) -> _Element:
     elements. Note: parent_element is modified in place.
     Add a newline after parent_elements (which represent paragraphs)"""
 
+    # these are inline elements, we should leave them well alone
+    # I think defined here:
+    # https://docs.oasis-open.org/legaldocml/akn-core/v1.0/cos01/part2-specs/schemas/akomantoso30.xsd
+    # //xsd:schema/xsd:group[@name="HTMLinline"]/xsd:choice
+    inlines = ("b", "i", "a", "u", "sub", "sup", "abbr", "span")
+
     for element in parent_element.iter("*"):
         tag = QName(element).localname
 
-        if tag in (
-            "b",
-            "i",
-            "a",
-            "u",
-            "sub",
-            "sup",
-            "abbr",
-            "span",
-        ):
-            # these are inline elements, we should leave them well alone
-            # I think defined here:
-            # https://docs.oasis-open.org/legaldocml/akn-core/v1.0/cos01/part2-specs/schemas/akomantoso30.xsd
-            # //xsd:schema/xsd:group[@name="HTMLinline"]/xsd:choice
+        if tag in inlines:
             continue
 
         # remove whitespace
@@ -795,9 +788,8 @@ def clean_whitespace(parent_element: _Element) -> _Element:
                 element.text = f"{element.text}\n"
 
         # Add in tab after num element
-        if tag == "num":
-            if element.text:
-                element.text = f"{element.text}\t"
+        if tag == "num" and element.text:
+            element.text = f"{element.text}\t"
 
     return parent_element
 
