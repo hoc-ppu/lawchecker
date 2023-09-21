@@ -29,7 +29,7 @@
         <html>
             <head>
                 <title><!--<xsl:value-of select="concat(current-date(), ' Added Names')"/>-->Added Names Report</title>
-                <style>html {font-family:"Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;background-color:#ebe9e8;word-wrap:normal;white-space:normal;} body {width:70%;background-color:#ffffff;margin-left:30px;margin:auto;overflow-wrap: break-word;padding-bottom:20px;} .header {background-color:#373151;color:#ffffff;} .number-summary-count {padding-left:20px;margin-bottom:20px} .amendment {margin-bottom:20px;margin-left:20px;border:2px solid #ebe9e8;padding-left:10px;width:80%;min-width:200px;padding-bottom:10px} .bill-title {color:black;background-color:#ffffff;padding-left:20px;} hr {color:#006e46;} .main-heading {padding-left:20px;padding-top:20px;}.main-summary {padding:0 0 10px 20px} .num-info {border-bottom: 1px dotted #ebe9e8;} .bill-reminder {text-align:right;color:#4d4d4d;font-size:10px;padding-right:5px;} .check-box {text-align:right;padding-top:10px;padding-right:20px;border-top:1px dotted #ebe9e8;}</style>
+                <style>html {font-family:"Segoe UI", Frutiger, "Frutiger Linotype", "Dejavu Sans", "Helvetica Neue", Arial, sans-serif;background-color:#ebe9e8;word-wrap:normal;white-space:normal;} body {width:70%;background-color:#ffffff;margin-left:30px;margin:auto;overflow-wrap: break-word;padding-bottom:20px;} .header {background-color:#373151;color:#ffffff;} .number-summary-count {padding-left:20px;margin-bottom:20px} .amendment {margin-bottom:20px;margin-left:20px;border:2px solid #ebe9e8;padding-left:10px;width:80%;min-width:200px;padding-bottom:10px} .bill-title {color:black;background-color:#ffffff;padding-left:20px;} hr {color:#006e46;} .main-heading {padding-left:20px;padding-top:20px;}.main-summary {padding:0 0 10px 20px} .num-info {border-bottom: 1px dotted #ebe9e8;} .bill-reminder {text-align:right;color:#4d4d4d;font-size:10px;padding-right:5px;} .check-box {text-align:right;padding-top:10px;padding-right:20px;border-top:1px dotted #ebe9e8;} .red {color:red} .green {color: green}</style>
             </head>
             <body>
                 <!-- Header section with main heading and selection of bills -->
@@ -52,11 +52,12 @@
                                 <li><a href="{concat('#',lower-case(replace(current-grouping-key(), ' ', '-')))}" style="color:white"><xsl:value-of select="current-grouping-key()"/></a></li>
                             </xsl:for-each-group>
                         </ul>
+                        <p>If you provide LawMaker XML: <span class="green"> &#x2714;</span> indicates that names have been added already, <span class="red"> &#x2718;</span> indicates that the name has not yet been added (at least not in the XML provided). You can turn these indicators on or off: <button id="name-in-xml-indicator-toggle-btn">Turn off</button> </p>
                     </div>
                 </div>
 
                 <xsl:for-each-group select="item[omit-from-report/text()!='true']" group-by="bill">
-                <!-- where omit from report is true nothing should be output -->
+                <!-- where omit from report is true nothing should be output. These are Micks instructions -->
                     <xsl:variable name="bill-grouping-key" select="current-grouping-key()"/>
                     <xsl:variable name="current-group-var" select="current-group()"/>
                     <!--## BILL ##-->
@@ -133,14 +134,14 @@
                                                             </a>
 
                                                             <xsl:if test="$is_lawmaker">
-                                                                <!-- Add tick if name is found or corss if it is not. This will only work with lawmaker files. -->
+                                                                <!-- Add tick if name is found or cross if it is not. This will only work with lawmaker files. -->
                                                                 <xsl:choose>
                                                                     <xsl:when test="$current-lm-supporter-blocks/*[@refersTo][normalize-space(text()) = $current-name/normalize-space(text())]">
                                                                         <!-- The current name has been found in the supporters list -->
-                                                                        <span style="color: green"  title="This name appears to have been added."> &#x2714;</span>
+                                                                        <span class="green name-in-xml-indicator"  title="This name appears to have been added."> &#x2714;</span>
                                                                     </xsl:when>
                                                                     <xsl:otherwise>
-                                                                        <span style="color: red"  title="This name does not apper to have been added. It could be that no XML was supplied to determine if names have been added or not"> &#x2718;</span>
+                                                                        <span class="red name-in-xml-indicator"  title="This name does not apper to have been added."> &#x2718;</span>
                                                                     </xsl:otherwise>
                                                                 </xsl:choose>
                                                             </xsl:if>
@@ -292,6 +293,31 @@
 
                     </div>
                 </xsl:for-each-group>
+
+                <script>
+                  document.addEventListener("DOMContentLoaded", function() {
+
+                    const toggleNameIndicatorsBtn = document.querySelector("#name-in-xml-indicator-toggle-btn");
+                    const nameIndicators = document.querySelectorAll(".name-in-xml-indicator");
+
+                    toggleNameIndicatorsBtn.addEventListener("click", function(){
+                    
+                      if (toggleNameIndicatorsBtn.innerHTML === "Turn off") {
+                        toggleNameIndicatorsBtn.innerHTML = "Turn on";
+                      } else {
+                        toggleNameIndicatorsBtn.innerHTML = "Turn off";
+                      }
+         
+                      nameIndicators.forEach(function(nameIndicators) {
+                        if (nameIndicators.style.display === "none") {
+                          nameIndicators.style.display = "inline";
+                        } else {
+                          nameIndicators.style.display = "none";
+                        }
+                      });
+                    });
+                  });
+                </script>
             </body>
         </html>
     </xsl:template>
