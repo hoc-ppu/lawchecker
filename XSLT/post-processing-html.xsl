@@ -24,7 +24,8 @@
 
     <xsl:template match="root">
 
-        <!-- <xsl:message><xsl:value-of select="$marsh-path"/></xsl:message> -->
+        <xsl:message>$marsh-path: <xsl:value-of select="$marsh-path"/></xsl:message>
+
         <html>
             <head>
                 <title><!--<xsl:value-of select="concat(current-date(), ' Added Names')"/>-->Added Names Report</title>
@@ -73,11 +74,13 @@
                         <!-- Amendments that can be displayed in marshalled order -->
                         <!-- For each amendment number in the matching Lawmaker XML file... -->
                         <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum] | $todays-papers/Amendments.Commons[normalize-space(replace(descendant::STText, ', As Amended', '')) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']">
-                        <!--FrameMaker version of above: <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
+                        <!--FrameMaker only version of above: <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
+
+                            <!--<xsl:message><xsl:value-of select="name(.)"/></xsl:message>-->
+                            <xsl:variable name="is_lawmaker" select="boolean(ancestor::akn:akomaNtoso)"/>
 
                             <xsl:variable name="current-amdt" select="."/>
-
-                            <!--<xsl:message><xsl:value-of select="$current-amdt"/></xsl:message>-->
+                            <xsl:variable name="current-lm-supporter-blocks" select="$current-amdt/ancestor::akn:amendmentBody/akn:amendmentHeading/akn:block[@name='proposer' or @name='supporters']"/>
 
                             <!-- ...group all the added names items that match the amendment number and put them in div[@class='amendment'] -->
                             <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no[.=upper-case($current-amdt)]">
@@ -107,6 +110,7 @@
                                             <div class="names-to-add">
                                                 <h4>Names to add</h4>
                                                 <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-add/descendant::name">
+                                                    <xsl:variable name="current-name" select="."/>
                                                     <div class="name">
                                                         <span>
                                                             <!-- Link each name back to item on Added Names page -->
@@ -125,8 +129,21 @@
                                                                         </xsl:attribute>
                                                                     </xsl:otherwise>
                                                                 </xsl:choose>
-                                                                <xsl:value-of select="."/>
+                                                                <xsl:value-of select="$current-name"/>
                                                             </a>
+
+                                                            <xsl:if test="$is_lawmaker">
+                                                                <!-- Add tick if name is found or corss if it is not. This will only work with lawmaker files. -->
+                                                                <xsl:choose>
+                                                                    <xsl:when test="$current-lm-supporter-blocks/*[@refersTo][normalize-space(text()) = $current-name/normalize-space(text())]">
+                                                                        <!-- The current name has been found in the supporters list -->
+                                                                        <span style="color: green"  title="This name appears to have been added."> &#x2714;</span>
+                                                                    </xsl:when>
+                                                                    <xsl:otherwise>
+                                                                        <span style="color: red"  title="This name does not apper to have been added. It could be that no XML was supplied to determine if names have been added or not"> &#x2718;</span>
+                                                                    </xsl:otherwise>
+                                                                </xsl:choose>
+                                                            </xsl:if>
                                                         </span>
                                                     </div>
                                                 </xsl:for-each>
