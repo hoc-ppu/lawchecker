@@ -14,7 +14,8 @@
     <!-- for marshaling -->
     <xsl:param name="marsh-path"/>
 
-    <xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))"/>
+    <!-- we need stable=yes to make the document-uri function work -->
+    <xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml;stable=yes'))"/>
     <!-- FramMaker of the above: <xsl:variable name="todays-papers" select="collection(concat($marsh-path, '?select=*.xml'))/Amendments.Commons"/> -->
 
 
@@ -52,7 +53,22 @@
                                 <li><a href="{concat('#',lower-case(replace(current-grouping-key(), ' ', '-')))}" style="color:white"><xsl:value-of select="current-grouping-key()"/></a></li>
                             </xsl:for-each-group>
                         </ul>
-                        <p>If you provide LawMaker XML: <span class="green"> &#x2714;</span> indicates that names have been added already, <span class="red"> &#x2718;</span> indicates that the name has not yet been added (at least not in the XML provided). You can turn these indicators on or off: <button id="name-in-xml-indicator-toggle-btn">Turn off</button> </p>
+                        <xsl:choose>
+                            <xsl:when test="$todays-papers">
+                                <p>If you provide LawMaker XML: <span class="green"> &#x2714;</span> indicates that names have been added already, <span class="red"> &#x2718;</span> indicates that the name has not yet been added (at least not in the XML provided). You can turn these indicators on or off: <button id="name-in-xml-indicator-toggle-btn">Turn off</button> </p>
+                                <p>The following XML files have been used for marshalling: <button id="show-hide-marshalling-xml-files-btn">Show files</button></p>
+                                <div id="collapsible-xml-files" style="display: none;">
+                                    <ul>
+                                        <xsl:for-each select="$todays-papers" >
+                                            <li><xsl:value-of select="tokenize(document-uri(.), '/')[last()]"/></li>
+                                        </xsl:for-each>
+                                    </ul>
+                                </div>
+                            </xsl:when>
+                            <xsl:otherwise>
+                                <p>No marshalling XML found</p>
+                            </xsl:otherwise>
+                        </xsl:choose>
                     </div>
                 </div>
 
@@ -298,16 +314,18 @@
                   document.addEventListener("DOMContentLoaded", function() {
 
                     const toggleNameIndicatorsBtn = document.querySelector("#name-in-xml-indicator-toggle-btn");
+                    const toggleMarshallingXmlFilesBtn = document.querySelector("#show-hide-marshalling-xml-files-btn");
                     const nameIndicators = document.querySelectorAll(".name-in-xml-indicator");
+                    const collapsibleXmlFilesSection = document.querySelector("#collapsible-xml-files");
 
                     toggleNameIndicatorsBtn.addEventListener("click", function(){
-                    
+
                       if (toggleNameIndicatorsBtn.innerHTML === "Turn off") {
                         toggleNameIndicatorsBtn.innerHTML = "Turn on";
                       } else {
                         toggleNameIndicatorsBtn.innerHTML = "Turn off";
                       }
-         
+
                       nameIndicators.forEach(function(nameIndicators) {
                         if (nameIndicators.style.display === "none") {
                           nameIndicators.style.display = "inline";
@@ -315,6 +333,19 @@
                           nameIndicators.style.display = "none";
                         }
                       });
+                    });
+
+                    toggleMarshallingXmlFilesBtn.addEventListener("click", function(){
+                      if (toggleMarshallingXmlFilesBtn.innerHTML === "Show files") {
+                        toggleMarshallingXmlFilesBtn.innerHTML = "Hide files";
+                      } else {
+                        toggleMarshallingXmlFilesBtn.innerHTML = "Show files";
+                      }
+                      if (collapsibleXmlFilesSection.style.display === "none") {
+                        collapsibleXmlFilesSection.style.display = "block";
+                      } else {
+                        collapsibleXmlFilesSection.style.display = "none";
+                      }
                     });
                   });
                 </script>
