@@ -71,245 +71,9 @@
                         </xsl:choose>
                     </div>
                 </div>
-
-                <xsl:for-each-group select="item[omit-from-report/text()!='true']" group-by="bill">
-                <!-- where omit from report is true nothing should be output. These are Micks instructions -->
-                    <xsl:variable name="bill-grouping-key" select="current-grouping-key()"/>
-                    <xsl:variable name="current-group-var" select="current-group()"/>
-                    <!--## BILL ##-->
-                    <div class="bill" id="{lower-case(replace(current-grouping-key(), ' ', '-'))}">
-
-                        <!-- Add bill title as heading -->
-                        <h1 class="bill-title"><xsl:value-of select="current-grouping-key()"/></h1>
-
-                        <!-- Summary of amendment numbers affected -->
-                        <div class="number-summary">
-                            <div class="number-summary-count"><p>Amendments in this paper with names added/removed: <b><xsl:value-of select="count(distinct-values(current-group()/descendant::matched-numbers/amd-no))"/></b></p></div>
-                        </div>
-
-                        <!--## AMDT NO ##-->
-                        <!-- Amendments that can be displayed in marshalled order -->
-                        <!-- For each amendment number in the matching Lawmaker XML file... -->
-                        <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum] | $todays-papers/Amendments.Commons[normalize-space(replace(descendant::STText, ', As Amended', '')) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']">
-                        <!--FrameMaker only version of above: <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
-
-                            <!--<xsl:message><xsl:value-of select="name(.)"/></xsl:message>-->
-                            <xsl:variable name="is_lawmaker" select="boolean(ancestor::akn:akomaNtoso)"/>
-
-                            <xsl:variable name="current-amdt" select="."/>
-                            <xsl:variable name="current-lm-supporter-blocks" select="$current-amdt/ancestor::akn:amendmentBody/akn:amendmentHeading/akn:block[@name='proposer' or @name='supporters']"/>
-
-                            <!-- ...group all the added names items that match the amendment number and put them in div[@class='amendment'] -->
-                            <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no[.=upper-case($current-amdt)]">
-
-                                <div class="amendment">
-
-                                        <div class="bill-reminder">
-                                            <xsl:value-of select="$bill-grouping-key"/>
-                                        </div>
-
-                                        <div class="num-info">
-                                            <h2 class="amendment-number">
-                                                <xsl:choose>
-                                                    <!-- Add "Amendment" prefix to amendment numbers -->
-                                                    <xsl:when test="not(matches(current-grouping-key(), '(NC|NS)'))">
-                                                        <xsl:value-of select="concat('Amendment ', current-grouping-key())"/>
-                                                    </xsl:when>
-                                                    <xsl:otherwise>
-                                                        <xsl:value-of select="current-grouping-key()"/>
-                                                    </xsl:otherwise>
-                                                </xsl:choose>
-                                            </h2>
-                                        </div>
-
-                                        <!--## NAMES TO ADD ##-->
-                                        <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-add/matched-names/name) > 0">
-                                            <div class="names-to-add">
-                                                <h4>Names to add</h4>
-                                                <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-add/descendant::name">
-                                                    <xsl:variable name="current-name" select="."/>
-                                                    <div class="name">
-                                                        <span>
-                                                            <!-- Link each name back to item on Added Names page -->
-                                                            <a title="{concat('Dashboard ID:', ancestor::names-to-add/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-add/preceding-sibling::dashboard-id)}">
-                                                                <xsl:choose>
-                                                                    <!-- If name does not match MNIS, add highlight -->
-                                                                    <xsl:when test="not(. = $mnis-name/Member/DisplayAs)">
-                                                                        <xsl:attribute name="style">
-                                                                            <xsl:text>text-decoration: underline red 1px; color: black;</xsl:text>
-                                                                        </xsl:attribute>
-                                                                    </xsl:when>
-                                                                    <!-- Otherwise, text will be black with no decoration -->
-                                                                    <xsl:otherwise>
-                                                                        <xsl:attribute name="style">
-                                                                            <xsl:text>text-decoration: none; color: black;</xsl:text>
-                                                                        </xsl:attribute>
-                                                                    </xsl:otherwise>
-                                                                </xsl:choose>
-                                                                <xsl:value-of select="$current-name"/>
-                                                            </a>
-
-                                                            <xsl:if test="$is_lawmaker">
-                                                                <!-- Add tick if name is found or cross if it is not. This will only work with lawmaker files. -->
-                                                                <xsl:choose>
-                                                                    <xsl:when test="$current-lm-supporter-blocks/*[@refersTo][normalize-space(text()) = $current-name/normalize-space(text())]">
-                                                                        <!-- The current name has been found in the supporters list -->
-                                                                        <span class="green name-in-xml-indicator"  title="This name appears to have been added."> &#x2714;</span>
-                                                                    </xsl:when>
-                                                                    <xsl:otherwise>
-                                                                        <span class="red name-in-xml-indicator"  title="This name does not apper to have been added."> &#x2718;</span>
-                                                                    </xsl:otherwise>
-                                                                </xsl:choose>
-                                                            </xsl:if>
-                                                        </span>
-                                                    </div>
-                                                </xsl:for-each>
-                                            </div>
-                                        </xsl:if>
-
-
-                                        <!--### NAMES TO REMOVE ###-->
-                                        <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-remove/matched-names/name) > 0">
-                                            <div class="names-to-remove">
-                                                <h4>Names to remove</h4>
-                                                <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-remove/descendant::name">
-                                                    <div class="name">
-                                                        <span>
-                                                            <a title="{concat('Dashboard ID:', ancestor::names-to-remove/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-remove/preceding-sibling::dashboard-id)}"><xsl:value-of select="."/></a></span>
-                                                    </div>
-                                                </xsl:for-each>
-
-                                            </div>
-                                        </xsl:if>
-
-                                         <!--### COMMENTS ###-->
-                                        <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::comments/p) > 0">
-                                            <div class="comments">
-                                                <h4 style="margin-bottom:5px;margin-top:30px;">Comments</h4>
-                                                <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::comments">
-                                                    <p style="font-size:smaller;color:#4d4d4d;"><a href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', @dashboard-id)}" style="text-decoration:none;color;color:#4d4d4d;"><b>Dashboard ID: <xsl:value-of select="@dashboard-id"/></b></a></p>
-                                                    <xsl:for-each select="p">
-                                                        <p title="{concat('Dashboard ID:', parent::comments/@dashboard-id)}" style="font-size:smaller;color:#4d4d4d;line-height:90%;">
-                                                            <i><xsl:value-of select="."/></i>
-                                                        </p>
-                                                    </xsl:for-each>
-                                                </xsl:for-each>
-                                            </div>
-                                        </xsl:if>
-                                    <div class="check-box">
-                                            <input type="checkbox"/>
-                                            <label>Checked</label>
-                                        </div>
-
-                                    </div><!-- End of amendment div -->
-                                </xsl:for-each-group>
-
-                        </xsl:for-each><!-- End marshalled order amendments -->
-
-
-                        <!-- Amendments that could not be matched/put in marshalled order -->
-                        <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no">
-                            <xsl:choose>
-                                <!-- ignore amendments that have already been marshalled from *LawMaker* -->
-                                <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]"></xsl:when>
-
-                                <!-- ignore amendments that have already been marshalled from *FrameMaker*  -->
-                                <xsl:when test="current-grouping-key() = $todays-papers/Amendments.Commons[normalize-space(replace(descendant::STText, ', As Amended', '')) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>
-
-                                <xsl:otherwise>
-                                    <div class="amendment">
-                                        <div class="bill-reminder">
-                                            <xsl:value-of select="$bill-grouping-key"/>
-                                        </div>
-
-                                        <div class="num-info">
-                                            <h2 class="amendment-number">
-                                                <xsl:choose>
-                                                    <!-- Add "Amendment" prefix to amendment numbers -->
-                                                    <xsl:when test="not(matches(current-grouping-key(), '(NC|NS)'))">
-                                                        <xsl:value-of select="concat('Amendment ', current-grouping-key())"/>
-                                                    </xsl:when>
-                                                    <xsl:otherwise>
-                                                        <xsl:value-of select="current-grouping-key()"/>
-                                                    </xsl:otherwise>
-                                                </xsl:choose>
-                                                <span style="font-family:Segoe UI Symbol;color:red;font-weight:normal;padding-left:10px" title="This amendment is not shown in marshalled order. It may be that the amendment has been withdrawn, it is newly tabled or no XML was supplied to determine marshalled order">&#9888;</span>
-                                            </h2>
-                                        </div>
-
-                                        <!--## NAMES TO ADD ##-->
-                                        <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-add/matched-names/name) > 0">
-                                            <div class="names-to-add">
-                                                <h4>Names to add</h4>
-                                                <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-add/descendant::name">
-                                                    <div class="name">
-                                                        <span>
-                                                             <!-- Link each name back to item on Added Names page -->
-                                                            <a title="{concat('Dashboard ID:', ancestor::names-to-add/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-add/preceding-sibling::dashboard-id)}">
-                                                                <xsl:choose>
-                                                                    <!-- If name does not match MNIS, add highlight -->
-                                                                    <xsl:when test="not(. = $mnis-name/Member/DisplayAs)">
-                                                                        <xsl:attribute name="style">
-                                                                            <xsl:text>text-decoration: underline red 1px; color: black;</xsl:text>
-                                                                        </xsl:attribute>
-                                                                    </xsl:when>
-                                                                    <!-- Otherwise, text will be black with no decoration -->
-                                                                    <xsl:otherwise>
-                                                                        <xsl:attribute name="style">
-                                                                            <xsl:text>text-decoration: none; color: black;</xsl:text>
-                                                                        </xsl:attribute>
-                                                                    </xsl:otherwise>
-                                                                </xsl:choose>
-                                                                <xsl:value-of select="."/>
-                                                            </a>
-                                                        </span>
-                                                    </div>
-                                                </xsl:for-each>
-                                            </div>
-                                        </xsl:if>
-
-
-                                        <!--### NAMES TO REMOVE ###-->
-                                        <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-remove/matched-names/name) > 0">
-                                            <div class="names-to-remove">
-                                                <h4>Names to remove</h4>
-                                                <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-remove/descendant::name">
-                                                    <div class="name">
-                                                        <span>
-                                                            <a title="{concat('Dashboard ID:', ancestor::names-to-remove/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-remove/preceding-sibling::dashboard-id)}"><xsl:value-of select="."/></a></span>
-                                                    </div>
-                                                </xsl:for-each>
-
-                                            </div>
-                                        </xsl:if>
-
-                                         <!--### COMMENTS ###-->
-                                        <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::comments/p) > 0">
-                                            <div class="comments">
-                                                <h4 style="margin-bottom:5px;margin-top:30px;">Comments</h4>
-                                                <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::comments">
-                                                    <p style="font-size:smaller;color:#4d4d4d;"><a href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', @dashboard-id)}" style="text-decoration:none;color;color:#4d4d4d;"><b>Dashboard ID: <xsl:value-of select="@dashboard-id"/></b></a></p>
-                                                    <xsl:for-each select="p">
-                                                        <p title="{concat('Dashboard ID:', parent::comments/@dashboard-id)}" style="font-size:smaller;color:#4d4d4d;line-height:80%;">
-                                                            <i><xsl:value-of select="."/></i>
-                                                        </p>
-                                                    </xsl:for-each>
-                                                </xsl:for-each>
-                                            </div>
-                                        </xsl:if>
-                                        <!-- Check box as aide memoire for those checking the paper -->
-                                        <div class="check-box">
-                                            <input type="checkbox"/>
-                                            <label>Checked</label>
-                                        </div>
-                                    </div>
-                                </xsl:otherwise>
-                            </xsl:choose>
-                        </xsl:for-each-group>
-
-                    </div>
-                </xsl:for-each-group>
-
+                <xsl:call-template name="reportBody">
+                    <xsl:with-param name="todays-papers" select="$todays-papers"></xsl:with-param>
+                </xsl:call-template>
                 <script>
                   document.addEventListener("DOMContentLoaded", function() {
 
@@ -351,5 +115,248 @@
                 </script>
             </body>
         </html>
+    </xsl:template>
+    
+    <xsl:template name="reportBody" >
+        <xsl:param name="todays-papers" required="yes"/>
+        
+        <xsl:for-each-group select="item[omit-from-report/text()!='true']" group-by="bill">
+            <!-- where omit from report is true nothing should be output. These are Micks instructions -->
+            <xsl:variable name="bill-grouping-key" select="current-grouping-key()"/>
+            <xsl:variable name="current-group-var" select="current-group()"/>
+            <!--## BILL ##-->
+            <div class="bill" id="{lower-case(replace(current-grouping-key(), ' ', '-'))}">
+                
+                <!-- Add bill title as heading -->
+                <h1 class="bill-title"><xsl:value-of select="current-grouping-key()"/></h1>
+                
+                <!-- Summary of amendment numbers affected -->
+                <div class="number-summary">
+                    <div class="number-summary-count"><p>Amendments in this paper with names added/removed: <b><xsl:value-of select="count(distinct-values(current-group()/descendant::matched-numbers/amd-no))"/></b></p></div>
+                </div>
+                
+                <!--## AMDT NO ##-->
+                <!-- Amendments that can be displayed in marshalled order -->
+                <!-- For each amendment number in the matching Lawmaker XML file... -->
+                <xsl:for-each select="$todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum] | $todays-papers/Amendments.Commons[normalize-space(replace(descendant::STText, ', As Amended', '')) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']">
+                    <!--FrameMaker only version of above: <xsl:for-each select="$todays-papers[normalize-space(descendant::STText) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"> -->
+                    
+                    <!--<xsl:message><xsl:value-of select="name(.)"/></xsl:message>-->
+                    <xsl:variable name="is_lawmaker" select="boolean(ancestor::akn:akomaNtoso)"/>
+                    
+                    <xsl:variable name="current-amdt" select="."/>
+                    <xsl:variable name="current-lm-supporter-blocks" select="$current-amdt/ancestor::akn:amendmentBody/akn:amendmentHeading/akn:block[@name='proposer' or @name='supporters']"/>
+                    
+                    <!-- ...group all the added names items that match the amendment number and put them in div[@class='amendment'] -->
+                    <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no[.=upper-case($current-amdt)]">
+                        
+                        <div class="amendment">
+                            
+                            <div class="bill-reminder">
+                                <xsl:value-of select="$bill-grouping-key"/>
+                            </div>
+                            
+                            <div class="num-info">
+                                <h2 class="amendment-number">
+                                    <xsl:choose>
+                                        <!-- Add "Amendment" prefix to amendment numbers -->
+                                        <xsl:when test="not(matches(current-grouping-key(), '(NC|NS)'))">
+                                            <xsl:value-of select="concat('Amendment ', current-grouping-key())"/>
+                                        </xsl:when>
+                                        <xsl:otherwise>
+                                            <xsl:value-of select="current-grouping-key()"/>
+                                        </xsl:otherwise>
+                                    </xsl:choose>
+                                </h2>
+                            </div>
+                            
+                            <!--## NAMES TO ADD ##-->
+                            <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-add/matched-names/name) > 0">
+                                <div class="names-to-add">
+                                    <h4>Names to add</h4>
+                                    <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-add/descendant::name">
+                                        <xsl:variable name="current-name" select="."/>
+                                        <div class="name">
+                                            <span>
+                                                <!-- Link each name back to item on Added Names page -->
+                                                <a title="{concat('Dashboard ID:', ancestor::names-to-add/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-add/preceding-sibling::dashboard-id)}">
+                                                    <xsl:choose>
+                                                        <!-- If name does not match MNIS, add highlight -->
+                                                        <xsl:when test="not(. = $mnis-name/Member/DisplayAs)">
+                                                            <xsl:attribute name="style">
+                                                                <xsl:text>text-decoration: underline red 1px; color: black;</xsl:text>
+                                                            </xsl:attribute>
+                                                        </xsl:when>
+                                                        <!-- Otherwise, text will be black with no decoration -->
+                                                        <xsl:otherwise>
+                                                            <xsl:attribute name="style">
+                                                                <xsl:text>text-decoration: none; color: black;</xsl:text>
+                                                            </xsl:attribute>
+                                                        </xsl:otherwise>
+                                                    </xsl:choose>
+                                                    <xsl:value-of select="$current-name"/>
+                                                </a>
+                                                
+                                                <xsl:if test="$is_lawmaker">
+                                                    <!-- Add tick if name is found or cross if it is not. This will only work with lawmaker files. -->
+                                                    <xsl:choose>
+                                                        <xsl:when test="$current-lm-supporter-blocks/*[@refersTo][normalize-space(text()) = $current-name/normalize-space(text())]">
+                                                            <!-- The current name has been found in the supporters list -->
+                                                            <span class="green name-in-xml-indicator"  title="This name appears to have been added."> &#x2714;</span>
+                                                        </xsl:when>
+                                                        <xsl:otherwise>
+                                                            <span class="red name-in-xml-indicator"  title="This name does not appear to have been added."> &#x2718;</span>
+                                                        </xsl:otherwise>
+                                                    </xsl:choose>
+                                                </xsl:if>
+                                            </span>
+                                        </div>
+                                    </xsl:for-each>
+                                </div>
+                            </xsl:if>
+                            
+                            
+                            <!--### NAMES TO REMOVE ###-->
+                            <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-remove/matched-names/name) > 0">
+                                <div class="names-to-remove">
+                                    <h4>Names to remove</h4>
+                                    <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-remove/descendant::name">
+                                        <div class="name">
+                                            <span>
+                                                <a title="{concat('Dashboard ID:', ancestor::names-to-remove/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-remove/preceding-sibling::dashboard-id)}"><xsl:value-of select="."/></a></span>
+                                        </div>
+                                    </xsl:for-each>
+                                    
+                                </div>
+                            </xsl:if>
+                            
+                            <!--### COMMENTS ###-->
+                            <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::comments/p) > 0">
+                                <div class="comments">
+                                    <h4 style="margin-bottom:5px;margin-top:30px;">Comments</h4>
+                                    <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::comments">
+                                        <p style="font-size:smaller;color:#4d4d4d;"><a href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', @dashboard-id)}" style="text-decoration:none;color;color:#4d4d4d;"><b>Dashboard ID: <xsl:value-of select="@dashboard-id"/></b></a></p>
+                                        <xsl:for-each select="p">
+                                            <p title="{concat('Dashboard ID:', parent::comments/@dashboard-id)}" style="font-size:smaller;color:#4d4d4d;line-height:90%;">
+                                                <i><xsl:value-of select="."/></i>
+                                            </p>
+                                        </xsl:for-each>
+                                    </xsl:for-each>
+                                </div>
+                            </xsl:if>
+                            <div class="check-box">
+                                <input type="checkbox"/>
+                                <label>Checked</label>
+                            </div>
+                            
+                        </div><!-- End of amendment div -->
+                    </xsl:for-each-group>
+                    
+                </xsl:for-each><!-- End marshalled order amendments -->
+                
+                
+                <!-- Amendments that could not be matched/put in marshalled order -->
+                <xsl:for-each-group select="$current-group-var/descendant::matched-numbers" group-by="amd-no">
+                    <xsl:choose>
+                        <!-- ignore amendments that have already been marshalled from *LawMaker* -->
+                        <xsl:when test="current-grouping-key() = $todays-papers[normalize-space(descendant::akn:TLCConcept[@eId='varBillTitle']/@showAs) = $bill-grouping-key]/descendant::akn:num[@ukl:dnum]"></xsl:when>
+                        
+                        <!-- ignore amendments that have already been marshalled from *FrameMaker*  -->
+                        <xsl:when test="current-grouping-key() = $todays-papers/Amendments.Commons[normalize-space(replace(descendant::STText, ', As Amended', '')) = $bill-grouping-key]/descendant::*[local-name()='Amendment.Number']"></xsl:when>
+                        
+                        <xsl:otherwise>
+                            <div class="amendment">
+                                <div class="bill-reminder">
+                                    <xsl:value-of select="$bill-grouping-key"/>
+                                </div>
+                                
+                                <div class="num-info">
+                                    <h2 class="amendment-number">
+                                        <xsl:choose>
+                                            <!-- Add "Amendment" prefix to amendment numbers -->
+                                            <xsl:when test="not(matches(current-grouping-key(), '(NC|NS)'))">
+                                                <xsl:value-of select="concat('Amendment ', current-grouping-key())"/>
+                                            </xsl:when>
+                                            <xsl:otherwise>
+                                                <xsl:value-of select="current-grouping-key()"/>
+                                            </xsl:otherwise>
+                                        </xsl:choose>
+                                        <span style="font-family:Segoe UI Symbol;color:red;font-weight:normal;padding-left:10px" title="This amendment is not shown in marshalled order. It may be that the amendment has been withdrawn, it is newly tabled or no XML was supplied to determine marshalled order">&#9888;</span>
+                                    </h2>
+                                </div>
+                                
+                                <!--## NAMES TO ADD ##-->
+                                <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-add/matched-names/name) > 0">
+                                    <div class="names-to-add">
+                                        <h4>Names to add</h4>
+                                        <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-add/descendant::name">
+                                            <div class="name">
+                                                <span>
+                                                    <!-- Link each name back to item on Added Names page -->
+                                                    <a title="{concat('Dashboard ID:', ancestor::names-to-add/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-add/preceding-sibling::dashboard-id)}">
+                                                        <xsl:choose>
+                                                            <!-- If name does not match MNIS, add highlight -->
+                                                            <xsl:when test="not(. = $mnis-name/Member/DisplayAs)">
+                                                                <xsl:attribute name="style">
+                                                                    <xsl:text>text-decoration: underline red 1px; color: black;</xsl:text>
+                                                                </xsl:attribute>
+                                                            </xsl:when>
+                                                            <!-- Otherwise, text will be black with no decoration -->
+                                                            <xsl:otherwise>
+                                                                <xsl:attribute name="style">
+                                                                    <xsl:text>text-decoration: none; color: black;</xsl:text>
+                                                                </xsl:attribute>
+                                                            </xsl:otherwise>
+                                                        </xsl:choose>
+                                                        <xsl:value-of select="."/>
+                                                    </a>
+                                                </span>
+                                            </div>
+                                        </xsl:for-each>
+                                    </div>
+                                </xsl:if>
+                                
+                                
+                                <!--### NAMES TO REMOVE ###-->
+                                <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::names-to-remove/matched-names/name) > 0">
+                                    <div class="names-to-remove">
+                                        <h4>Names to remove</h4>
+                                        <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::names-to-remove/descendant::name">
+                                            <div class="name">
+                                                <span>
+                                                    <a title="{concat('Dashboard ID:', ancestor::names-to-remove/preceding-sibling::dashboard-id)}" href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', ancestor::names-to-remove/preceding-sibling::dashboard-id)}"><xsl:value-of select="."/></a></span>
+                                            </div>
+                                        </xsl:for-each>
+                                        
+                                    </div>
+                                </xsl:if>
+                                
+                                <!--### COMMENTS ###-->
+                                <xsl:if test="count(current-group()/ancestor::numbers/following-sibling::comments/p) > 0">
+                                    <div class="comments">
+                                        <h4 style="margin-bottom:5px;margin-top:30px;">Comments</h4>
+                                        <xsl:for-each select="current-group()/ancestor::numbers/following-sibling::comments">
+                                            <p style="font-size:smaller;color:#4d4d4d;"><a href="{concat('https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID=', @dashboard-id)}" style="text-decoration:none;color;color:#4d4d4d;"><b>Dashboard ID: <xsl:value-of select="@dashboard-id"/></b></a></p>
+                                            <xsl:for-each select="p">
+                                                <p title="{concat('Dashboard ID:', parent::comments/@dashboard-id)}" style="font-size:smaller;color:#4d4d4d;line-height:80%;">
+                                                    <i><xsl:value-of select="."/></i>
+                                                </p>
+                                            </xsl:for-each>
+                                        </xsl:for-each>
+                                    </div>
+                                </xsl:if>
+                                <!-- Check box as aide memoire for those checking the paper -->
+                                <div class="check-box">
+                                    <input type="checkbox"/>
+                                    <label>Checked</label>
+                                </div>
+                            </div>
+                        </xsl:otherwise>
+                    </xsl:choose>
+                </xsl:for-each-group>
+                
+            </div>
+        </xsl:for-each-group>
+        
     </xsl:template>
 </xsl:stylesheet>
