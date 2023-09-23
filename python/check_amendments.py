@@ -28,9 +28,8 @@ T = TypeVar("T")
 # [x] make ANR respect omit-from-report setting
 # [x] put logger in separate file
 # warn about problem amendments in an error section
-# error if input file is not XML
+# [x] error if input file is not XML
 # warn if no amendments found
-# warn if bill titles don't match
 # [x] open HTML file in browser
 # [] pytest metadata
 # Rearange total counts to be at the top
@@ -40,8 +39,9 @@ T = TypeVar("T")
 # put duplicate names back in output
 # test on more example documents
 # [x] put on GitHub
-# warn if old XML file and new XML file seem to be the wrong way around,
-# i.e. if the old file seems newer than the new  file.
+# [x] warn if bill titles don't match
+# [x] warn if old XML file and new XML file seem to be the wrong way around,
+#   i.e. if the old file seems newer than the new  file.
 
 # think about changing 1 to A1 or Amendment 1... to make it look better in
 # Added and removed amendments. See
@@ -93,7 +93,10 @@ text_content = XPath("string()", expected_type=type(str()))
 
 # get MP name elements. These are proposer and supporters elements
 get_name_elements = XPath(
-    "dns:amendmentHeading/dns:block[@name='proposer' or @name='supporters']/*[@refersTo]",
+    (
+        "dns:amendmentHeading/dns:block[@name='proposer' or"
+        " @name='supporters']/*[@refersTo]"
+    ),
     expected_type=list[_Element],
 )
 
@@ -206,9 +209,7 @@ class SupDocument(Mapping):
             )
             self.meta_pub_date = datetime.strptime(
                 published_date.get("date", default=""), "%Y-%m-%d"  # type: ignore
-            ).strftime(
-                "%A %d %B %Y"
-            )
+            ).strftime("%A %d %B %Y")
         except Exception as e:
             warning_msg = f"Can't find Published Date meta data. Check {self.file_name}"
             self.meta_pub_date = warning_msg
@@ -338,16 +339,24 @@ class Report:
             ("", self.old_doc.file_name, self.new_doc.file_name)
         )
 
-        meta_data_table.add_row(("File path", self.old_doc.file_path, self.new_doc.file_path))
-        meta_data_table.add_row(("Bill Title", self.old_doc.meta_bill_title, self.new_doc.meta_bill_title))
-        meta_data_table.add_row(("Published date", self.old_doc.meta_pub_date, self.new_doc.meta_pub_date))
-        meta_data_table.add_row(("List Type", self.old_doc.meta_list_type, self.new_doc.meta_list_type))
+        meta_data_table.add_row(
+            ("File path", self.old_doc.file_path, self.new_doc.file_path)
+        )
+        meta_data_table.add_row(
+            ("Bill Title", self.old_doc.meta_bill_title, self.new_doc.meta_bill_title)
+        )
+        meta_data_table.add_row(
+            ("Published date", self.old_doc.meta_pub_date, self.new_doc.meta_pub_date)
+        )
+        meta_data_table.add_row(
+            ("List Type", self.old_doc.meta_list_type, self.new_doc.meta_list_type)
+        )
 
         section = html.fromstring(
             '<div class="wrap">'
             '<section id="intro">'
-            '<h2>Introduction</h2>'
-            f'<p>{into}</p>'
+            "<h2>Introduction</h2>"
+            f"<p>{into}</p>"
             "</section>"
             "</div>"
         )
@@ -448,14 +457,12 @@ class Report:
         # Name changes in context
 
         names_change_context_section = html.fromstring(
-            '<section class="collapsible closed">'
-            '<div class="collapsible-header">'
-            '<h3><span class="arrow"> </span>Name Changes in Context <small class="text-muted"> [show]</small></h3>'
-            "<p>Expand this section to see the same names as above but in context.</p>"
-            "</div>"
-            '<div class="collapsible-content" style="display: none;" id="name-changes-in-context">'
-            "</div>"
-            "</section>"
+            '<section class="collapsible closed"><div'
+            ' class="collapsible-header"><h3><span class="arrow"> </span>Name Changes'
+            ' in Context <small class="text-muted"> [show]</small></h3><p>Expand this'
+            " section to see the same names as above but in context.</p></div><div"
+            ' class="collapsible-content" style="display: none;"'
+            ' id="name-changes-in-context"></div></section>'
         )
 
         # build up text content
@@ -463,13 +470,15 @@ class Report:
         if self.name_changes_in_context:
             changed_amdts.append(
                 html.fromstring(
-                    f"<p>The following {len(self.name_changes_in_context)} amendments have changed names: </p>\n"
+                    f"<p>The following {len(self.name_changes_in_context)} amendments"
+                    " have changed names: </p>\n"
                 )
             )
             for item in self.name_changes_in_context:
                 changed_amdts.append(
                     html.fromstring(
-                        f"<div><p class='h5 mt-4'>{item.num}:</p>\n{item.html_diff}\n</div>"
+                        "<div><p class='h5"
+                        f" mt-4'>{item.num}:</p>\n{item.html_diff}\n</div>"
                     )
                 )
 
@@ -506,7 +515,7 @@ class Report:
         correct_stars = "The following amendments have correct stars: None"
         if self.correct_stars:
             correct_stars = (
-                f"The following amendments have correct stars: "
+                "The following amendments have correct stars: "
                 f"{', '.join(self.correct_stars)}"
                 f" [total correct: {len(self.correct_stars)}]"
             )
@@ -514,7 +523,7 @@ class Report:
         incorrect_stars = "The following amendments have incorrect stars: None"
         if self.incorrect_stars:
             incorrect_stars = (
-                f"The following amendments have incorrect stars: "
+                "The following amendments have incorrect stars: "
                 f"{', '.join(self.incorrect_stars)}"
                 f" [total incorrect: {len(self.incorrect_stars)}]"
             )
@@ -528,9 +537,15 @@ class Report:
     def render_changed_amdts(self) -> _Element:
         # -------------------- Changed Amendments -------------------- #
         # build up text content
-        changed_amdts = "<p>The following amendments have changed content: <strong>None</strong></p>"
+        changed_amdts = (
+            "<p>The following amendments have changed content:"
+            " <strong>None</strong></p>"
+        )
         if self.changed_amdts:
-            changed_amdts = f"<p>The following {len(self.changed_amdts)} amendments have changed content: </p>\n"
+            changed_amdts = (
+                f"<p>The following {len(self.changed_amdts)} amendments have changed"
+                " content: </p>\n"
+            )
             for item in self.changed_amdts:
                 changed_amdts += f"<p class='h5'>{item.num}:</p>\n{item.html_diff}\n"
 
@@ -547,7 +562,6 @@ class Report:
         # )
 
     def star_check(self, new_amdt: Amendment, old_amdt: Optional[Amendment]):
-
         """New amendments should have a black star.
         Amendments which previously had a black star should now have a white star.
         Amendments which previously had a white star should now have no star."""
@@ -600,7 +614,6 @@ class Report:
                     )
 
     def added_and_removed_amdts(self, old_doc: "SupDocument", new_doc: "SupDocument"):
-
         """Return a tuple of sets containing the amendment numbers which have been added and removed
 
         You should call this method on the older document and pass in the newer document as the argument
@@ -715,7 +728,9 @@ def main():
     if len(sys.argv) > 1:
         # do cmd line version
         parser = argparse.ArgumentParser(
-            description="Create an HTML document with various automated checks on amendments."
+            description=(
+                "Create an HTML document with various automated checks on amendments."
+            )
         )
 
         parser.add_argument(
@@ -774,7 +789,6 @@ def find_duplicates(lst: list[str]) -> list[str]:
 
 
 def clean_whitespace(parent_element: _Element) -> _Element:
-
     """remove unwanted whitespace from parent_element and all its descendant
     elements. Note: parent_element is modified in place.
     Add a newline after parent_elements (which represent paragraphs)"""
