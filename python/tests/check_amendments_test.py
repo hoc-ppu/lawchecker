@@ -5,7 +5,8 @@ from pathlib import Path
 from unittest.mock import patch
 
 import pytest
-from lxml.etree import ElementTree
+from lxml import etree
+from lxml.etree import ElementTree, _Element
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -28,7 +29,7 @@ def report() -> check_amendments.Report:
     return report
 
 
-def elements_equal(e1, e2, ignore_whitespace=True):
+def _elements_equal(e1, e2, ignore_whitespace=True):
     if e1.tag != e2.tag:
         return False
     if e1.attrib != e2.attrib:
@@ -47,7 +48,19 @@ def elements_equal(e1, e2, ignore_whitespace=True):
         return False
 
     # true when both have no children empty
-    return all(elements_equal(c1, c2) for c1, c2 in zip(e1, e2))
+    return all(_elements_equal(c1, c2) for c1, c2 in zip(e1, e2))
+
+def elements_equal(e1: _Element, e2: _Element, ignore_whitespace=True):
+
+    """By comparing the strings we get better error messages when elements are not equal"""
+
+    if _elements_equal(e1, e2, ignore_whitespace):
+        return True
+    else:
+        e1_string = etree.tostring(etree.indent(e1, space="  "))
+        e2_string = etree.tostring(etree.indent(e2, space="  "))
+        return e1_string == e2_string
+
 
 
 def test_render_intro(report):
@@ -94,3 +107,60 @@ def test_get_meta_data():
 
         warning_msg = "Can't find Bill Title meta data. Check test"
         assert sup_doc.meta_bill_title == warning_msg
+
+
+def test_black_star_to_white():
+
+    """Test case where black stars change to white stars"""
+
+    white_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_white_star)
+    black_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_black_star)
+
+    report = check_amendments.Report(black_star_amend, white_star_amend)
+    assert report.correct_stars == ["NC52 (☆)"]
+
+
+def test_white_star_to_no_star():
+
+    white_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_white_star)
+    no_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_no_star)
+
+    report = check_amendments.Report(white_star_amend, no_star_amend)
+    assert report.correct_stars == ["NC52 (no star)"]
+
+
+def test_black_star_to_black():
+    # when a black star has not been updated
+
+    black_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_black_star)
+    black_star_amend2 = deepcopy(black_star_amend)
+
+    report = check_amendments.Report(black_star_amend, black_star_amend2)
+    assert report.incorrect_stars == ["NC52 has black star (White star expected)"]
+
+def test_white_star_to_white_star():
+    # when a white star has not been updated
+
+    white_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_white_star)
+    white_star_amend2 = deepcopy(white_star_amend)
+
+    report = check_amendments.Report(white_star_amend, white_star_amend2)
+    assert report.incorrect_stars == ["NC52 has white star (No star expected)"]
+
+def test_white_star_to_black_star():
+
+    white_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_white_star)
+    black_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_black_star)
+
+    report = check_amendments.Report(white_star_amend, black_star_amend)
+    assert report.incorrect_stars == ["NC52 has black star (No star expected)"]
+
+def test_black_star_to_no_star():
+
+    black_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_black_star)
+    no_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_no_star)
+
+    report = check_amendments.Report(black_star_amend, no_star_amend)
+    assert report.incorrect_stars == ["NC52 has no star (White star expected)"]
+
+
