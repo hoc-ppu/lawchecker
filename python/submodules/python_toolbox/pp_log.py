@@ -5,9 +5,7 @@ and command-line feedback.
 
 import logging
 import os
-
 from logging.handlers import RotatingFileHandler
-
 
 LOG_NAME = "pp_log"
 
@@ -27,7 +25,6 @@ class FileFormatter(logging.Formatter):
     """
 
     def format(self, record):
-
         format = (
             "%(asctime)s "
             + record.levelname.capitalize()
@@ -55,7 +52,6 @@ class ConsoleFormatter(logging.Formatter):
     }
 
     def format(self, record):
-
         format = (
             "    "
             + self.colours.get(record.levelname, "\033[0m")
@@ -82,14 +78,13 @@ Configure logging to file.
 """
 
 # Get path to user's home directory
-user_profile_path = os.environ["USERPROFILE"]
+user_profile_path = os.path.expanduser("~")
 
 # Append ".logs" to `user_profile_path`
 log_directory_path = os.path.join(user_profile_path, ".logs")
 
 # If directory at `log_directory_path` doesn't already exist...
 if os.path.isdir(log_directory_path) is False:
-
     # Create `log_directory_path`
     os.mkdir(log_directory_path)
 
@@ -129,14 +124,10 @@ logger.addHandler(log_handler_console)
 
 
 def set_file_level(level: str) -> None:
-
     if level in AVAILABLE_LEVELS:
-
         log_handler_file.setLevel(AVAILABLE_LEVELS[level])
 
 
 def set_console_level(level: str) -> None:
-
     if level in AVAILABLE_LEVELS:
-
         log_handler_console.setLevel(AVAILABLE_LEVELS[level])
