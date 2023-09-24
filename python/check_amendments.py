@@ -32,7 +32,7 @@ T = TypeVar("T")
 # warn if no amendments found
 # [x] open HTML file in browser
 # [] pytest metadata
-# Rearange total counts to be at the top
+# [x] Rearange total counts to be at the top
 # [x] Put in added names GUI
 # [x] change to pyside6 from pyQt5
 # [x] shorten class Xpath
@@ -368,17 +368,17 @@ class Report:
     def render_added_and_removed_amdts(self) -> _Element:
         # ----------- Removed and added amendments section ----------- #
         # build up text content
-        removed_content = "Removed content: None"
+        removed_content = html.fromstring("Removed content: <strong>None</strong>")
         if self.removed_amdts:
-            removed_content = (
-                f"Removed content: {' '.join(self.removed_amdts)}"
-                f" [total removed: {len(self.removed_amdts)}]"
+            removed_content = html.fromstring(
+                f"Removed content: <strong>{len(self.removed_amdts)}</strong><br />"
+                f"{' '.join(self.removed_amdts)}"
             )
-        added_content = "Added content: None"
+        added_content = html.fromstring("Added content: <strong>None</strong>")
         if self.added_amdts:
-            added_content = (
-                f"Added content: {' '.join(self.added_amdts)} "
-                f"[total added: {len(self.added_amdts)}]"
+            added_content = html.fromstring(
+                f"Added content: <strong>{len(self.added_amdts)}</strong><br />"
+                f"{' '.join(self.added_amdts)}"
             )
 
         card = templates.Card("Added and removed amendments")
@@ -394,12 +394,14 @@ class Report:
     def render_added_and_removed_names(self) -> _Element:
         # ----------- Added and removed names section ----------- #
         # build up text content
-        no_name_changes = "The following amendments have no name changes: None"
+        no_name_changes = html.fromstring(
+            "The following amendments have no name changes: <strong>None</strong>"
+        )
         if self.no_name_changes:
-            no_name_changes = (
-                "<p>The following amendments have no name changes: "
-                f"{', '.join(self.no_name_changes)}"
-                f" [total with no changes: {len(self.no_name_changes)}]</p>"
+            no_name_changes = html.fromstring(
+                f"<p>The following <strong>{len(self.no_name_changes)}</strong>"
+                " amendments have no name changes:"
+                f" {', '.join(self.no_name_changes)}</p>"
             )
 
         name_changes = html.fromstring(
@@ -493,7 +495,7 @@ class Report:
                 names_change_context_section,
             )
         )
-        card.tertiary_info.append(html.fromstring(no_name_changes))
+        card.tertiary_info.append(no_name_changes)
         # self.add_element_to_output_html(card.html)
 
         return card.html
@@ -512,20 +514,22 @@ class Report:
     def render_stars(self) -> _Element:
         # -------------------- Star check section -------------------- #
         # build up text content
-        correct_stars = "The following amendments have correct stars: None"
+        correct_stars = html.fromstring(
+            "The following amendments have correct stars: <strong>None</strong>"
+        )
         if self.correct_stars:
-            correct_stars = (
-                "The following amendments have correct stars: "
-                f"{', '.join(self.correct_stars)}"
-                f" [total correct: {len(self.correct_stars)}]"
+            correct_stars = html.fromstring(
+                f"The following <strong>{len(self.correct_stars)}</strong> amendments"
+                f" have correct stars: {', '.join(self.correct_stars)}"
             )
 
-        incorrect_stars = "The following amendments have incorrect stars: None"
+        incorrect_stars = html.fromstring(
+            "The following amendments have incorrect stars: <strong>None</strong>"
+        )
         if self.incorrect_stars:
-            incorrect_stars = (
-                "The following amendments have incorrect stars: "
-                f"{', '.join(self.incorrect_stars)}"
-                f" [total incorrect: {len(self.incorrect_stars)}]"
+            incorrect_stars = html.fromstring(
+                f"The following <strong>{len(self.incorrect_stars)}</strong> amendments"
+                f" have incorrect stars: {', '.join(self.incorrect_stars)}"
             )
 
         card = templates.Card("Star Check")
@@ -543,8 +547,8 @@ class Report:
         )
         if self.changed_amdts:
             changed_amdts = (
-                f"<p>The following {len(self.changed_amdts)} amendments have changed"
-                " content: </p>\n"
+                f"<p>The following <strong>{len(self.changed_amdts)}</strong>"
+                " amendments have changed content: </p>\n"
             )
             for item in self.changed_amdts:
                 changed_amdts += f"<p class='h5'>{item.num}:</p>\n{item.html_diff}\n"
