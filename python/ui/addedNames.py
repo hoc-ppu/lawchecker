@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'addedNames2.ui'
+## Form generated from reading UI file 'addedNames.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.5.2
 ##
@@ -223,7 +223,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         self.run_btn.setDefault(False)
 
 
