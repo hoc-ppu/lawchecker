@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 import check_amendments
+
 # 3rd party saxon imports
 import saxonche
 
@@ -24,6 +25,7 @@ else:
     from PySide6 import QtCore, QtWidgets
     from ui.addedNames import Ui_MainWindow
 
+DEFAULT_OUTPUT_FILE_NAME = "Added_Names_Report.html"
 
 XSLT_MARSHAL_PARAM_NAME = "marsh-path"
 
@@ -106,6 +108,13 @@ def cli(cli_args):
         "the report. Use quotes if there are spaces.",
     )
 
+    parser.add_argument(
+        "-o", "--output",
+        type=str,
+        help="Output file name",
+        default=DEFAULT_OUTPUT_FILE_NAME,
+    )
+
     args = parser.parse_args(cli_args[1:])
     print(args)
 
@@ -119,12 +128,18 @@ def cli(cli_args):
         xsl_2_Path = XSL_2_PATH
 
     if args.marshal_dir:
-        marshal_dir = args.marshal_dir
+        marshal_dir = Path(args.marshal_dir)
     else:
         marshal_dir = None
 
     print(f"marshal_dir={marshal_dir}")
-    run_xslts(input_Path, xsl_1_Path, xsl_2_Path, parameter=Path(marshal_dir))
+    run_xslts(
+        input_Path,
+        xsl_1_Path,
+        xsl_2_Path,
+        parameter=marshal_dir,
+        output_file_name=args.output
+    )
 
 
 def gui(args):
@@ -308,7 +323,7 @@ def gui(args):
 
             )
 
-            webbrowser.open(out_html_Path.as_uri())
+            webbrowser.open(out_html_Path.resolve().as_uri())
 
 
     # use gui version
@@ -333,7 +348,6 @@ def remove_docstring(parameter: Path):
     # loop through XML files and remove the doctypes
     for file in fm_xml_files:
 
-        print(file.name)
 
         LM_XML = False
         root_start = 0
@@ -358,6 +372,8 @@ def remove_docstring(parameter: Path):
         if LM_XML:
             # do not do anything to LM XML
             continue
+
+        print(f"Trying to remove docstring from {file.name}")
 
         # try to overwrite file
         with open(file, "w", encoding="UTF-8") as fi:
@@ -419,6 +435,7 @@ def run_xslts(
     xsl_1_Path: Path,
     xsl_2_Path: Path,
     parameter: Optional[Path] = None,
+    output_file_name: str = DEFAULT_OUTPUT_FILE_NAME,
 ):
 
     print(f"{input_Path=}")
@@ -434,7 +451,7 @@ def run_xslts(
 
     intermediate_file_name = f"{formated_date}_intermediate.xml"
     input_file_resave_name = f"{formated_date}_input_from_SP.xml"
-    output_file_name = f"Added_Names_Report.html"
+
 
     if WORKING_FOLDER is None:
         dated_folder_Path = REPORTS_FOLDER.joinpath(formated_date).resolve()
@@ -461,9 +478,9 @@ def run_xslts(
         # print(proc.version)
 
         # need to be as uri in case there are spaces in the path
-        input_path = input_Path.as_uri()
-        intermidiate_path = intermidiate_Path.as_uri()
-        outfilepath = out_html_Path.as_uri()
+        input_path = input_Path.resolve().as_uri()
+        intermidiate_path = intermidiate_Path.resolve().as_uri()
+        outfilepath = out_html_Path.resolve().as_uri()
 
         # --- 1st XSLT ---
         xsltproc = proc.new_xslt30_processor()
@@ -482,7 +499,7 @@ def run_xslts(
             # get path to folder containing LM/FM XML file(s) and pass this to
             # the XSLT processor as a parameter. This is for marshelling.
             remove_docstring(parameter)
-            parameter_str = parameter.as_uri()  # uri works best with Saxon
+            parameter_str = parameter.resolve().as_uri()  # uri works best with Saxon
             param = proc.make_string_value(parameter_str)
 
             executable2.set_parameter(XSLT_MARSHAL_PARAM_NAME, param)
