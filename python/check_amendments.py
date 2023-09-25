@@ -10,11 +10,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, NamedTuple, Optional, TypeVar, cast
 
-from lxml import etree, html
-from lxml.etree import QName, _Element
-
 import templates
 from logger import logger
+from lxml import etree, html
+from lxml.etree import QName, _Element
 
 T = TypeVar("T")
 
@@ -28,20 +27,20 @@ T = TypeVar("T")
 # [x] make ANR respect omit-from-report setting
 # [x] put logger in separate file
 # warn about problem amendments in an error section
-# error if input file is not XML
+# [x] error if input file is not XML
 # warn if no amendments found
-# warn if bill titles don't match
 # [x] open HTML file in browser
 # [] pytest metadata
-# Rearange total counts to be at the top
+# [x] Rearange total counts to be at the top
 # [x] Put in added names GUI
 # [x] change to pyside6 from pyQt5
 # [x] shorten class Xpath
 # put duplicate names back in output
 # test on more example documents
 # [x] put on GitHub
-# warn if old XML file and new XML file seem to be the wrong way around,
-# i.e. if the old file seems newer than the new  file.
+# [x] warn if bill titles don't match
+# [x] warn if old XML file and new XML file seem to be the wrong way around,
+#   i.e. if the old file seems newer than the new  file.
 
 # think about changing 1 to A1 or Amendment 1... to make it look better in
 # Added and removed amendments. See
@@ -93,7 +92,10 @@ text_content = XPath("string()", expected_type=type(str()))
 
 # get MP name elements. These are proposer and supporters elements
 get_name_elements = XPath(
-    "dns:amendmentHeading/dns:block[@name='proposer' or @name='supporters']/*[@refersTo]",
+    (
+        "dns:amendmentHeading/dns:block[@name='proposer' or"
+        " @name='supporters']/*[@refersTo]"
+    ),
     expected_type=list[_Element],
 )
 
@@ -212,9 +214,7 @@ class SupDocument(Mapping):
             )
             self.meta_pub_date = datetime.strptime(
                 published_date.get("date", default=""), "%Y-%m-%d"  # type: ignore
-            ).strftime(
-                "%A %d %B %Y"
-            )
+            ).strftime("%A %d %B %Y")
         except Exception as e:
             warning_msg = f"Can't find Published Date meta data. Check {self.file_name}"
             self.meta_pub_date = warning_msg
@@ -344,16 +344,24 @@ class Report:
             ("", self.old_doc.file_name, self.new_doc.file_name)
         )
 
-        meta_data_table.add_row(("File path", self.old_doc.file_path, self.new_doc.file_path))
-        meta_data_table.add_row(("Bill Title", self.old_doc.meta_bill_title, self.new_doc.meta_bill_title))
-        meta_data_table.add_row(("Published date", self.old_doc.meta_pub_date, self.new_doc.meta_pub_date))
-        meta_data_table.add_row(("List Type", self.old_doc.meta_list_type, self.new_doc.meta_list_type))
+        meta_data_table.add_row(
+            ("File path", self.old_doc.file_path, self.new_doc.file_path)
+        )
+        meta_data_table.add_row(
+            ("Bill Title", self.old_doc.meta_bill_title, self.new_doc.meta_bill_title)
+        )
+        meta_data_table.add_row(
+            ("Published date", self.old_doc.meta_pub_date, self.new_doc.meta_pub_date)
+        )
+        meta_data_table.add_row(
+            ("List Type", self.old_doc.meta_list_type, self.new_doc.meta_list_type)
+        )
 
         section = html.fromstring(
             '<div class="wrap">'
             '<section id="intro">'
-            '<h2>Introduction</h2>'
-            f'<p>{into}</p>'
+            "<h2>Introduction</h2>"
+            f"<p>{into}</p>"
             "</section>"
             "</div>"
         )
@@ -365,17 +373,17 @@ class Report:
     def render_added_and_removed_amdts(self) -> _Element:
         # ----------- Removed and added amendments section ----------- #
         # build up text content
-        removed_content = "Removed content: None"
+        removed_content = html.fromstring("Removed content: <strong>None</strong>")
         if self.removed_amdts:
-            removed_content = (
-                f"Removed content: {' '.join(self.removed_amdts)}"
-                f" [total removed: {len(self.removed_amdts)}]"
+            removed_content = html.fromstring(
+                f"Removed content: <strong>{len(self.removed_amdts)}</strong><br />"
+                f"{' '.join(self.removed_amdts)}"
             )
-        added_content = "Added content: None"
+        added_content = html.fromstring("Added content: <strong>None</strong>")
         if self.added_amdts:
-            added_content = (
-                f"Added content: {' '.join(self.added_amdts)} "
-                f"[total added: {len(self.added_amdts)}]"
+            added_content = html.fromstring(
+                f"Added content: <strong>{len(self.added_amdts)}</strong><br />"
+                f"{' '.join(self.added_amdts)}"
             )
 
         card = templates.Card("Added and removed amendments")
@@ -386,56 +394,21 @@ class Report:
         return card.html
 
 
-    def added_and_removed_names_table(self) -> _Element:
-
-        if not self.name_changes:
-            return html.fromstring(
-                "<p>The following amendments have name changes: None</p>"
-            )
-
-        name_changes = templates.Table(("Ref", "Names added", "Names removed", "Totals"))
-
-        # we have a special class for this table
-        name_changes.html.classes.add("an-table")  # type: ignore
-
-        for item in self.name_changes:
-            names_added = []
-            for name in item.added:
-                names_added.append(
-                    html.fromstring(
-                        f'<span class="col-12 col-lg-6  mb-2">{name}</span>'
-                    )
-                )
-            p_names_added = etree.fromstring('<p class="row"></p>')
-            p_names_added.extend(names_added)
-
-            total_added = len(item.added)
-            total_removed = len(item.removed)
-            totals = []
-            if total_added:
-                totals.append(f"Added: {total_added}")
-            if total_removed:
-                totals.append(f"Removed: {total_removed}")
-
-            name_changes.add_row(
-                (item.num, p_names_added, ", ".join(item.removed), ", ".join(totals))
-            )
-
-        return name_changes.html
-
 
     def render_added_and_removed_names(self) -> _Element:
         # ----------- Added and removed names section ----------- #
         # build up text content
-        no_name_changes = "The following amendments have no name changes: None"
+        no_name_changes = html.fromstring(
+            "The following amendments have no name changes: <strong>None</strong>"
+        )
         if self.no_name_changes:
-            no_name_changes = (
-                "<p>The following amendments have no name changes: "
-                f"{', '.join(self.no_name_changes)}"
-                f" [total with no changes: {len(self.no_name_changes)}]</p>"
+            no_name_changes = html.fromstring(
+                f"<p>The following <strong>{len(self.no_name_changes)}</strong>"
+                " amendments have no name changes:"
+                f" {', '.join(self.no_name_changes)}</p>"
             )
 
-        name_changes_table = self.added_and_removed_names_table()
+
 
         # Name changes in context
 
@@ -456,13 +429,15 @@ class Report:
         if self.name_changes_in_context:
             changed_amdts.append(
                 html.fromstring(
-                    f"<p>The following {len(self.name_changes_in_context)} amendments have changed names: </p>\n"
+                    f"<p>The following {len(self.name_changes_in_context)} amendments"
+                    " have changed names: </p>\n"
                 )
             )
             for item in self.name_changes_in_context:
                 changed_amdts.append(
                     html.fromstring(
-                        f"<div><p class='h5 mt-4'>{item.num}:</p>\n{item.html_diff}\n</div>"
+                        "<div><p class='h5"
+                        f" mt-4'>{item.num}:</p>\n{item.html_diff}\n</div>"
                     )
                 )
 
@@ -477,7 +452,7 @@ class Report:
                 names_change_context_section,
             )
         )
-        card.tertiary_info.append(html.fromstring(no_name_changes))
+        card.tertiary_info.append(no_name_changes)
         # self.add_element_to_output_html(card.html)
 
         return card.html
@@ -486,20 +461,22 @@ class Report:
     def render_stars(self) -> _Element:
         # -------------------- Star check section -------------------- #
         # build up text content
-        correct_stars = "The following amendments have correct stars: None"
+        correct_stars = html.fromstring(
+            "The following amendments have correct stars: <strong>None</strong>"
+        )
         if self.correct_stars:
-            correct_stars = (
-                f"The following amendments have correct stars: "
-                f"{', '.join(self.correct_stars)}"
-                f" [total correct: {len(self.correct_stars)}]"
+            correct_stars = html.fromstring(
+                f"The following <strong>{len(self.correct_stars)}</strong> amendments"
+                f" have correct stars: {', '.join(self.correct_stars)}"
             )
 
-        incorrect_stars = "The following amendments have incorrect stars: None"
+        incorrect_stars = html.fromstring(
+            "The following amendments have incorrect stars: <strong>None</strong>"
+        )
         if self.incorrect_stars:
-            incorrect_stars = (
-                f"The following amendments have incorrect stars: "
-                f"{', '.join(self.incorrect_stars)}"
-                f" [total incorrect: {len(self.incorrect_stars)}]"
+            incorrect_stars = html.fromstring(
+                f"The following <strong>{len(self.incorrect_stars)}</strong> amendments"
+                f" have incorrect stars: {', '.join(self.incorrect_stars)}"
             )
 
         card = templates.Card("Star Check")
@@ -511,9 +488,15 @@ class Report:
     def render_changed_amdts(self) -> _Element:
         # -------------------- Changed Amendments -------------------- #
         # build up text content
-        changed_amdts = "<p>The following amendments have changed content: <strong>None</strong></p>"
+        changed_amdts = (
+            "<p>The following amendments have changed content:"
+            " <strong>None</strong></p>"
+        )
         if self.changed_amdts:
-            changed_amdts = f"<p>The following {len(self.changed_amdts)} amendments have changed content: </p>\n"
+            changed_amdts = (
+                f"<p>The following <strong>{len(self.changed_amdts)}</strong>"
+                " amendments have changed content: </p>\n"
+            )
             for item in self.changed_amdts:
                 changed_amdts += f"<p class='h5'>{item.num}:</p>\n{item.html_diff}\n"
 
@@ -524,7 +507,6 @@ class Report:
 
 
     def star_check(self, new_amdt: Amendment, old_amdt: Optional[Amendment]):
-
         """New amendments should have a black star.
         Amendments which previously had a black star should now have a white star.
         Amendments which previously had a white star should now have no star."""
@@ -690,7 +672,9 @@ def main():
     if len(sys.argv) > 1:
         # do cmd line version
         parser = argparse.ArgumentParser(
-            description="Create an HTML document with various automated checks on amendments."
+            description=(
+                "Create an HTML document with various automated checks on amendments."
+            )
         )
 
         parser.add_argument(
@@ -749,7 +733,6 @@ def find_duplicates(lst: list[str]) -> list[str]:
 
 
 def clean_whitespace(parent_element: _Element) -> _Element:
-
     """remove unwanted whitespace from parent_element and all its descendant
     elements. Note: parent_element is modified in place.
     Add a newline after parent_elements (which represent paragraphs)"""

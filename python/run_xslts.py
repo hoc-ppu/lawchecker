@@ -12,6 +12,7 @@ import check_amendments
 
 # 3rd party saxon imports
 import saxonche
+import submodules.python_toolbox.pp_xml_lxml as pp_xml_lxml
 
 USE_GUI = True
 
@@ -26,6 +27,10 @@ else:
     from ui.addedNames import Ui_MainWindow
 
 DEFAULT_OUTPUT_FILE_NAME = "Added_Names_Report.html"
+
+XMLNS = "http://docs.oasis-open.org/legaldocml/ns/akn/3.0"  # akn is default ns
+
+NSMAP: dict[str, str] = {"dns": XMLNS}
 
 XSLT_MARSHAL_PARAM_NAME = "marsh-path"
 
@@ -61,7 +66,6 @@ WORKING_FOLDER: Optional[Path] = None
 
 
 def main():
-
     cli_args = sys.argv
     if USE_GUI:
         gui(cli_args)  # graphical version
@@ -80,23 +84,29 @@ def cli(cli_args):
             raise argparse.ArgumentTypeError(f"readable_dir:{path} is not a valid path")
 
     parser = argparse.ArgumentParser(
-        description="Create an HTML report of added names from XML downloaded form the Dashboard"
+        description=(
+            "Create an HTML report of added names from XML downloaded form the"
+            " Dashboard"
+        )
     )
 
     parser.add_argument(
         "file",
         metavar="XML File",
         type=open,
-        help="File path to the XML you wish to process. "
-        "Use quotes if there are spaces.",
+        help=(
+            "File path to the XML you wish to process. Use quotes if there are spaces."
+        ),
     )
 
     parser.add_argument(
         "--xslts",
         metavar="XSLT Folder",
         type=_dir_path,
-        help="Path to the folder containing the XSLTs wish to run. "
-        "Use quotes if there are spaces.",
+        help=(
+            "Path to the folder containing the XSLTs wish to run. "
+            "Use quotes if there are spaces."
+        ),
     )
 
     parser.add_argument(
@@ -176,7 +186,6 @@ def gui(args):
 
             self.dated_folder_Path: Optional[Path] = None
 
-
         def create_working_folder(self):
             date_obj = self.workingFolderDateEdit.date().toPython()
             formatted_date = date_obj.strftime("%Y-%m-%d")
@@ -233,7 +242,7 @@ def gui(args):
 
             default_location = PARENT_FOLDER
 
-            self.lm_old_xml_file, _  = QtWidgets.QFileDialog.getOpenFileName(
+            self.lm_old_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
                 self, "Open old XML file", str(default_location)
             )
 
@@ -249,12 +258,11 @@ def gui(args):
             if self.dated_folder_Path is not None:
                 default_location = self.dated_folder_Path
 
-            self.lm_new_xml_file, _  = QtWidgets.QFileDialog.getOpenFileName(
+            self.lm_new_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
                 self, "Open old XML file", str(default_location)
             )
 
         def run(self):
-
             lm_xml_folder_Path: Optional[Path] = None
 
             if self.lm_xml_folder:
@@ -275,39 +283,107 @@ def gui(args):
                 print("No XML file selected.")
 
         def create_compare(self):
-            """Create the compare report."""
+            """
+            Create the compare report
+            """
 
-            if not self.lm_new_xml_file:
-                QtWidgets.QMessageBox.critical(
-                    window, "Error", "No new XML file selected."
-                )
-                return
+            """
+            Check that Old and New XML fields have been populated
+            """
+
             if not self.lm_old_xml_file:
                 QtWidgets.QMessageBox.critical(
                     window, "Error", "No old XML file selected."
                 )
                 return
 
-            new_xml_Path = Path(self.lm_new_xml_file).resolve()
-            old_xml_Path = Path(self.lm_old_xml_file).resolve()
+            if not self.lm_new_xml_file:
+                QtWidgets.QMessageBox.critical(
+                    window, "Error", "No new XML file selected."
+                )
+                return
 
-            if not new_xml_Path.exists():
+            old_xml_path = Path(self.lm_old_xml_file).resolve()
+            new_xml_path = Path(self.lm_new_xml_file).resolve()
+
+            """
+            Check the Old and New XML files can both be parsed as XML
+            """
+
+            old_xml = pp_xml_lxml.load_xml(old_xml_path)
+            new_xml = pp_xml_lxml.load_xml(new_xml_path)
+
+            if not old_xml:
                 QtWidgets.QMessageBox.critical(
-                    window, "Error", f"New XML file does not exist: {new_xml_Path}"
+                    window, "Error", f"Old XML file is not valid XML: {old_xml_path}"
                 )
                 return
-            if not old_xml_Path.exists():
+
+            if not new_xml:
                 QtWidgets.QMessageBox.critical(
-                    window, "Error", f"Old XML file does not exist: {old_xml_Path}"
+                    window, "Error", f"New XML file is not valid XML: {new_xml_path}"
                 )
                 return
+
+            """
+            Check that the  <FRBRalias name="alternateUri" /> element in both the Old
+            and New XML is the same
+            """
+
+            old_xml_uri = old_xml.find(
+                "//dns:FRBRWork/dns:FRBRalias[@name='alternateUri']",
+                namespaces=NSMAP,
+            )
+            new_xml_uri = new_xml.find(
+                "//dns:FRBRWork/dns:FRBRalias[@name='alternateUri']",
+                namespaces=NSMAP,
+            )
+
+            if old_xml_uri and new_xml_uri:
+                if old_xml_uri.attrib["value"] != new_xml_uri.attrib["value"]:
+                    QtWidgets.QMessageBox.critical(
+                        window, "Error", "XML files do not represent the same bill"
+                    )
+                    return
+
+            """
+            Check that the date in the  <FRBRdate date="published" /> element in the New
+            XML is more recent than the date in the Old XML
+            """
+
+            old_xml_date = old_xml.find(
+                "//dns:FRBRWork/dns:FRBRdate[@name='published']",
+                namespaces=NSMAP,
+            )
+            new_xml_date = new_xml.find(
+                "//dns:FRBRWork/dns:FRBRdate[@name='published']",
+                namespaces=NSMAP,
+            )
+
+            if old_xml_date and new_xml_date:
+                old_xml_date_obj = datetime.strptime(
+                    old_xml_date.attrib["date"], "%Y-%m-%d"
+                )
+                new_xml_date_obj = datetime.strptime(
+                    new_xml_date.attrib["date"], "%Y-%m-%d"
+                )
+
+                if not (old_xml_date_obj < new_xml_date_obj):
+                    QtWidgets.QMessageBox.critical(
+                        window,
+                        "Error",
+                        "New XML must be dated more recently than Old XML",
+                    )
+                    return
 
             if WORKING_FOLDER is None:
                 dated_folder_Path = REPORTS_FOLDER.joinpath(
                     datetime.now().strftime("%Y-%m-%d")
                 ).resolve()
             else:
-                dated_folder_Path = WORKING_FOLDER.resolve()  # working folder selected in UI
+                dated_folder_Path = (
+                    WORKING_FOLDER.resolve()
+                )  # working folder selected in UI
             dated_folder_Path.mkdir(parents=True, exist_ok=True)
 
             xml_folder_Path = dated_folder_Path.joinpath(DASHBOARD_DATA_FOLDER)
@@ -315,12 +391,11 @@ def gui(args):
 
             out_html_Path = dated_folder_Path.joinpath("Compare_Report.html")
 
-            report = check_amendments.Report(old_xml_Path, new_xml_Path)
+            report = check_amendments.Report(old_xml_path, new_xml_path)
             report.html_tree.write(
                 str(out_html_Path),
                 encoding="utf-8",
                 doctype="<!DOCTYPE html>",
-
             )
 
             webbrowser.open(out_html_Path.resolve().as_uri())
@@ -348,17 +423,14 @@ def remove_docstring(parameter: Path):
     # loop through XML files and remove the doctypes
     for file in fm_xml_files:
 
-
         LM_XML = False
         root_start = 0
         file_lines = []
 
         with open(file, "r", encoding="utf-8") as f:
-
             file_lines = f.readlines()
 
             for i, line in enumerate(file_lines):
-
                 if "<akomaNtoso" in line:
                     # if LawMaker XML we expect the root to be akomaNtoso
                     # in which case completely ignore
@@ -407,7 +479,6 @@ def extract_date(input_Path: Path) -> str:
 
 
 def check_xsl_paths(*xsls: Path) -> bool:
-
     for xsl_Path in xsls:
         try:
             # check xsl paths are valid
@@ -437,7 +508,6 @@ def run_xslts(
     parameter: Optional[Path] = None,
     output_file_name: str = DEFAULT_OUTPUT_FILE_NAME,
 ):
-
     print(f"{input_Path=}")
     print(f"{xsl_1_Path=}")
     print(f"{xsl_2_Path=}")
@@ -451,7 +521,7 @@ def run_xslts(
 
     intermediate_file_name = f"{formated_date}_intermediate.xml"
     input_file_resave_name = f"{formated_date}_input_from_SP.xml"
-
+    output_file_name = "Added_Names_Report.html"
 
     if WORKING_FOLDER is None:
         dated_folder_Path = REPORTS_FOLDER.joinpath(formated_date).resolve()
@@ -474,7 +544,6 @@ def run_xslts(
         f.write(input_Path.read_text())
 
     with saxonche.PySaxonProcessor(license=False) as proc:
-
         # print(proc.version)
 
         # need to be as uri in case there are spaces in the path
