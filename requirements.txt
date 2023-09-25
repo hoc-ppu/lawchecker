@@ -1,4 +1,4 @@
 lxml
-PySide6
+pyside6-essentials
 pytest
 saxonche
