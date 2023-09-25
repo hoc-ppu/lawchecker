@@ -150,11 +150,18 @@ class Amendment:
 class SupDocument(Mapping):
     """Container for an amendment document aka official list"""
 
-    def __init__(self, file: Path):
-        self.file_name = file.name
-        self.file_path = str(file.resolve())
-        tree = etree.parse(str(file))
-        self.root = tree.getroot()
+    def __init__(self, xml: Path | _Element):
+        if isinstance(xml, Path):
+            self.file_name = xml.name
+            self.file_path = str(xml.resolve())
+            tree = etree.parse(self.file_path)
+            self.root = tree.getroot()
+        else:
+            self.file_name = "Test"
+            self.file_path = "test/Test"
+            tree = etree.ElementTree(xml)
+            self.root = xml
+
 
         # build up metadata
         self.meta_list_type: str
@@ -257,7 +264,7 @@ class Report:
     There are assumed to be no published documents between the two documents,
     if there are then the star check will be inaccurate"""
 
-    def __init__(self, old_file: Path, new_file: Path):
+    def __init__(self, old_file: Path | _Element, new_file: Path | _Element):
         try:
             self.html_tree = html.parse(HTML_TEMPLATE_FILE)
             self.html_root = self.html_tree.getroot()
@@ -562,7 +569,7 @@ class Report:
                 elif new_amdt.star in ("★", "☆"):
                     star_state = "black star" if new_amdt.star == "★" else "white star"
                     self.incorrect_stars.append(
-                        f"{new_amdt.num} has {star_state}. No star expected."
+                        f"{new_amdt.num} has {star_state} (No star expected)"
                     )
                 else:
                     self.incorrect_stars.append(
