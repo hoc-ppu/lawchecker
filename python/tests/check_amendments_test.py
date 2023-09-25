@@ -113,8 +113,10 @@ def test_black_star_to_white():
 
     """Test case where black stars change to white stars"""
 
-    white_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_white_star)
-    black_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_black_star)
+    # this is a correct case
+
+    white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
+    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
 
     report = check_amendments.Report(black_star_amend, white_star_amend)
     assert report.correct_stars == ["NC52 (☆)"]
@@ -122,26 +124,36 @@ def test_black_star_to_white():
 
 def test_white_star_to_no_star():
 
-    white_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_white_star)
-    no_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_no_star)
+    """Test case where white stars change to no star"""
+
+    # this is a correct case
+
+    white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
+    no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
 
     report = check_amendments.Report(white_star_amend, no_star_amend)
     assert report.correct_stars == ["NC52 (no star)"]
 
 
 def test_black_star_to_black():
-    # when a black star has not been updated
+    """test case where black stars are not updated"""
 
-    black_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_black_star)
+    # this is an incorrect case. Items with black stars
+    # should have white stars on their second appearance.
+
+    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
     black_star_amend2 = deepcopy(black_star_amend)
 
     report = check_amendments.Report(black_star_amend, black_star_amend2)
     assert report.incorrect_stars == ["NC52 has black star (White star expected)"]
 
 def test_white_star_to_white_star():
-    # when a white star has not been updated
+    """test case where white star not updated"""
 
-    white_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_white_star)
+    # this is an incorrect case. Items with a white star
+    # should have no star on their next (3rd) appearance
+
+    white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
     white_star_amend2 = deepcopy(white_star_amend)
 
     report = check_amendments.Report(white_star_amend, white_star_amend2)
@@ -149,16 +161,26 @@ def test_white_star_to_white_star():
 
 def test_white_star_to_black_star():
 
-    white_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_white_star)
-    black_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_black_star)
+    """test case where white star changes to black star"""
+
+    # this is an incorrect case. Items with a white star
+    # should have no star on their next (3rd) appearance.
+    # A black star here is likely a mistake
+
+    white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
+    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
 
     report = check_amendments.Report(white_star_amend, black_star_amend)
     assert report.incorrect_stars == ["NC52 has black star (No star expected)"]
 
 def test_black_star_to_no_star():
 
-    black_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_black_star)
-    no_star_amend = etree.fromstring(data_for_testing.dumy_amendment_with_no_star)
+    """test case where a black star changes to no star"""
+
+    # this is an incorrect case. Likely a mistake.
+
+    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
+    no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
 
     report = check_amendments.Report(black_star_amend, no_star_amend)
     assert report.incorrect_stars == ["NC52 has no star (White star expected)"]

@@ -47,7 +47,7 @@ added_names_table = html.fromstring(
 )
 
 
-dumy_amendment_with_black_star = """<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+dummy_amendment_with_black_star = """<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
 	<amendmentList>
 	 <collectionBody>
@@ -83,7 +83,7 @@ dumy_amendment_with_black_star = """<akomaNtoso xmlns="http://docs.oasis-open.or
 	</amendmentList>
 </akomaNtoso>"""
 
-dumy_amendment_with_white_star = """<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+dummy_amendment_with_white_star = """<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
 	<amendmentList>
 	 <collectionBody>
@@ -119,7 +119,7 @@ dumy_amendment_with_white_star = """<akomaNtoso xmlns="http://docs.oasis-open.or
 	</amendmentList>
 </akomaNtoso>"""
 
-dumy_amendment_with_no_star = """<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+dummy_amendment_with_no_star = """<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
 	<amendmentList>
 	 <collectionBody>
