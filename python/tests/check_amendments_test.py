@@ -15,8 +15,10 @@ print(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 # sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 print(str(Path(__file__).resolve().parent.parent))
 
-import check_amendments
 import data_for_testing
+from stars import BLACK_STAR, NO_STAR, WHITE_STAR
+
+import check_amendments
 
 
 @pytest.fixture
@@ -119,7 +121,7 @@ def test_black_star_to_white():
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
 
     report = check_amendments.Report(black_star_amend, white_star_amend)
-    assert report.correct_stars == ["NC52 (☆)"]
+    assert report.correct_stars == [f"NC52 ({WHITE_STAR})"]
 
 
 def test_white_star_to_no_star():
@@ -132,7 +134,7 @@ def test_white_star_to_no_star():
     no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
 
     report = check_amendments.Report(white_star_amend, no_star_amend)
-    assert report.correct_stars == ["NC52 (no star)"]
+    assert report.correct_stars == [f"NC52 ({NO_STAR})"]
 
 
 def test_black_star_to_black():
@@ -145,7 +147,7 @@ def test_black_star_to_black():
     black_star_amend2 = deepcopy(black_star_amend)
 
     report = check_amendments.Report(black_star_amend, black_star_amend2)
-    assert report.incorrect_stars == ["NC52 has black star (White star expected)"]
+    assert report.incorrect_stars == [f"NC52 has {BLACK_STAR} ({WHITE_STAR} expected)"]
 
 def test_white_star_to_white_star():
     """test case where white star not updated"""
@@ -157,7 +159,7 @@ def test_white_star_to_white_star():
     white_star_amend2 = deepcopy(white_star_amend)
 
     report = check_amendments.Report(white_star_amend, white_star_amend2)
-    assert report.incorrect_stars == ["NC52 has white star (No star expected)"]
+    assert report.incorrect_stars == [f"NC52 has {WHITE_STAR} ({NO_STAR} expected)"]
 
 def test_white_star_to_black_star():
 
@@ -171,7 +173,7 @@ def test_white_star_to_black_star():
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
 
     report = check_amendments.Report(white_star_amend, black_star_amend)
-    assert report.incorrect_stars == ["NC52 has black star (No star expected)"]
+    assert report.incorrect_stars == [f"NC52 has {BLACK_STAR} ({NO_STAR} expected)"]
 
 def test_black_star_to_no_star():
 
@@ -183,6 +185,43 @@ def test_black_star_to_no_star():
     no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
 
     report = check_amendments.Report(black_star_amend, no_star_amend)
-    assert report.incorrect_stars == ["NC52 has no star (White star expected)"]
+    assert report.incorrect_stars == [f"NC52 has {NO_STAR} ({WHITE_STAR} expected)"]
+
+def test_unknown_star_attribute_in_xml_new_item():
+
+    """test case where the star attribute is not one of the three expected values
+    in the new amendment"""
+
+    # this is an incorrect case. Likely a mistake.
+
+    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
+    unknown_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_unknown_star)
+
+    report = check_amendments.Report(black_star_amend, unknown_star_amend)
+    assert report.incorrect_stars == [f"NC52 has Error with star ({WHITE_STAR} expected)"]
 
 
+def test_unknown_star_attribute_in_xml_old_item():
+
+    """test case where the star attribute is not one of the three expected values
+    in the old amendment"""
+
+    # this is an incorrect case. Likely a mistake.
+
+    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
+    unknown_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_unknown_star)
+
+    report = check_amendments.Report(unknown_star_amend, black_star_amend)
+    assert report.incorrect_stars == ['Error with star in Test, NC52 check manually.']
+
+
+def test_black_star_to_no_star_when_days_between():
+
+    """when there are sitting days between the two documents being compared
+    all stars become no stars"""
+
+    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
+    no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
+
+    report = check_amendments.Report(black_star_amend, no_star_amend, days_between_papers=True)
+    assert report.correct_stars == [f"NC52 ({NO_STAR})"]

@@ -154,3 +154,40 @@ dummy_amendment_with_no_star = """<akomaNtoso xmlns="http://docs.oasis-open.org/
 	 </collectionBody>
 	</amendmentList>
 </akomaNtoso>"""
+
+
+dummy_amendment_with_unknown_star = """<akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+	<amendmentList>
+	 <collectionBody>
+	  <component class="amendment" ukl:statusIndicator="UNKNOWN STAR">
+	   <amendment name="hcamnd">
+		<preface>
+		 <block name="title"> — <docStage>Report Stage</docStage></block>
+		</preface>
+		<amendmentBody>
+		 <amendmentHeading>
+		  <block name="proposer"><docIntroducer refersTo="">Secretary Claire Coutinho</docIntroducer></block>
+		 </amendmentHeading>
+		 <amendmentContent>
+		  <tblock>
+		   <num ukl:dnum="">NC52</num>
+		   <block name="instruction"><mod>To move the following Clause—<quotedStructure endQuote="”" startQuote="“">
+			<section>
+			 <num/>
+			 <heading>Revenue certainty scheme for sustainable aviation fuel producers: consultation and report</heading>
+			</section>
+			</quotedStructure><inline name="AppendText"/></mod> </block>
+		  </tblock>
+		 </amendmentContent>
+		 <amendmentJustification>
+		  <blockContainer><heading>Member's explanatory statement</heading>
+		   <p>explanatory statement</p>
+		  </blockContainer>
+		 </amendmentJustification>
+		</amendmentBody>
+	   </amendment>
+	  </component>
+	 </collectionBody>
+	</amendmentList>
+</akomaNtoso>"""

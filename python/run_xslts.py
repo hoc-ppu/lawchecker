@@ -8,11 +8,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-import check_amendments
-
 # 3rd party saxon imports
 import saxonche
 import submodules.python_toolbox.pp_xml_lxml as pp_xml_lxml
+
+import check_amendments
 
 USE_GUI = True
 
@@ -183,6 +183,7 @@ def gui(args):
             self.old_compare_XML_btn.clicked.connect(self.open_old_amd_xml)
             self.new_compare_XML_btn.clicked.connect(self.open_new_amd_xml)
             self.create_compare_btn.clicked.connect(self.create_compare)
+            self.create_compare_btn.setFocus()  # focus this button
 
             self.dated_folder_Path: Optional[Path] = None
 
@@ -287,9 +288,8 @@ def gui(args):
             Create the compare report
             """
 
-            """
-            Check that Old and New XML fields have been populated
-            """
+
+            # Check that Old and New XML fields have been populated
 
             if not self.lm_old_xml_file:
                 QtWidgets.QMessageBox.critical(
@@ -306,12 +306,11 @@ def gui(args):
             old_xml_path = Path(self.lm_old_xml_file).resolve()
             new_xml_path = Path(self.lm_new_xml_file).resolve()
 
-            """
-            Check the Old and New XML files can both be parsed as XML
-            """
 
-            old_xml = pp_xml_lxml.load_xml(old_xml_path)
-            new_xml = pp_xml_lxml.load_xml(new_xml_path)
+            # Check the Old and New XML files can both be parsed as XML
+
+            old_xml = pp_xml_lxml.load_xml(str(old_xml_path))
+            new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
 
             if not old_xml:
                 QtWidgets.QMessageBox.critical(
@@ -325,10 +324,9 @@ def gui(args):
                 )
                 return
 
-            """
-            Check that the  <FRBRalias name="alternateUri" /> element in both the Old
-            and New XML is the same
-            """
+
+            # Check that the  <FRBRalias name="alternateUri" />
+            # element in both the Old and New XML is the same
 
             old_xml_uri = old_xml.find(
                 "//dns:FRBRWork/dns:FRBRalias[@name='alternateUri']",
@@ -339,17 +337,16 @@ def gui(args):
                 namespaces=NSMAP,
             )
 
-            if old_xml_uri and new_xml_uri:
+            if old_xml_uri is not None and new_xml_uri is not None:
                 if old_xml_uri.attrib["value"] != new_xml_uri.attrib["value"]:
                     QtWidgets.QMessageBox.critical(
                         window, "Error", "XML files do not represent the same bill"
                     )
                     return
 
-            """
-            Check that the date in the  <FRBRdate date="published" /> element in the New
-            XML is more recent than the date in the Old XML
-            """
+
+            # Check that the date in the  <FRBRdate date="published" />
+            # element in the New XML is more recent than the date in the Old XML
 
             old_xml_date = old_xml.find(
                 "//dns:FRBRWork/dns:FRBRdate[@name='published']",
@@ -360,7 +357,7 @@ def gui(args):
                 namespaces=NSMAP,
             )
 
-            if old_xml_date and new_xml_date:
+            if old_xml_date is not None and new_xml_date is not None:
                 old_xml_date_obj = datetime.strptime(
                     old_xml_date.attrib["date"], "%Y-%m-%d"
                 )
@@ -391,11 +388,18 @@ def gui(args):
 
             out_html_Path = dated_folder_Path.joinpath("Compare_Report.html")
 
-            report = check_amendments.Report(old_xml_path, new_xml_path)
+            # checked status of checkbox
+            days_between_papers: bool = self.days_between_chk.isChecked()
+
+            report = check_amendments.Report(
+                old_xml_path,
+                new_xml_path,
+                days_between_papers=days_between_papers
+            )
             report.html_tree.write(
                 str(out_html_Path),
                 encoding="utf-8",
-                doctype="<!DOCTYPE html>",
+                doctype="<!DOCTYPE html>"
             )
 
             webbrowser.open(out_html_Path.resolve().as_uri())
@@ -508,10 +512,7 @@ def run_xslts(
     parameter: Optional[Path] = None,
     output_file_name: str = DEFAULT_OUTPUT_FILE_NAME,
 ):
-    print(f"{input_Path=}")
-    print(f"{xsl_1_Path=}")
-    print(f"{xsl_2_Path=}")
-    print(f"{parameter=}")
+    print(f"{input_Path=}\n{xsl_1_Path=}\n{xsl_2_Path=}\n{parameter=}")
 
     xsls_exist = check_xsl_paths(xsl_1_Path, xsl_2_Path)
     if not xsls_exist:
@@ -521,7 +522,6 @@ def run_xslts(
 
     intermediate_file_name = f"{formated_date}_intermediate.xml"
     input_file_resave_name = f"{formated_date}_input_from_SP.xml"
-    output_file_name = "Added_Names_Report.html"
 
     if WORKING_FOLDER is None:
         dated_folder_Path = REPORTS_FOLDER.joinpath(formated_date).resolve()

@@ -231,6 +231,13 @@
                </property>
               </widget>
              </item>
+             <item row="2" column="1">
+              <widget class="QPushButton" name="new_compare_XML_btn">
+               <property name="text">
+                <string>Select File</string>
+               </property>
+              </widget>
+             </item>
              <item row="2" column="0">
               <widget class="QLabel" name="select_label_2">
                <property name="text">
@@ -238,13 +245,6 @@
                </property>
                <property name="alignment">
                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="1">
-              <widget class="QPushButton" name="new_compare_XML_btn">
-               <property name="text">
-                <string>Select File</string>
                </property>
               </widget>
              </item>
@@ -258,10 +258,17 @@
              <item row="0" column="0" colspan="2">
               <widget class="QLabel" name="instruction_label_2">
                <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can create a report compareing consecutive versions of the same amendment paper. This report will show you: Added and removed amendments, Aded and removed names, Any stars that have not been changed correctly, and standing amendments with changes.&lt;/p&gt;&lt;p&gt;Below the &lt;span style=&quot; font-weight:700;&quot;&gt;old XML file&lt;/span&gt; is the XML downloaded from LawMaker for the &lt;span style=&quot; font-weight:700;&quot;&gt;previously published version&lt;/span&gt; of this paper. The &lt;span style=&quot; font-weight:700;&quot;&gt;new XML file i&lt;/span&gt;s the XML downloaded from Lawmaker for the &lt;span style=&quot; font-weight:700;&quot;&gt;paper you are working on&lt;/span&gt;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can create a report compareing consecutive versions of the same amendment paper. This report will show you: Added and removed amendments, Added and removed names, Any stars that have not been changed correctly, and standing amendments with changes.&lt;/p&gt;&lt;p&gt;Below the &lt;span style=&quot; font-weight:700;&quot;&gt;old XML file&lt;/span&gt; is the XML downloaded from LawMaker for the &lt;span style=&quot; font-weight:700;&quot;&gt;previously published version&lt;/span&gt; of this paper. The &lt;span style=&quot; font-weight:700;&quot;&gt;new XML file i&lt;/span&gt;s the XML downloaded from Lawmaker for the &lt;span style=&quot; font-weight:700;&quot;&gt;paper you are working on&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;Tick &lt;span style=&quot; font-weight:700;&quot;&gt;Days between papers&lt;/span&gt; if there are sitting days (or printing days) between the papers you are comparing. This is needed to get the star check right. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="wordWrap">
                 <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QCheckBox" name="days_between_chk">
+               <property name="text">
+                <string>Days between papers</string>
                </property>
               </widget>
              </item>
