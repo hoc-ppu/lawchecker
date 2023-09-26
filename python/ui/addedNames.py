@@ -15,10 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QDateEdit, QFrame, QGridLayout,
-    QHBoxLayout, QLabel, QMainWindow, QPushButton,
-    QSizePolicy, QSpacerItem, QTabWidget, QVBoxLayout,
-    QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QDateEdit, QFrame,
+    QGridLayout, QHBoxLayout, QLabel, QMainWindow,
+    QPushButton, QSizePolicy, QSpacerItem, QTabWidget,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -176,16 +176,16 @@ class Ui_MainWindow(object):
 
         self.gridLayout_5.addWidget(self.label_9, 1, 0, 1, 1)
 
+        self.new_compare_XML_btn = QPushButton(self.widget_2)
+        self.new_compare_XML_btn.setObjectName(u"new_compare_XML_btn")
+
+        self.gridLayout_5.addWidget(self.new_compare_XML_btn, 2, 1, 1, 1)
+
         self.select_label_2 = QLabel(self.widget_2)
         self.select_label_2.setObjectName(u"select_label_2")
         self.select_label_2.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.gridLayout_5.addWidget(self.select_label_2, 2, 0, 1, 1)
-
-        self.new_compare_XML_btn = QPushButton(self.widget_2)
-        self.new_compare_XML_btn.setObjectName(u"new_compare_XML_btn")
-
-        self.gridLayout_5.addWidget(self.new_compare_XML_btn, 2, 1, 1, 1)
 
         self.old_compare_XML_btn = QPushButton(self.widget_2)
         self.old_compare_XML_btn.setObjectName(u"old_compare_XML_btn")
@@ -197,6 +197,11 @@ class Ui_MainWindow(object):
         self.instruction_label_2.setWordWrap(True)
 
         self.gridLayout_5.addWidget(self.instruction_label_2, 0, 0, 1, 2)
+
+        self.days_between_chk = QCheckBox(self.widget_2)
+        self.days_between_chk.setObjectName(u"days_between_chk")
+
+        self.gridLayout_5.addWidget(self.days_between_chk, 3, 1, 1, 1)
 
         self.gridLayout_5.setColumnStretch(0, 1)
         self.gridLayout_5.setColumnStretch(1, 1)
@@ -248,10 +253,11 @@ class Ui_MainWindow(object):
         self.run_btn.setText(QCoreApplication.translate("MainWindow", u"Create Added Names Report", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.AddedNamesTab), QCoreApplication.translate("MainWindow", u"Added names report", None))
         self.label_9.setText(QCoreApplication.translate("MainWindow", u"Old XML file", None))
-        self.select_label_2.setText(QCoreApplication.translate("MainWindow", u"New XML file", None))
         self.new_compare_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
+        self.select_label_2.setText(QCoreApplication.translate("MainWindow", u"New XML file", None))
         self.old_compare_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
-        self.instruction_label_2.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>You can create a report compareing consecutive versions of the same amendment paper. This report will show you: Added and removed amendments, Aded and removed names, Any stars that have not been changed correctly, and standing amendments with changes.</p><p>Below the <span style=\" font-weight:700;\">old XML file</span> is the XML downloaded from LawMaker for the <span style=\" font-weight:700;\">previously published version</span> of this paper. The <span style=\" font-weight:700;\">new XML file i</span>s the XML downloaded from Lawmaker for the <span style=\" font-weight:700;\">paper you are working on</span>.</p></body></html>", None))
+        self.instruction_label_2.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>You can create a report compareing consecutive versions of the same amendment paper. This report will show you: Added and removed amendments, Added and removed names, Any stars that have not been changed correctly, and standing amendments with changes.</p><p>Below the <span style=\" font-weight:700;\">old XML file</span> is the XML downloaded from LawMaker for the <span style=\" font-weight:700;\">previously published version</span> of this paper. The <span style=\" font-weight:700;\">new XML file i</span>s the XML downloaded from Lawmaker for the <span style=\" font-weight:700;\">paper you are working on</span>.</p><p>Tick <span style=\" font-weight:700;\">Days between papers</span> if there are sitting days (or printing days) between the papers you are comparing. This is needed to get the star check right. </p></body></html>", None))
+        self.days_between_chk.setText(QCoreApplication.translate("MainWindow", u"Days between papers", None))
         self.create_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Create compare report", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CheckAmendmentsTab), QCoreApplication.translate("MainWindow", u"Check Amendments", None))
     # retranslateUi

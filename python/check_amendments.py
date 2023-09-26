@@ -10,34 +10,29 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Generic, NamedTuple, Optional, TypeVar, cast
 
-import templates
-from logger import logger
 from lxml import etree, html
 from lxml.etree import QName, _Element
+
+import templates
+from logger import logger
+from stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 
 T = TypeVar("T")
 
 
 # TODO: [x] put all sections in HTML document
-# [x] add bootstrap to HTML
 # Add messages for Nil return
-# [x] say which documents are being compared
-# [x] do the star check
 # [x] read arguments from command line
 # [x] make ANR respect omit-from-report setting
 # [x] put logger in separate file
 # warn about problem amendments in an error section
 # [x] error if input file is not XML
 # warn if no amendments found
-# [x] open HTML file in browser
 # [] pytest metadata
 # [x] Rearange total counts to be at the top
-# [x] Put in added names GUI
-# [x] change to pyside6 from pyQt5
 # [x] shorten class Xpath
-# put duplicate names back in output
+# put duplicate names back in output – not necessary as LM deduplicates names
 # test on more example documents
-# [x] put on GitHub
 # [x] warn if bill titles don't match
 # [x] warn if old XML file and new XML file seem to be the wrong way around,
 #   i.e. if the old file seems newer than the new  file.
@@ -116,6 +111,17 @@ html_diff = difflib.HtmlDiff(tabsize=6)
 nbsp = re.compile(r"(?<!&nbsp;)&nbsp;(?!</span>)(?!&nbsp;)")
 
 
+class ChangedNames(NamedTuple):
+    num: str
+    added: list[str]
+    removed: list[str]
+
+
+class ChangedAmdt(NamedTuple):
+    num: str
+    html_diff: str
+
+
 class Amendment:
     def __init__(self, amdt: _Element, parent_doc: "SupDocument"):
         self.parent_doc = parent_doc
@@ -124,7 +130,7 @@ class Amendment:
         )
         _xml = amdt.find("amendment/amendmentBody", namespaces=NSMAP2)
         self._names: Optional[list[str]] = None
-        self.star = amdt.get(f"{{{UKL}}}statusIndicator", None)
+        self.star = Star(amdt.get(QName(UKL, "statusIndicator"), default=""))
 
         if _num is not None and _num.text and _xml is not None:
             self.num: str = _num.text
@@ -246,16 +252,6 @@ class SupDocument(Mapping):
         return self._dict.items()
 
 
-class ChangedNames(NamedTuple):
-    num: str
-    added: list[str]
-    removed: list[str]
-
-
-class ChangedAmdt(NamedTuple):
-    num: str
-    html_diff: str
-
 
 class Report:
 
@@ -264,13 +260,20 @@ class Report:
     There are assumed to be no published documents between the two documents,
     if there are then the star check will be inaccurate"""
 
-    def __init__(self, old_file: Path | _Element, new_file: Path | _Element):
+    def __init__(
+        self,
+        old_file: Path | _Element,
+        new_file: Path | _Element,
+        days_between_papers: bool = False
+    ):
         try:
             self.html_tree = html.parse(HTML_TEMPLATE_FILE)
             self.html_root = self.html_tree.getroot()
         except Exception as e:
             logger.error(f"Error parsing HTML template file: {e}")
             raise
+
+        self.days_between_papers = days_between_papers
 
         self.old_doc = SupDocument(old_file)
         self.new_doc = SupDocument(new_file)
@@ -373,15 +376,15 @@ class Report:
     def render_added_and_removed_amdts(self) -> _Element:
         # ----------- Removed and added amendments section ----------- #
         # build up text content
-        removed_content = html.fromstring("Removed content: <strong>None</strong>")
+        removed_content = "Removed content: <strong>None</strong>"
         if self.removed_amdts:
-            removed_content = html.fromstring(
+            removed_content = (
                 f"Removed content: <strong>{len(self.removed_amdts)}</strong><br />"
                 f"{' '.join(self.removed_amdts)}"
             )
-        added_content = html.fromstring("Added content: <strong>None</strong>")
+        added_content = "Added content: <strong>None</strong>"
         if self.added_amdts:
-            added_content = html.fromstring(
+            added_content = (
                 f"Added content: <strong>{len(self.added_amdts)}</strong><br />"
                 f"{' '.join(self.added_amdts)}"
             )
@@ -393,7 +396,42 @@ class Report:
         ])
         return card.html
 
+    def added_and_removed_names_table(self) -> _Element:
 
+        if not self.name_changes:
+            return html.fromstring(
+                "<p>The following amendments have name changes: None</p>"
+            )
+
+        name_changes = templates.Table(("Ref", "Names added", "Names removed", "Totals"))
+
+        # we have a special class for this table
+        name_changes.html.classes.add("an-table")  # type: ignore
+
+        for item in self.name_changes:
+            names_added = []
+            for name in item.added:
+                names_added.append(
+                    html.fromstring(
+                        f'<span class="col-12 col-lg-6  mb-2">{name}</span>'
+                    )
+                )
+            p_names_added = etree.fromstring('<p class="row"></p>')
+            p_names_added.extend(names_added)
+
+            total_added = len(item.added)
+            total_removed = len(item.removed)
+            totals = []
+            if total_added:
+                totals.append(f"Added: {total_added}")
+            if total_removed:
+                totals.append(f"Removed: {total_removed}")
+
+            name_changes.add_row(
+                (item.num, p_names_added, ", ".join(item.removed), ", ".join(totals))
+            )
+
+        return name_changes.html
 
     def render_added_and_removed_names(self) -> _Element:
         # ----------- Added and removed names section ----------- #
@@ -408,7 +446,7 @@ class Report:
                 f" {', '.join(self.no_name_changes)}</p>"
             )
 
-
+        name_changes_table = self.added_and_removed_names_table()
 
         # Name changes in context
 
@@ -445,6 +483,10 @@ class Report:
             ".//div[@id='name-changes-in-context']"
         ).extend(changed_amdts)  # type: ignore
 
+        if len(self.name_changes_in_context) == 0:
+            # might as well not output anything if not necessary
+            names_change_context_section = html.Element("divs")
+
         card = templates.Card("Added and removed names")
         card.secondary_info.extend(
             (
@@ -461,20 +503,20 @@ class Report:
     def render_stars(self) -> _Element:
         # -------------------- Star check section -------------------- #
         # build up text content
-        correct_stars = html.fromstring(
+        correct_stars = (
             "The following amendments have correct stars: <strong>None</strong>"
         )
         if self.correct_stars:
-            correct_stars = html.fromstring(
+            correct_stars = (
                 f"The following <strong>{len(self.correct_stars)}</strong> amendments"
                 f" have correct stars: {', '.join(self.correct_stars)}"
             )
 
-        incorrect_stars = html.fromstring(
+        incorrect_stars = (
             "The following amendments have incorrect stars: <strong>None</strong>"
         )
         if self.incorrect_stars:
-            incorrect_stars = html.fromstring(
+            incorrect_stars = (
                 f"The following <strong>{len(self.incorrect_stars)}</strong> amendments"
                 f" have incorrect stars: {', '.join(self.incorrect_stars)}"
             )
@@ -506,57 +548,48 @@ class Report:
         return card.html
 
 
-    def star_check(self, new_amdt: Amendment, old_amdt: Optional[Amendment]):
+
+
+    def star_check(
+        self,
+        new_amdt: Amendment,
+        old_amdt: Amendment | None,
+    ):
+
         """New amendments should have a black star.
-        Amendments which previously had a black star should now have a white star.
-        Amendments which previously had a white star should now have no star."""
+
+        if there are no sitting or printing days between the two documents:
+        * Amendments which previously had a black star should now have a white star.
+        * Amendments which previously had a white star should now have no star.
+        If there are sitting or printing days between the two documents:
+        * Amendments which previously a star of any colour should now have no star."""
 
         if old_amdt is None:
-            # no previous document to compare against
-            if new_amdt.star == "★":
+            if new_amdt.star == BLACK_STAR:
                 self.correct_stars.append(f"{new_amdt.num} ({new_amdt.star})")
-            elif new_amdt.star == "☆":
-                self.incorrect_stars.append(
-                    f"{new_amdt.num} has white star (Black expected)"
-                )
-            elif not new_amdt.star:
-                self.incorrect_stars.append(
-                    f"{new_amdt.num} has no star (Black star expected)"
-                )
             else:
-                self.incorrect_stars.append(
-                    f"Error in item {new_amdt.num} check manually."
-                )
+                self.incorrect_stars.append(f"{new_amdt.num} has {new_amdt.star} ({BLACK_STAR} expected)")
+
+        elif old_amdt.star in (BLACK_STAR, WHITE_STAR):
+
+            expected_star = old_amdt.star.next_star(self.days_between_papers)
+            if new_amdt.star == expected_star:
+                self.correct_stars.append(f"{new_amdt.num} ({new_amdt.star})")
+            else:
+                self.incorrect_stars.append(f"{new_amdt.num} has {new_amdt.star} ({expected_star} expected)")
+
+        elif old_amdt.star == NO_STAR:
+            # do nothing
+            pass
 
         else:
-            if old_amdt.star == "★":
-                # black star should have changed to white star
-                if new_amdt.star == "☆":
-                    self.correct_stars.append(f"{new_amdt.num} ({new_amdt.star})")
+            # there is an error with the star in the input XML
+            self.incorrect_stars.append(
+                f"Error with star in {old_amdt.parent_doc.file_name},"
+                f" {old_amdt.num} check manually."
+            )
 
-                elif new_amdt.star == "★":
-                    self.incorrect_stars.append(
-                        f"{new_amdt.num} has black star (White star expected)"
-                    )
-                elif not new_amdt.star:
-                    self.incorrect_stars.append(
-                        f"{new_amdt.num} has no star (White star expected)"
-                    )
 
-            if old_amdt.star == "☆":
-                # white star should have changed to no star
-                if not new_amdt.star:
-                    self.correct_stars.append(f"{new_amdt.num} (no star)")
-
-                elif new_amdt.star in ("★", "☆"):
-                    star_state = "black star" if new_amdt.star == "★" else "white star"
-                    self.incorrect_stars.append(
-                        f"{new_amdt.num} has {star_state} (No star expected)"
-                    )
-                else:
-                    self.incorrect_stars.append(
-                        f"Error in item {new_amdt.num} check manually."
-                    )
 
     def added_and_removed_amdts(self, old_doc: "SupDocument", new_doc: "SupDocument"):
 
@@ -687,6 +720,12 @@ def main():
             "new_doc",
             type=Path,
             help="The amendment paper you wish to check",
+        )
+
+        parser.add_argument(
+            "--days-between-papers",
+            action="store_true",
+            help="Use this flag if there are sitting days between the documents"
         )
 
         args = parser.parse_args(sys.argv[1:])
