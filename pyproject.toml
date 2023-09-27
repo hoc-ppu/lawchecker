@@ -1,3 +1,5 @@
 [tool.isort]
 profile = "black"
-known_first_party = ["logger", "templates"]
+known_first_party = ["logger", "templates", "check_amendments", "stars"]
+knoen_local_folder = ["stars"]
+known_third_party = ["lxml"]
