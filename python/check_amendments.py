@@ -723,15 +723,20 @@ def main():
         )
 
         parser.add_argument(
-            "--days-between-papers",
+            "-d",
+            "--days-between",
             action="store_true",
-            help="Use this flag if there are sitting days between the documents"
+            help="Use this flag if there are sitting days between the documents compared"
         )
 
         args = parser.parse_args(sys.argv[1:])
 
         filename = "html_diff.html"
-        report = Report(args.old_doc, args.new_doc)
+        report = Report(
+            args.old_doc,
+            args.new_doc,
+            days_between_papers=args.days_between
+        )
         report.html_tree.write(
             filename,
             encoding="utf-8",
