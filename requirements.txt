@@ -1,4 +1,0 @@
-lxml
-pyside6-essentials
-pytest
-saxonche

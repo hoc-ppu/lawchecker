@@ -1,5 +1,23 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "supcheck"
+version = "1.1.1"
+dependencies = [
+    "lxml",
+    "pyside6-essentials",
+    "saxonche",
+]
+
+[project.scripts]
+anreport = "supcheck.added_names_report:main"
+compare = "supcheck.compare_amendment_documents:main"
+startgui = "supcheck.supcheck_gui:main"
+
 [tool.isort]
 profile = "black"
-known_first_party = ["logger", "templates", "check_amendments", "stars"]
-knoen_local_folder = ["stars"]
-known_third_party = ["lxml"]
+# known_first_party = ["logger", "templates", "check_amendments", "stars"]
+# known_local_folder = ["stars"]
+# known_third_party = ["lxml"]
