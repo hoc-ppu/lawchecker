@@ -8,17 +8,16 @@ import webbrowser
 from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Generic, NamedTuple, Optional, TypeVar, cast
+from typing import NamedTuple
 
 from lxml import etree, html
 from lxml.etree import QName, _Element
 
-import templates
-from logger import logger
-from stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
-
-T = TypeVar("T")
-
+from supcheck import templates
+from supcheck import xpath_helpers as xp
+from supcheck.logger import logger
+from supcheck.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
+from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 
 # TODO: [x] put all sections in HTML document
 # Add messages for Nil return
@@ -42,67 +41,7 @@ T = TypeVar("T")
 # check_amendments.py LM_XML/digital_rm_rep_0825.xml LM_XML/digital_rm_rep_0906.xml
 
 
-HTML_TEMPLATE_FILE = "python/html_diff_template.html"
 
-XMLNS = "http://docs.oasis-open.org/legaldocml/ns/akn/3.0"  # akn is default ns
-UKL = "https://www.legislation.gov.uk/namespaces/UK-AKN"
-XSI = "http://www.w3.org/2001/XMLSchema-instance"
-
-NSMAP: dict[str, str] = {"dns": XMLNS, "ukl": UKL, "xsi": XSI}
-
-# empty prefix [i.e. key=""] is allowed in some lxml methods/functions but
-# not others. E.g. it's allowed in find but not allowed in xpath
-NSMAP2 = NSMAP.copy()
-NSMAP2[""] = XMLNS
-
-
-# ---------------------- create xpath functions ---------------------- #
-class XPath(etree.XPath, Generic[T]):
-    def __init__(
-        self,
-        path: str,
-        expected_type: type[T],
-        *,
-        namespaces: Optional[Mapping[str, str]] = NSMAP,
-        **kwargs: Any,
-    ):
-        super().__init__(
-            path,
-            namespaces=namespaces,
-            **kwargs,
-        )
-        self.typ = expected_type
-
-    def __call__(self, _etree_or_element, **_variables) -> T:
-        typ = self.typ
-        return cast(typ, super().__call__(_etree_or_element, **_variables))
-
-
-get_amendments = XPath(
-    "//dns:component[dns:amendment]",
-    expected_type=list[_Element],
-)
-
-text_content = XPath("string()", expected_type=type(str()))
-
-# get MP name elements. These are proposer and supporters elements
-get_name_elements = XPath(
-    (
-        "dns:amendmentHeading/dns:block[@name='proposer' or"
-        " @name='supporters']/*[@refersTo]"
-    ),
-    expected_type=list[_Element],
-)
-
-get_amdt_heading = XPath(
-    "dns:amendmentHeading[1]",
-    expected_type=list[_Element],
-)
-
-get_amdt_content = XPath(
-    "dns:amendmentContent[1]",
-    expected_type=list[_Element],
-)
 
 
 # html diff object
@@ -129,7 +68,7 @@ class Amendment:
             "amendment/amendmentBody/amendmentContent/tblock/num", namespaces=NSMAP2
         )
         _xml = amdt.find("amendment/amendmentBody", namespaces=NSMAP2)
-        self._names: Optional[list[str]] = None
+        self._names: list[str] | None = None
         self.star = Star(amdt.get(QName(UKL, "statusIndicator"), default=""))
 
         if _num is not None and _num.text and _xml is not None:
@@ -148,7 +87,7 @@ class Amendment:
         if self._names is None:
             self._names = [
                 name_element.text
-                for name_element in get_name_elements(self.xml)
+                for name_element in xp.get_name_elements(self.xml)
                 if name_element.text
             ]
 
@@ -181,7 +120,7 @@ class SupDocument(Mapping):
         self.problem_amendments = 0
         self.amendments: list[Amendment] = []
 
-        for amdt_xml in get_amendments(self.root):
+        for amdt_xml in xp.get_amendments(self.root):
             try:
                 amendment = Amendment(amdt_xml, self)
                 self.amendments.append(amendment)
@@ -267,7 +206,7 @@ class Report:
         days_between_papers: bool = False
     ):
         try:
-            self.html_tree = html.parse(HTML_TEMPLATE_FILE)
+            self.html_tree = html.parse(COMPARE_REPORT_TEMPLATE)
             self.html_root = self.html_tree.getroot()
         except Exception as e:
             logger.error(f"Error parsing HTML template file: {e}")
@@ -620,8 +559,8 @@ class Report:
             )
 
     def diff_names_in_context(self, new_amdt: Amendment, old_amdt: Amendment):
-        new_amdt_heading = get_amdt_heading(new_amdt.xml)
-        old_amdt_heading = get_amdt_heading(old_amdt.xml)
+        new_amdt_heading = xp.get_amdt_heading(new_amdt.xml)
+        old_amdt_heading = xp.get_amdt_heading(old_amdt.xml)
 
         if len(new_amdt_heading) == 0 or len(old_amdt_heading) == 0:
             logger.warning(f"{new_amdt.num}: no sponsors found")
@@ -640,8 +579,8 @@ class Report:
             self.name_changes_in_context.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
     def diff_amdt_content(self, new_amdt: Amendment, old_amdt: Amendment):
-        new_amdt_content = get_amdt_content(new_amdt.xml)
-        old_amdt_content = get_amdt_content(old_amdt.xml)
+        new_amdt_content = xp.get_amdt_content(new_amdt.xml)
+        old_amdt_content = xp.get_amdt_content(old_amdt.xml)
 
         if len(new_amdt_content) == 0 or len(old_amdt_content) == 0:
             logger.warning(f"{new_amdt.num}: no sponsors found")
@@ -673,8 +612,8 @@ class Report:
         the find_func must return an lxml.etree._Element"""
 
         # remove the unnecessary whitespace before comparing the text content
-        old_text_content = text_content(clean_whitespace(old_xml))
-        new_text_content = text_content(clean_whitespace(new_xml))
+        old_text_content = xp.text_content(clean_whitespace(old_xml))
+        new_text_content = xp.text_content(clean_whitespace(new_xml))
 
         if new_text_content == old_text_content:
             # no changes

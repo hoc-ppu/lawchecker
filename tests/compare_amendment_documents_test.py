@@ -16,14 +16,14 @@ print(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 print(str(Path(__file__).resolve().parent.parent))
 
 import data_for_testing
-from stars import BLACK_STAR, NO_STAR, WHITE_STAR
 
-import check_amendments
+from supcheck import compare_amendment_documents as compare
+from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR
 
 
 @pytest.fixture
-def report() -> check_amendments.Report:
-    report = check_amendments.Report(
+def report() -> compare.Report:
+    report = compare.Report(
         Path("LM_XML/energy_rm_rep_0904.xml").resolve(),
         Path("LM_XML/energy_day_rep_0905.xml").resolve(),
     )
@@ -83,7 +83,7 @@ def test_meta_data_extract():
     with patch("lxml.etree.parse") as mock_parse:
         mock_parse.return_value = ElementTree(data_for_testing.intro_input)
 
-        sup_doc = check_amendments.SupDocument(Path("test"))
+        sup_doc = compare.SupDocument(Path("test"))
 
         assert sup_doc.meta_list_type == "(Amendment Paper)"
         assert sup_doc.meta_bill_title == "Energy Bill [HL]"
@@ -97,7 +97,7 @@ def test_get_meta_data():
     with patch("lxml.etree.parse") as mock_parse:
         element = deepcopy(data_for_testing.intro_input)
         tlcconcept = element.find(
-            ".//TLCConcept[@eId='varBillTitle']", namespaces=check_amendments.NSMAP2
+            ".//TLCConcept[@eId='varBillTitle']", namespaces=compare.NSMAP2
         )
 
         # remove the bill title attribute
@@ -105,7 +105,7 @@ def test_get_meta_data():
 
         mock_parse.return_value = ElementTree(element)
 
-        sup_doc = check_amendments.SupDocument(Path("test"))
+        sup_doc = compare.SupDocument(Path("test"))
 
         warning_msg = "Can't find Bill Title meta data. Check test"
         assert sup_doc.meta_bill_title == warning_msg
@@ -120,7 +120,7 @@ def test_black_star_to_white():
     white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
 
-    report = check_amendments.Report(black_star_amend, white_star_amend)
+    report = compare.Report(black_star_amend, white_star_amend)
     assert report.correct_stars == [f"NC52 ({WHITE_STAR})"]
 
 
@@ -133,7 +133,7 @@ def test_white_star_to_no_star():
     white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
     no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
 
-    report = check_amendments.Report(white_star_amend, no_star_amend)
+    report = compare.Report(white_star_amend, no_star_amend)
     assert report.correct_stars == [f"NC52 ({NO_STAR})"]
 
 
@@ -146,7 +146,7 @@ def test_black_star_to_black():
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
     black_star_amend2 = deepcopy(black_star_amend)
 
-    report = check_amendments.Report(black_star_amend, black_star_amend2)
+    report = compare.Report(black_star_amend, black_star_amend2)
     assert report.incorrect_stars == [f"NC52 has {BLACK_STAR} ({WHITE_STAR} expected)"]
 
 def test_white_star_to_white_star():
@@ -158,7 +158,7 @@ def test_white_star_to_white_star():
     white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
     white_star_amend2 = deepcopy(white_star_amend)
 
-    report = check_amendments.Report(white_star_amend, white_star_amend2)
+    report = compare.Report(white_star_amend, white_star_amend2)
     assert report.incorrect_stars == [f"NC52 has {WHITE_STAR} ({NO_STAR} expected)"]
 
 def test_white_star_to_black_star():
@@ -172,7 +172,7 @@ def test_white_star_to_black_star():
     white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
 
-    report = check_amendments.Report(white_star_amend, black_star_amend)
+    report = compare.Report(white_star_amend, black_star_amend)
     assert report.incorrect_stars == [f"NC52 has {BLACK_STAR} ({NO_STAR} expected)"]
 
 def test_black_star_to_no_star():
@@ -184,7 +184,7 @@ def test_black_star_to_no_star():
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
     no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
 
-    report = check_amendments.Report(black_star_amend, no_star_amend)
+    report = compare.Report(black_star_amend, no_star_amend)
     assert report.incorrect_stars == [f"NC52 has {NO_STAR} ({WHITE_STAR} expected)"]
 
 def test_unknown_star_attribute_in_xml_new_item():
@@ -197,7 +197,7 @@ def test_unknown_star_attribute_in_xml_new_item():
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
     unknown_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_unknown_star)
 
-    report = check_amendments.Report(black_star_amend, unknown_star_amend)
+    report = compare.Report(black_star_amend, unknown_star_amend)
     assert report.incorrect_stars == [f"NC52 has Error with star ({WHITE_STAR} expected)"]
 
 
@@ -211,7 +211,7 @@ def test_unknown_star_attribute_in_xml_old_item():
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
     unknown_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_unknown_star)
 
-    report = check_amendments.Report(unknown_star_amend, black_star_amend)
+    report = compare.Report(unknown_star_amend, black_star_amend)
     assert report.incorrect_stars == ['Error with star in Test, NC52 check manually.']
 
 
@@ -223,5 +223,5 @@ def test_black_star_to_no_star_when_days_between():
     black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
     no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
 
-    report = check_amendments.Report(black_star_amend, no_star_amend, days_between_papers=True)
+    report = compare.Report(black_star_amend, no_star_amend, days_between_papers=True)
     assert report.correct_stars == [f"NC52 ({NO_STAR})"]
