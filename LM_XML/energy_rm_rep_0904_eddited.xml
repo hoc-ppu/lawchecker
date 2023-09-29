@@ -21066,7 +21066,7 @@
      </amendmentBody>
     </amendment>
    </component>
-   <component class="amendment" ukl:statusIndicator="☆">
+   <component class="amendment" ukl:statusIndicator="★">
     <amendment name="hcamnd">
      <?LDAPP-Component componentId="5ca5da58-e0ee-4567-a700-58326e4d5cbb" seriesId="5ca5da58-e0ee-4567-a700-58326e4d5cbb" versionNumber=""?>
      <meta>
@@ -21129,7 +21129,7 @@
      </amendmentBody>
     </amendment>
    </component>
-   <component class="amendment" ukl:statusIndicator="☆">
+   <component class="amendment" ukl:statusIndicator="★">
     <amendment name="hcamnd">
      <?LDAPP-Component componentId="20db25b7-3b53-454b-972d-98c6504e43f7" seriesId="20db25b7-3b53-454b-972d-98c6504e43f7" versionNumber=""?>
      <meta>
