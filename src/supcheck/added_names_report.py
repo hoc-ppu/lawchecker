@@ -11,7 +11,7 @@ from typing import Optional
 # 3rd party saxon imports
 import saxonche
 
-from . import settings
+from supcheck import settings
 
 
 def main():
@@ -190,6 +190,7 @@ def run_xslts(
     parameter: Optional[Path] = None,
     output_file_name: str = settings.DEFAULT_OUTPUT_NAME,
 ):
+
     print(f"{input_Path=}\n{xsl_1_Path=}\n{xsl_2_Path=}\n{parameter=}")
 
     xsls_exist = check_xsl_paths(xsl_1_Path, xsl_2_Path)

@@ -10,7 +10,9 @@ from PySide6 import QtCore, QtWidgets
 
 from supcheck import added_names_report, settings
 from supcheck.compare_amendment_documents import Report
-from supcheck.settings import NSMAP
+
+# from supcheck.logger import logger  # must be before anything from submodules
+from supcheck.settings import NSMAP, WORKING_FOLDER
 from supcheck.submodules.python_toolbox import pp_xml_lxml
 from supcheck.ui.addedNames import Ui_MainWindow
 
@@ -44,7 +46,7 @@ def main():
 
             self.fm_xml_btn.clicked.connect(self.open_amd_xml_dir)
 
-            self.run_btn.clicked.connect(self.run)
+            self.run_btn.clicked.connect(self.run_xslts)
 
             # tab 2. compare tab
             self.old_compare_XML_btn.clicked.connect(self.open_old_amd_xml)
@@ -55,7 +57,7 @@ def main():
             self.dated_folder_Path: Path | None = None
 
         def create_working_folder(self):
-            date_obj = self.workingFolderDateEdit.date().toPython()
+            date_obj: datetime = self.workingFolderDateEdit.date().toPython()  # type: ignore
             formatted_date = date_obj.strftime("%Y-%m-%d")
 
             try:
@@ -111,7 +113,7 @@ def main():
             default_location = settings.PARENT_FOLDER
 
             self.lm_old_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
-                self, "Open old XML file", str(default_location)
+                self, "Open old XML file", str(default_location), "XML files (*.xml)"
             )
 
         def open_new_amd_xml(self):
@@ -127,10 +129,10 @@ def main():
                 default_location = self.dated_folder_Path
 
             self.lm_new_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
-                self, "Open old XML file", str(default_location)
+                self, "Open old XML file", str(default_location), "XML files (*.xml)"
             )
 
-        def run(self):
+        def run_xslts(self):
             lm_xml_folder_Path: Path | None = None
 
             if self.lm_xml_folder:
