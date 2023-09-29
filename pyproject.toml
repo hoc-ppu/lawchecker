@@ -1,23 +1,26 @@
-[build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "supcheck"
 version = "1.1.1"
+license = { file = "LICENCE" }
 dependencies = [
     "lxml",
     "pyside6-essentials",
     "saxonche",
 ]
+requires-python = ">=3.10"
 
+[project.optional-dependencies]
+dev = ["pytest", "pyinstaller", "lxml-stubs"]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+# these are entry points for the command line
 [project.scripts]
-anreport = "supcheck.added_names_report:main"
+an_report = "supcheck.added_names_report:main"
 compare = "supcheck.compare_amendment_documents:main"
 startgui = "supcheck.supcheck_gui:main"
 
 [tool.isort]
 profile = "black"
-# known_first_party = ["logger", "templates", "check_amendments", "stars"]
-# known_local_folder = ["stars"]
-# known_third_party = ["lxml"]
