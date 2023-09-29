@@ -24,3 +24,4 @@ startgui = "supcheck.supcheck_gui:main"
 
 [tool.isort]
 profile = "black"
+force_to_top = ["supcheck.supcheck_logger"]

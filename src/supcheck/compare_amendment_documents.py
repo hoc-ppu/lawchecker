@@ -13,9 +13,9 @@ from typing import NamedTuple
 from lxml import etree, html
 from lxml.etree import QName, _Element
 
+from supcheck.supcheck_logger import logger
 from supcheck import templates
 from supcheck import xpath_helpers as xp
-from supcheck.logger import logger
 from supcheck.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
 from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 

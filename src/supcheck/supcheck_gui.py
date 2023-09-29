@@ -8,10 +8,9 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
 
+from supcheck.supcheck_logger import logger  # must be before anything from submodules
 from supcheck import added_names_report, settings
 from supcheck.compare_amendment_documents import Report
-
-# from supcheck.logger import logger  # must be before anything from submodules
 from supcheck.settings import NSMAP, WORKING_FOLDER
 from supcheck.submodules.python_toolbox import pp_xml_lxml
 from supcheck.ui.addedNames import Ui_MainWindow
