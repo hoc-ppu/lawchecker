@@ -21,7 +21,6 @@ from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 
 # TODO: [x] put all sections in HTML document
 # Add messages for Nil return
-# [x] read arguments from command line
 # [x] make ANR respect omit-from-report setting
 # [x] put logger in separate file
 # warn about problem amendments in an error section
@@ -39,9 +38,6 @@ from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 # think about changing 1 to A1 or Amendment 1... to make it look better in
 # Added and removed amendments. See
 # check_amendments.py LM_XML/digital_rm_rep_0825.xml LM_XML/digital_rm_rep_0906.xml
-
-
-
 
 
 # html diff object
@@ -82,7 +78,9 @@ class Amendment:
 
     @property
     def names(self) -> list[str]:
-        """List of the names of the MPs who proposed and supported the amendment"""
+        """
+        List of the names of the MPs who proposed and supported the amendment
+        """
 
         if self._names is None:
             self._names = [
@@ -194,10 +192,12 @@ class SupDocument(Mapping):
 
 class Report:
 
-    """Container for Amendment Report.
+    """
+    Container for Amendment Report.
     The report summarises changes changes between two LM XML official list documents.
     There are assumed to be no published documents between the two documents,
-    if there are then the star check will be inaccurate"""
+    if there are then the star check will be inaccurate
+    """
 
     def __init__(
         self,
@@ -236,9 +236,11 @@ class Report:
         self.make_html()  # this does not save the html document
 
     def gather_changes(self):
-        """Loop thorugh all amendments in the new document and compare them
+        """
+        Loop thorugh all amendments in the new document and compare them
         against the same amendment in the old document (if possible),
-        populate the various lists of changes"""
+        populate the various lists of changes
+        """
 
         self.added_and_removed_amdts(self.old_doc, self.new_doc)
 
@@ -259,7 +261,9 @@ class Report:
             self.diff_amdt_content(new_amdt, old_amend)
 
     def make_html(self):
-        """Build up HTML document with various automated checks on amendments"""
+        """
+        Build up HTML document with various automated checks on amendments
+        """
 
         insert_point = self.html_root.find('.//div[@id="content-goes-here"]')
         # print(etr)
@@ -543,9 +547,9 @@ class Report:
         # look for duplicate names. Only need to do this for the new_amdt.
         self.duplicate_names = find_duplicates(new_amdt.names)
 
-        # TODO: put this back in
-        # if self.duplicate_names:
-        #     logger.warning("Duplicate names found")
+        if self.duplicate_names:
+            # warn in UI
+            logger.warning(f"Duplicate names found in {new_amdt.num}")
 
         added_names = [item for item in new_amdt.names if item not in old_amdt.names]
         removed_names = [item for item in old_amdt.names if item not in new_amdt.names]
@@ -559,15 +563,30 @@ class Report:
             )
 
     def diff_names_in_context(self, new_amdt: Amendment, old_amdt: Amendment):
+
+        """
+        Create an HTML string containing a tables showing the differences
+        between old_amdt//amendmentHeading and new_amdt//amendmentHeading.
+
+        amendmentHeading is the element which contains the sponsors.
+        It does not contain the amendment body.
+        """
+
         new_amdt_heading = xp.get_amdt_heading(new_amdt.xml)
         old_amdt_heading = xp.get_amdt_heading(old_amdt.xml)
 
-        if len(new_amdt_heading) == 0 or len(old_amdt_heading) == 0:
-            logger.warning(f"{new_amdt.num}: no sponsors found")
-            return
-        else:
+        try:
+            # make sure heading elements found
             new_amdt_heading = new_amdt_heading[0]
             old_amdt_heading = old_amdt_heading[0]
+
+            # and make sure children
+            assert len(new_amdt_heading) > 0
+            assert len(old_amdt_heading) > 0
+
+        except (IndexError, AssertionError):
+            logger.warning(f"{new_amdt.num}: no sponsors found")
+            return
 
         dif_html_str = self._diff_xml_content(
             new_amdt_heading,
@@ -579,6 +598,15 @@ class Report:
             self.name_changes_in_context.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
     def diff_amdt_content(self, new_amdt: Amendment, old_amdt: Amendment):
+
+        """
+        Create an HTML string containing a tables showing the differences
+        between old_amdt//amendmentContent and new_amdt//amendmentContent.
+
+        amendmentContent is the element which contains the text of the
+        amendment. It does not contain the sponsor information.
+        """
+
         new_amdt_content = xp.get_amdt_content(new_amdt.xml)
         old_amdt_content = xp.get_amdt_content(old_amdt.xml)
 
@@ -605,11 +633,10 @@ class Report:
         fromdesc: str = "",
         todesc: str = "",
     ):
-        """Return an HTML string containing tables showing the differences
-        between coresponding amendments in each input document.
-
-        Optionally pass in a function to narrow down the content to be diffed.
-        the find_func must return an lxml.etree._Element"""
+        """
+        Return an HTML string containing a tables showing the differences
+        between old_xml and new_xml.
+        """
 
         # remove the unnecessary whitespace before comparing the text content
         old_text_content = xp.text_content(clean_whitespace(old_xml))
@@ -671,16 +698,19 @@ def main():
         args = parser.parse_args(sys.argv[1:])
 
         filename = "html_diff.html"
+
         report = Report(
             args.old_doc,
             args.new_doc,
             days_between_papers=args.days_between
         )
+
         report.html_tree.write(
             filename,
             encoding="utf-8",
             doctype="<!DOCTYPE html>",
         )
+
         webbrowser.open(Path(filename).resolve().as_uri())
 
     else:
@@ -690,6 +720,7 @@ def main():
 
 
 def find_duplicates(lst: list[str]) -> list[str]:
+
     # Convert the list to a set to remove duplicates
     unique_items = set(lst)
 
@@ -716,15 +747,21 @@ def find_duplicates(lst: list[str]) -> list[str]:
 
 
 def clean_whitespace(parent_element: _Element) -> _Element:
-    """remove unwanted whitespace from parent_element and all its descendant
+
+    """
+    Remove unwanted whitespace from parent_element and all its descendant
     elements. Note: parent_element is modified in place.
-    Add a newline after parent_elements (which represent paragraphs)"""
+    Add a newline after parent_elements (which represent paragraphs)
+    """
 
     # these are inline elements, we should leave them well alone
     # I think defined here:
     # https://docs.oasis-open.org/legaldocml/akn-core/v1.0/cos01/part2-specs/schemas/akomantoso30.xsd
     # //xsd:schema/xsd:group[@name="HTMLinline"]/xsd:choice
     inlines = ("b", "i", "a", "u", "sub", "sup", "abbr", "span")
+
+    # paragraph elements. Add new line after.
+    paragraphs = ("p", "docIntroducer", "docProponent", "heading",)  # "mod"?
 
     for element in parent_element.iter("*"):
         tag = QName(element).localname
@@ -738,14 +775,11 @@ def clean_whitespace(parent_element: _Element) -> _Element:
         if element.tail:
             element.tail = element.tail.strip()
 
-        # Add in newlines after each of these elements
-        if tag in (
-            # "mod",
-            "p",
-            "docIntroducer",
-            "docProponent",
-            "heading",
-        ) or (tag == "block" and element.get("name") == "instruction"):
+
+        is_block_instruction = tag == "block" and element.get("name") == "instruction"
+
+        if tag in paragraphs or is_block_instruction:
+            # Add in newlines after each of these elements
             try:
                 last_child = element[-1]
             except IndexError:
