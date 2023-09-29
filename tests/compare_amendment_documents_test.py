@@ -1,23 +1,18 @@
-import os
 import sys
 from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
 
+import data_for_testing
 import pytest
 from lxml import etree
 from lxml.etree import ElementTree, _Element
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-print(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-# sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-print(str(Path(__file__).resolve().parent.parent))
-
-import data_for_testing
+# the below line is only needed if you don't pip install the package
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 from supcheck import compare_amendment_documents as compare
+from supcheck.settings import NSMAP2
 from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR
 
 
@@ -63,6 +58,34 @@ def elements_equal(e1: _Element, e2: _Element, ignore_whitespace=True):
         e2_string = etree.tostring(etree.indent(e2, space="  "))
         return e1_string == e2_string
 
+
+def test_diff_names_in_context_warning(caplog):
+
+    """
+    Test that warning is generated when there is a problem finding sponsors
+    """
+
+    doc_skeleton = deepcopy(data_for_testing.intro_input)
+
+    # skeleton has no amendments so we will use this:
+    amdt = deepcopy(data_for_testing.dummy_amendment_with_white_star)
+
+    # edit amendment to remove the sponsors
+    amdt.find(".//amendmentHeading", namespaces=NSMAP2).clear()
+
+    # put the skeleton and the amendment together
+    doc_skeleton.find(
+        ".//amendmentList", namespaces=NSMAP2
+    ).extend(  # type: ignore
+        amdt.find(".//amendmentList", namespaces=NSMAP2)  # type: ignore
+    )
+
+    compare.Report(
+        doc_skeleton,
+        doc_skeleton,
+    )
+
+    assert "NC52: no sponsors found" in caplog.text
 
 
 def test_render_intro(report):
@@ -111,14 +134,16 @@ def test_get_meta_data():
         assert sup_doc.meta_bill_title == warning_msg
 
 
+# ----------------- Test star check is done properly ----------------- #
+
 def test_black_star_to_white():
 
     """Test case where black stars change to white stars"""
 
     # this is a correct case
 
-    white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
-    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
+    white_star_amend = deepcopy(data_for_testing.dummy_amendment_with_white_star)
+    black_star_amend = deepcopy(data_for_testing.dummy_amendment_with_black_star)
 
     report = compare.Report(black_star_amend, white_star_amend)
     assert report.correct_stars == [f"NC52 ({WHITE_STAR})"]
@@ -130,8 +155,8 @@ def test_white_star_to_no_star():
 
     # this is a correct case
 
-    white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
-    no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
+    white_star_amend = deepcopy(data_for_testing.dummy_amendment_with_white_star)
+    no_star_amend = deepcopy(data_for_testing.dummy_amendment_with_no_star)
 
     report = compare.Report(white_star_amend, no_star_amend)
     assert report.correct_stars == [f"NC52 ({NO_STAR})"]
@@ -143,11 +168,12 @@ def test_black_star_to_black():
     # this is an incorrect case. Items with black stars
     # should have white stars on their second appearance.
 
-    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
+    black_star_amend = deepcopy(data_for_testing.dummy_amendment_with_black_star)
     black_star_amend2 = deepcopy(black_star_amend)
 
     report = compare.Report(black_star_amend, black_star_amend2)
     assert report.incorrect_stars == [f"NC52 has {BLACK_STAR} ({WHITE_STAR} expected)"]
+
 
 def test_white_star_to_white_star():
     """test case where white star not updated"""
@@ -155,11 +181,12 @@ def test_white_star_to_white_star():
     # this is an incorrect case. Items with a white star
     # should have no star on their next (3rd) appearance
 
-    white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
+    white_star_amend = deepcopy(data_for_testing.dummy_amendment_with_white_star)
     white_star_amend2 = deepcopy(white_star_amend)
 
     report = compare.Report(white_star_amend, white_star_amend2)
     assert report.incorrect_stars == [f"NC52 has {WHITE_STAR} ({NO_STAR} expected)"]
+
 
 def test_white_star_to_black_star():
 
@@ -169,11 +196,12 @@ def test_white_star_to_black_star():
     # should have no star on their next (3rd) appearance.
     # A black star here is likely a mistake
 
-    white_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_white_star)
-    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
+    white_star_amend = deepcopy(data_for_testing.dummy_amendment_with_white_star)
+    black_star_amend = deepcopy(data_for_testing.dummy_amendment_with_black_star)
 
     report = compare.Report(white_star_amend, black_star_amend)
     assert report.incorrect_stars == [f"NC52 has {BLACK_STAR} ({NO_STAR} expected)"]
+
 
 def test_black_star_to_no_star():
 
@@ -181,11 +209,12 @@ def test_black_star_to_no_star():
 
     # this is an incorrect case. Likely a mistake.
 
-    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
-    no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
+    black_star_amend = deepcopy(data_for_testing.dummy_amendment_with_black_star)
+    no_star_amend = deepcopy(data_for_testing.dummy_amendment_with_no_star)
 
     report = compare.Report(black_star_amend, no_star_amend)
     assert report.incorrect_stars == [f"NC52 has {NO_STAR} ({WHITE_STAR} expected)"]
+
 
 def test_unknown_star_attribute_in_xml_new_item():
 
@@ -194,8 +223,8 @@ def test_unknown_star_attribute_in_xml_new_item():
 
     # this is an incorrect case. Likely a mistake.
 
-    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
-    unknown_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_unknown_star)
+    black_star_amend = deepcopy(data_for_testing.dummy_amendment_with_black_star)
+    unknown_star_amend = deepcopy(data_for_testing.dummy_amendment_with_unknown_star)
 
     report = compare.Report(black_star_amend, unknown_star_amend)
     assert report.incorrect_stars == [f"NC52 has Error with star ({WHITE_STAR} expected)"]
@@ -208,8 +237,8 @@ def test_unknown_star_attribute_in_xml_old_item():
 
     # this is an incorrect case. Likely a mistake.
 
-    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
-    unknown_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_unknown_star)
+    black_star_amend = deepcopy(data_for_testing.dummy_amendment_with_black_star)
+    unknown_star_amend = deepcopy(data_for_testing.dummy_amendment_with_unknown_star)
 
     report = compare.Report(unknown_star_amend, black_star_amend)
     assert report.incorrect_stars == ['Error with star in Test, NC52 check manually.']
@@ -220,8 +249,8 @@ def test_black_star_to_no_star_when_days_between():
     """when there are sitting days between the two documents being compared
     all stars become no stars"""
 
-    black_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_black_star)
-    no_star_amend = etree.fromstring(data_for_testing.dummy_amendment_with_no_star)
+    black_star_amend = deepcopy(data_for_testing.dummy_amendment_with_black_star)
+    no_star_amend = deepcopy(data_for_testing.dummy_amendment_with_no_star)
 
     report = compare.Report(black_star_amend, no_star_amend, days_between_papers=True)
     assert report.correct_stars == [f"NC52 ({NO_STAR})"]
