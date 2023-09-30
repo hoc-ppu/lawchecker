@@ -7,7 +7,9 @@ You can create:
 - an HTML report which compared two Amendment paper XML files
 
 ## Python script installation
-Clone the repository if you have not already done so. [Here is a guide to cloning](https://www.youtube.com/watch?v=CKcqniGu3tA). Or if you do not have git installed you could download and extract the zip file.
+Clone the repository if you have not already done so. [Here is a guide to cloning](https://www.youtube.com/watch?v=CKcqniGu3tA).
+This project uses submodules so when cloning use, `--recurse-submodules`. Alternatively run `submodule update --init`.
+If you do not have git installed you could download and extract the zip file. You may also need to download the submodule.
 Install a recent version of [Python](https://www.python.org/downloads/) if you have not got one.
 
 ### *Optionally* create and activate a python virtual environment.
