@@ -1,9 +1,14 @@
+from pathlib import Path
+
 from lxml import etree, html
 
 # flake8: noqa
 
+intro_file_1 = Path("LM_XML/energy_rm_rep_0904.xml").resolve()
+intro_file_2 = Path("LM_XML/energy_day_rep_0905.xml").resolve()
+
 intro = html.fromstring(
-    """<div class="wrap"><section id="intro"><h2>Introduction</h2><p>This report summarises changes between two LawMaker XML official list documents. The documents are:<br/><strong>energy_rm_rep_0904.xml</strong> and <strong>energy_day_rep_0905.xml</strong></p></section><table class="sticky-head table-responsive-md table"><thead><tr><th scope="col"/><th scope="col">energy_rm_rep_0904.xml</th><th scope="col">energy_day_rep_0905.xml</th></tr></thead><tbody><tr><td>File path</td><td>/Users/mark/projects/added-names/LM_XML/energy_rm_rep_0904.xml</td><td>/Users/mark/projects/added-names/LM_XML/energy_day_rep_0905.xml</td></tr><tr><td>Bill Title</td><td>Energy Bill [HL]</td><td>Energy Bill [HL]</td></tr><tr><td>Published date</td><td>Monday 04 September 2023</td><td>Tuesday 05 September 2023</td></tr><tr><td>List Type</td><td>(Amendment Paper)</td><td>(Amendment Paper)</td></tr></tbody></table></div>"""
+    f"""<div class="wrap"><section id="intro"><h2>Introduction</h2><p>This report summarises changes between two LawMaker XML official list documents. The documents are:<br/><strong>energy_rm_rep_0904.xml</strong> and <strong>energy_day_rep_0905.xml</strong></p></section><table class="sticky-head table-responsive-md table"><thead><tr><th scope="col"/><th scope="col">energy_rm_rep_0904.xml</th><th scope="col">energy_day_rep_0905.xml</th></tr></thead><tbody><tr><td>File path</td><td>{intro_file_1}</td><td>{intro_file_2}</td></tr><tr><td>Bill Title</td><td>Energy Bill [HL]</td><td>Energy Bill [HL]</td></tr><tr><td>Published date</td><td>Monday 04 September 2023</td><td>Tuesday 05 September 2023</td></tr><tr><td>List Type</td><td>(Amendment Paper)</td><td>(Amendment Paper)</td></tr></tbody></table></div>"""
 )
 
 added_and_removed_names_table = html.fromstring(

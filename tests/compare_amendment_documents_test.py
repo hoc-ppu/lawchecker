@@ -47,16 +47,26 @@ def _elements_equal(e1, e2, ignore_whitespace=True):
     # true when both have no children empty
     return all(_elements_equal(c1, c2) for c1, c2 in zip(e1, e2))
 
-def elements_equal(e1: _Element, e2: _Element, ignore_whitespace=True):
+def assert_elements_equal(e1: _Element, e2: _Element, ignore_whitespace=True):
 
     """By comparing the strings we get better error messages when elements are not equal"""
 
     if _elements_equal(e1, e2, ignore_whitespace):
-        return True
+        # return True
+        assert True
     else:
-        e1_string = etree.tostring(etree.indent(e1, space="  "))
-        e2_string = etree.tostring(etree.indent(e2, space="  "))
-        return e1_string == e2_string
+
+        # indent elements in place
+        etree.indent(e1, space=" ")
+        etree.indent(e2, space=" ")
+
+        e1_string = etree.tostring(e1, encoding="utf-8")
+        e2_string = etree.tostring(e2, encoding="utf-8")
+
+        # return e1_string == e2_string
+        assert e1_string == e2_string
+
+# def to
 
 
 def test_diff_names_in_context_warning(caplog):
@@ -91,15 +101,15 @@ def test_diff_names_in_context_warning(caplog):
 def test_render_intro(report):
     """Test that the intro is rendered correctly"""
 
-    assert elements_equal(data_for_testing.intro, report.render_intro()) is True
+    assert_elements_equal(data_for_testing.intro, report.render_intro())
 
 
 def test_added_and_removed_names_table(report):
     """Test that the added and removed names are rendered correctly"""
 
-    assert elements_equal(
+    assert_elements_equal(
         data_for_testing.added_and_removed_names_table, report.added_and_removed_names_table()
-    ) is True
+    )
 
 
 def test_meta_data_extract():
