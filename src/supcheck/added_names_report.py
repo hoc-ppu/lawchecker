@@ -11,6 +11,7 @@ from typing import Optional
 # 3rd party saxon imports
 import saxonche
 
+from supcheck.supcheck_logger import logger
 from supcheck import settings
 
 
@@ -36,7 +37,8 @@ def main():
         metavar="XML File",
         type=open,
         help=(
-            "File path to the XML you wish to process. Use quotes if there are spaces."
+            "File path to the XML you wish to process."
+            " Use quotes if there are spaces."
         ),
     )
 
@@ -45,8 +47,8 @@ def main():
         metavar="XSLT Folder",
         type=_dir_path,
         help=(
-            "Path to the folder containing the XSLTs wish to run. "
-            "Use quotes if there are spaces."
+            "Optional Path to the folder containing the XSLTs you wish to run."
+            " Use quotes if there are spaces."
         ),
     )
 
@@ -67,7 +69,6 @@ def main():
     )
 
     args = parser.parse_args(sys.argv[1:])
-    print(args)
 
     input_Path = Path(args.file.name)
 
@@ -83,7 +84,6 @@ def main():
     else:
         marshal = None
 
-    print(f"{marshal=}")
     run_xslts(
         input_Path,
         xsl_1_Path,
@@ -94,7 +94,10 @@ def main():
 
 
 def remove_docstring(parameter: Path):
-    """Process FM XML files to remove docstring and overwrite original"""
+
+    """
+    Process FM XML files to remove docstring and overwrite original
+    """
 
     # lets also turn it into an absolute path
     parameter_abs = parameter.resolve()
@@ -110,6 +113,8 @@ def remove_docstring(parameter: Path):
         file_lines = []
 
         with open(file, "r", encoding="utf-8") as f:
+
+            # TODO: don't read the whole file into memory
             file_lines = f.readlines()
 
             for i, line in enumerate(file_lines):
@@ -127,7 +132,7 @@ def remove_docstring(parameter: Path):
             # do not do anything to LM XML
             continue
 
-        print(f"Trying to remove docstring from {file.name}")
+        logger.info(f"Trying to remove docstring from {file.name}")
 
         # try to overwrite file
         with open(file, "w", encoding="UTF-8") as fi:
@@ -142,19 +147,19 @@ def extract_date(input_Path: Path) -> str:
     with open(input_Path) as f:
         input_xml_str = f.read()
 
-    # print(f'input_xml_str length is: {len(input_xml_str)}')
     # get the updated date
     match = re.search(r"(<updated>)([A-Z0-9:+-]+)(</updated>)", input_xml_str)
     date_str = ""
     if match:
         date_str = match.group(2)
-        print(f"Date extracted from input xml (from SharePoint) {date_str}")
+        logger.info(f"Date extracted from input xml (from SharePoint) {date_str}")
 
     try:
         dt = datetime.strptime(date_str[:19], "%Y-%m-%dT%H:%M:%S")
         formated_date = dt.strftime("%Y-%m-%d__%H-%M")
+
     except Exception as e:
-        print(repr(e))
+        logger.warning(f"Date not found in xml: {repr(e)}")
         formated_date = ""
 
     return formated_date
@@ -173,7 +178,7 @@ def check_xsl_paths(*xsls: Path) -> bool:
                 "\n\nUsually you should have two XSL files in a folder called 'XSLT'"
                 " and that folder should be in the same folder as this program."
             )
-            print("Error:", err_txt)
+            logger.error("Error:", err_txt)
             # if USE_GUI:
             #     # this can be caught in the GUI code and the
             #     # Error message displayed in a GUI window
@@ -191,7 +196,7 @@ def run_xslts(
     output_file_name: str = settings.DEFAULT_OUTPUT_NAME,
 ):
 
-    print(f"{input_Path=}\n{xsl_1_Path=}\n{xsl_2_Path=}\n{parameter=}")
+    logger.info(f"{input_Path=}   {xsl_1_Path=}   {xsl_2_Path=}   {parameter=}")
 
     xsls_exist = check_xsl_paths(xsl_1_Path, xsl_2_Path)
     if not xsls_exist:
@@ -214,8 +219,7 @@ def run_xslts(
     intermidiate_Path = xml_folder_Path.joinpath(intermediate_file_name)
     out_html_Path = dated_folder_Path.joinpath(output_file_name)
 
-    print(f"{intermidiate_Path=}")
-    print(f"{out_html_Path=}")
+    logger.info(f"{intermidiate_Path=}   {out_html_Path=}")
 
     # resave the input file
     resave_Path = xml_folder_Path.joinpath(input_file_resave_name)
@@ -223,7 +227,6 @@ def run_xslts(
         f.write(input_Path.read_text())
 
     with saxonche.PySaxonProcessor(license=False) as proc:
-        # print(proc.version)
 
         # need to be as uri in case there are spaces in the path
         input_path = input_Path.resolve().as_uri()
@@ -258,11 +261,11 @@ def run_xslts(
 
         # --- finished transforms ---
 
-        print(f"Created: {out_html_Path}")
+        logger.info(f"Created: {out_html_Path}")
 
         webbrowser.open(outfilepath)
 
-        print("Done.")
+        logger.info("Done.")
 
 
 if __name__ == "__main__":
