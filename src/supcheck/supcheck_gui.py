@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
 
-from supcheck.supcheck_logger import logger  # must be before anything from submodules
+from supcheck.supcheck_logger import logger  # must be before submodules...
 from supcheck import added_names_report, settings
 from supcheck.compare_amendment_documents import Report
 from supcheck.settings import NSMAP, WORKING_FOLDER
@@ -29,6 +29,7 @@ def main():
             if sys.platform == "darwin":
                 # annoyingly sizing works differently on macOS and windows
                 self.resize(self.size().width(), 740)  # fit widgets on mac
+                # pass
 
             self.dash_xml_file = ""  # will be the xml file path
             self.lm_xml_folder = ""  # will be the lm xml folder path
@@ -279,6 +280,11 @@ def main():
     # window = QtWidgets.QMainWindow()
     window = MainWindow()
     window.show()
+
+    # import logging
+    # for logger_name, lgr in logging.root.manager.loggerDict.items():
+    #     print(f"{logger_name=}, {lgr=}")
+    #     print("   ", lgr.handlers)
 
     app.exec()
 

@@ -446,14 +446,17 @@ class Report:
     def render_stars(self) -> _Element:
         # -------------------- Star check section -------------------- #
         # build up text content
-        correct_stars = (
-            "The following amendments have correct stars: <strong>None</strong>"
+        correct_stars = html.fromstring(
+            "<p>The following amendments have correct stars: <strong>None</strong></p>"
         )
         if self.correct_stars:
-            correct_stars = (
-                f"The following <strong>{len(self.correct_stars)}</strong> amendments"
-                f" have correct stars: {', '.join(self.correct_stars)}"
-            )
+
+            sec = (templates.SmallCollapsableSection(
+                f"<span>The following <strong>{len(self.correct_stars)}</strong>"
+                f" amendments have correct stars: </span>"
+            ))
+            sec.collapsible.text = f"{', '.join(self.correct_stars)}"
+            correct_stars = sec.html
 
         incorrect_stars = (
             "The following amendments have incorrect stars: <strong>None</strong>"
@@ -466,7 +469,7 @@ class Report:
 
         card = templates.Card("Star Check")
         card.secondary_info.append(html.fromstring(f"<p>{incorrect_stars}</p>"))
-        card.tertiary_info.append(html.fromstring(f"<p>{correct_stars}</p>"))
+        card.tertiary_info.append(correct_stars)
         # self.add_element_to_output_html(card.html)
         return card.html
 
@@ -489,8 +492,6 @@ class Report:
         card.secondary_info.extend(html.fragments_fromstring(changed_amdts))
 
         return card.html
-
-
 
 
     def star_check(
@@ -531,7 +532,6 @@ class Report:
                 f"Error with star in {old_amdt.parent_doc.file_name},"
                 f" {old_amdt.num} check manually."
             )
-
 
 
     def added_and_removed_amdts(self, old_doc: "SupDocument", new_doc: "SupDocument"):
@@ -668,55 +668,49 @@ class Report:
 
 
 def main():
-    if len(sys.argv) > 1:
-        # do cmd line version
-        parser = argparse.ArgumentParser(
-            description=(
-                "Create an HTML document with various automated checks on amendments."
-            )
+
+    parser = argparse.ArgumentParser(
+        description=(
+            "Create an HTML document with various automated checks on amendments."
         )
+    )
 
-        parser.add_argument(
-            "old_doc",
-            type=Path,
-            help="The amendment paper from a previous day",
-        )
+    parser.add_argument(
+        "old_doc",
+        type=Path,
+        help="The amendment paper from a previous day",
+    )
 
-        parser.add_argument(
-            "new_doc",
-            type=Path,
-            help="The amendment paper you wish to check",
-        )
+    parser.add_argument(
+        "new_doc",
+        type=Path,
+        help="The amendment paper you wish to check",
+    )
 
-        parser.add_argument(
-            "-d",
-            "--days-between",
-            action="store_true",
-            help="Use this flag if there are sitting days between the documents compared"
-        )
+    parser.add_argument(
+        "-d",
+        "--days-between",
+        action="store_true",
+        help="Use this flag if there are sitting days between the documents compared"
+    )
 
-        args = parser.parse_args(sys.argv[1:])
+    args = parser.parse_args(sys.argv[1:])
 
-        filename = "html_diff.html"
+    filename = "html_diff.html"
 
-        report = Report(
-            args.old_doc,
-            args.new_doc,
-            days_between_papers=args.days_between
-        )
+    report = Report(
+        args.old_doc,
+        args.new_doc,
+        days_between_papers=args.days_between
+    )
 
-        report.html_tree.write(
-            filename,
-            encoding="utf-8",
-            doctype="<!DOCTYPE html>",
-        )
+    report.html_tree.write(
+        filename,
+        encoding="utf-8",
+        doctype="<!DOCTYPE html>",
+    )
 
-        webbrowser.open(Path(filename).resolve().as_uri())
-
-    else:
-        # could do GUI version here
-        print("No arguments given")
-        return
+    webbrowser.open(Path(filename).resolve().as_uri())
 
 
 def find_duplicates(lst: list[str]) -> list[str]:
