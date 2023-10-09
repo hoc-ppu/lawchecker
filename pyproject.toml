@@ -19,7 +19,7 @@ build-backend = "setuptools.build_meta"
 # these are entry points for the command line
 [project.scripts]
 an_report = "supcheck.added_names_report:main"
-compare = "supcheck.compare_amendment_documents:main"
+compare_report = "supcheck.compare_amendment_documents:main"
 startgui = "supcheck.supcheck_gui:main"
 
 [tool.isort]
