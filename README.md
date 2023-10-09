@@ -60,7 +60,7 @@ If that doesn't work because of saxon try following the [instructions](https://w
 ## Usage
 There are three entry points.
  - `an_report` creates an added names report. Type `an_report --help` in your terminal or comand prompt for help on how to use this.
- - `compare` creates a report detailing the differences between two Amendment paper XML files. Type `compare --help` in your terminal or comand prompt for help on how to use this.
+ - `compare_report` creates a report detailing the differences between two Amendment paper XML files. Type `compare_report --help` in your terminal or comand prompt for help on how to use this.
  - `startgui` will start a graphical user interface with lets you create both of the above reports.
 
 
