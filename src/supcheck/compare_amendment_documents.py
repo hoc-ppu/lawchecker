@@ -343,7 +343,7 @@ class Report:
 
         if not self.name_changes:
             return html.fromstring(
-                "<p>The following amendments have name changes: None</p>"
+                "<p><strong>Zero</strong> amendments have name changes.</p>"
             )
 
         name_changes = templates.Table(("Ref", "Names added", "Names removed", "Totals"))
@@ -377,40 +377,34 @@ class Report:
         return name_changes.html
 
     def render_added_and_removed_names(self) -> _Element:
-        # ----------- Added and removed names section ----------- #
-        # build up text content
+
+        """Added and removed names section"""
+
         no_name_changes = html.fromstring(
-            "The following amendments have no name changes: <strong>None</strong>"
+            "<p><strong>Zero</strong> amendments have no name changes.</p>"
         )
+
         if self.no_name_changes:
-            no_name_changes = html.fromstring(
-                f"<p>The following <strong>{len(self.no_name_changes)}</strong>"
-                " amendments have no name changes:"
-                f" {', '.join(self.no_name_changes)}</p>"
-            )
+
+            sec = (templates.SmallCollapsableSection(
+                f"<span><strong>{len(self.no_name_changes)}</strong>"
+                f" amendments have no name changes: "
+                '<small class="text-muted"> [show]</small></span>'
+            ))
+            sec.collapsible.text = f"{', '.join(self.no_name_changes)}"
+            no_name_changes = sec.html
 
         name_changes_table = self.added_and_removed_names_table()
 
         # Name changes in context
-
-        names_change_context_section = html.fromstring(
-            '<section class="collapsible closed">'
-            '<div class="collapsible-header">'
-            '<h3 class="h4"><span class="arrow"> </span>'
-            'Name Changes in Context <small class="text-muted"> [show]</small></h3>'
-            "<p>Expand this section to see the same names as above but in context.</p>"
-            "</div>"
-            '<div class="collapsible-content" style="display: none;" id="name-changes-in-context">'
-            "</div>"
-            "</section>"
-        )
+        names_change_context_section = templates.NameChangeContextSection()
 
         # build up text content
         changed_amdts = []
         if self.name_changes_in_context:
             changed_amdts.append(
                 html.fromstring(
-                    f"<p>The following {len(self.name_changes_in_context)} amendments"
+                    f"<p><strong>{len(self.name_changes_in_context)}</strong> amendments"
                     " have changed names: </p>\n"
                 )
             )
@@ -422,23 +416,19 @@ class Report:
                     )
                 )
 
-        names_change_context_section.find(
-            ".//div[@id='name-changes-in-context']"
-        ).extend(changed_amdts)  # type: ignore
 
         if len(self.name_changes_in_context) == 0:
             # might as well not output anything if not necessary
-            names_change_context_section = html.Element("divs")
+            names_change_context_section.clear()
 
         card = templates.Card("Added and removed names")
         card.secondary_info.extend(
             (
                 name_changes_table,
-                names_change_context_section,
+                names_change_context_section.html,
             )
         )
         card.tertiary_info.append(no_name_changes)
-        # self.add_element_to_output_html(card.html)
 
         return card.html
 
@@ -447,24 +437,25 @@ class Report:
         # -------------------- Star check section -------------------- #
         # build up text content
         correct_stars = html.fromstring(
-            "<p>The following amendments have correct stars: <strong>None</strong></p>"
+            "<p><strong>Zero</strong> amendments have correct stars.</p>"
         )
         if self.correct_stars:
 
             sec = (templates.SmallCollapsableSection(
-                f"<span>The following <strong>{len(self.correct_stars)}</strong>"
-                f" amendments have correct stars: </span>"
+                f"<span><strong>{len(self.correct_stars)}</strong>"
+                f" amendments have correct stars: "
+                '<small class="text-muted"> [show]</small></span>'
             ))
             sec.collapsible.text = f"{', '.join(self.correct_stars)}"
             correct_stars = sec.html
 
         incorrect_stars = (
-            "The following amendments have incorrect stars: <strong>None</strong>"
+            "<strong>Zero</strong> amendments have incorrect stars"
         )
         if self.incorrect_stars:
             incorrect_stars = (
-                f"The following <strong>{len(self.incorrect_stars)}</strong> amendments"
-                f" have incorrect stars: {', '.join(self.incorrect_stars)}"
+                f'<strong class="red">{len(self.incorrect_stars)} amendments'
+                f" have incorrect stars:</strong>  {', '.join(self.incorrect_stars)}"
             )
 
         card = templates.Card("Star Check")
@@ -477,12 +468,11 @@ class Report:
         # -------------------- Changed Amendments -------------------- #
         # build up text content
         changed_amdts = (
-            "<p>The following amendments have changed content:"
-            " <strong>None</strong></p>"
+            "<p><strong>Zero</strong> amendments have changed content.</p>"
         )
         if self.changed_amdts:
             changed_amdts = (
-                f"<p>The following <strong>{len(self.changed_amdts)}</strong>"
+                f'<p><strong class="red">{len(self.changed_amdts)}</strong>'
                 " amendments have changed content: </p>\n"
             )
             for item in self.changed_amdts:
