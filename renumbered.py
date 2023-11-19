@@ -2,6 +2,7 @@ import logging
 import re
 from pathlib import Path
 
+import pandas as pd
 from lxml import etree
 from lxml.etree import _Element
 
@@ -32,81 +33,75 @@ def main():
     # get all the XML files in the current directory
     xml_files = Path(".").glob("*.xml")
 
+    data = []
+
     for file in xml_files:
         print(file)
         xml = etree.parse(str(file))
         root = xml.getroot()
 
         # get the sections
-        sections = get_sections(root)
+        data.append(get_sections(root))
 
         print(get_version(root))
 
+    data_frames = [pd.DataFrame(d) for d in data]
 
-def get_sections(xml_element: _Element):
-
-    # body element
-    body = xml_element.find('.//xmlns:body', namespaces=NSMAP)
-
-    if body is None:
-        logger.error("No body element!")
-        return
+    if len(data_frames) == 2:
+        # data_frames[0].join(data_frames[1], how="left", on="guid")
+        df = data_frames[0].set_index('guid').join(data_frames[1].set_index('guid'), how="outer")
+        df.to_csv("data.csv")
 
 
-    attrs = []
-    para_attrs = []
+def get_sections(root: _Element):
 
-    sections = body.xpath("//xmlns:section", namespaces=NSMAP)
+    attrs = {"eid": [], "guid": []}
 
-    for section in sections:
+    xpath = (
+        "//xmlns:body//xmlns:section"          # sections
+        "[not(contains(@eId, 'subsec')) "      # skip subsections
+        "and not(contains(@eId, 'qstr'))]"     # skip qstr elements
+        "|//xmlns:body//xmlns:paragraph"       # paragraphs
+        "[contains(@eId, 'sched') "            # only keep the schedules
+        "and not(contains(@eId, 'subpara')) "  # remove subpara
+        "and not(contains(@eId, 'qstr'))]"     # and qstr (duplicated)
+    )
 
-        guid = section.get('GUID', None)
-        eid = section.get('eId', None)
+    sections_paragraphs: list[_Element] = root.xpath(xpath, namespaces=NSMAP)  # type: ignore
 
-        if guid is None or eid is None:
-            logger.warning("Section with no GUID or EID")
-            continue
+    if len(sections_paragraphs) == 0:
+        logger.warning("No sections or paragraphs found")
+        return attrs
 
-        # skip subsections, qstr elements
-        if "subsec" in eid or "qstr" in eid:
-            continue
+    for element in sections_paragraphs:
 
-        # and oc notations (duplicated)
-        # I think here we are supposed to edit the eid value to remove '__' and anything after it
-        try:
-            eid = eid.split("__")[0]
-        except IndexError:
-            pass
-
-
-        attrs.append([guid, eid])
-
-    paragraphs = body.xpath("//xmlns:paragraph", namespaces=NSMAP)
-
-    for paragraph in paragraphs:
-
-        guid = paragraph.get('GUID', None)
-        eid = paragraph.get('eId', None)
+        guid = element.get('GUID', None)
+        eid = element.get('eId', None)
 
         if guid is None or eid is None:
             logger.warning("Section with no GUID or EID")
             continue
 
-        # only keep the schedules
-        if "sched" not in eid:
-            continue
+        element_name = etree.QName(element).localname
 
-        # remove subpara and qstr (duplicated)
-        if "subpara" in eid or "qstr" in eid:
-            continue
+        if element_name == "section":
 
-        # remove oc notations (__oc_#, sometimes at end and sometimes middle of string)
-        eid = re.sub(r"__oc_\d+", "", eid)
+            # and oc notations (duplicated)
+            # I think here we are supposed to edit the eid value to remove '__' and anything after it
+            try:
+                eid = eid.split("__")[0]
+            except IndexError:
+                pass
 
-        para_attrs.append([guid, eid])
+        if element_name == "paragraph":
 
-    # print(para_attrs)
-    print(len(para_attrs))
+            # remove oc notations (__oc_#, sometimes at end and sometimes middle of string)
+            eid = re.sub(r"__oc_\d+", "", eid)
+
+        attrs["eid"].append(eid)
+        attrs["guid"].append(guid)
+
+    return attrs
 
 
 def get_version(xml_root: _Element) -> str:
@@ -121,7 +116,6 @@ def get_version(xml_root: _Element) -> str:
     house = house.replace("House of ", "")
 
     return f"{house}, {stage}"
-
 
 
 if __name__ == "__main__":
