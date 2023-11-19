@@ -2,6 +2,9 @@
 # R junk
 .Rapp.history
 
+# ignore CSV files
+*.csv
+
 # mac junk
 .DS_Store
 ._.DS_Store
