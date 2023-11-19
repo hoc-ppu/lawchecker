@@ -9,6 +9,7 @@ import pandas as pd
 from dateutil import parser as date_parser
 from lxml import etree
 from lxml.etree import _Element
+from pandas import Series
 
 NSMAP = {
     "xmlns": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
@@ -62,6 +63,11 @@ def cli(input_folder, output_folder):
     Takes in a UK bill XML files. Return CSV file(s) comparing
     the numbering of each version of the same bill.
     """
+
+    if input_folder is not None:
+        input_folder = Path(input_folder)
+    if output_folder is not None:
+        output_folder = Path(output_folder)
 
     compare_bills(input_folder, output_folder)
 
@@ -158,21 +164,21 @@ class Bill:
             if element_name == "section":
 
                 # and oc notations (duplicated)
-                # I think here we are supposed to edit the eid value to remove '__' and anything after it
-                try:
-                    eid = eid.split("__")[0]
-                except IndexError:
-                    pass
+                # I think here we are supposed to edit the eid value
+                # to remove '__' and anything after it
+                eid = eid.split("__")[0]
 
             if element_name == "paragraph":
 
-                # remove oc notations (__oc_#, sometimes at end and sometimes middle of string)
+                # remove oc notations
+                # (__oc_#, sometimes at end and sometimes middle of string)
                 eid = re.sub(r"__oc_\d+", "", eid)
 
             attrs[ref_col_name].append(eid)
             attrs["guid"].append(guid)
 
         return attrs
+
 
 def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
 
@@ -199,8 +205,8 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
         else:
             bills_container[bill.title].append(bill)
 
-    # all bills are now sorted into a dictionary with the bill title as the key
-    # the value is a list of Bill objects. So different versions of the same
+    # all bills are now sorted into a dictionary with the bill title as the key.
+    # The value is a list of Bill objects. So different versions of the same
     # bill are grouped together.
 
     # we should further order the list of bills by the published date
@@ -220,15 +226,17 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
             # get the sections, store in a dataframe
             df = pd.DataFrame(bill.get_sections())
 
-            df['order'] = df.reset_index().index  # add column for current order
+            # add col for later sorting
+            df['order'] = df.apply(get_sort_number, axis=1)
+
             data_frames.append(df)
 
         df = data_frames[0]
 
-        for x in data_frames[1:]:
+        for i, x in enumerate(data_frames[1:]):
             # outer join all dataframes
-            df = df.merge(x, how="outer", on='guid', suffixes=("_l", "_r"))
-            # df = df.set_index('guid').join(x.set_index('guid'), how="outer", rsuffix="_r")
+            # suffixes are added to column names to avoid collision when joining
+            df = df.merge(x, how="outer", on='guid', suffixes=(f"_{i}l", f"_{i}r"))
 
         # Need to sort rows as, sadly, an outer join doesn't keep the order.
 
@@ -260,6 +268,24 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
     print("Done")
 
 
+
+def get_sort_number(row: Series) -> int:
+
+    """Create a number from the digits in the eId for sorting."""
+
+    # assumption! eId is always in position 1
+    digits = re.findall(r'\d+', row.iloc[1])
+
+    # pad with zeros and concatenate
+    string = "".join(x.zfill(3) for x in digits)
+
+    try:
+        return int(string)
+    except ValueError:
+        return 0  # problem so put these at the top
+
+
+
 def clean(string: str, no_space=False, file_name_safe=False) -> str:
 
     # some general cleaning
@@ -268,7 +294,8 @@ def clean(string: str, no_space=False, file_name_safe=False) -> str:
     string = string.replace(",", "")
 
     # bill title cleaning
-    string = string.replace("[hl]", "")
+    string = string.replace("[hl]", "").strip()
+    string = re.sub(r" bill$", "", string)
 
     # I don't like spaces in file names 😛
     if file_name_safe:
@@ -279,7 +306,7 @@ def clean(string: str, no_space=False, file_name_safe=False) -> str:
         string = string.replace(" ", "_")
 
     if file_name_safe:
-        keep = (".", "_")
+        keep = ("_")
         string = "".join(c for c in string if c.isalnum() or c in keep)
 
     return string.strip()
