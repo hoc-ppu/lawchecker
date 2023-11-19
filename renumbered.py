@@ -20,6 +20,7 @@ NSMAP = {
 # --------------------------- BEGIN LOGGER --------------------------- #
 
 logger = logging.getLogger('renumbered')
+logger.setLevel(logging.DEBUG)
 
 log_file_Path = Path(Path.home(), 'logs', 'renumbered.log').absolute()
 log_file_Path.parent.mkdir(parents=True, exist_ok=True)
@@ -40,19 +41,19 @@ fh.setFormatter(formatter)
 logger.addHandler(ch)  # add the handler to the logger
 logger.addHandler(fh)
 
-
 # -------------------- Begin comand line interface ------------------- #
 
 @click.command()
 @click.option(
     '--input-folder',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help="Specify a different folder for finding bill XML."
          " Defaults to current directory.",
 )
 @click.option(
     "--output-folder",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
-    help="Specify a different folder for the output CSV file(s) to be saved in."
+    help="Specify a different folder for saving the output CSV file(s) in."
          " Defaults to current directory.",
 )
 def cli(input_folder, output_folder):
@@ -185,13 +186,13 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
 
     bills_container: dict[str, list[Bill]] = {}
 
-    for file in xml_files:
+    for xml_file in xml_files:
 
         # parse bills and sort into dictionary with bill title as key
 
-        logger.info(file)
+        logger.info(f"{xml_file=}")
 
-        bill = Bill(file)
+        bill = Bill(xml_file)
 
         if bill.title not in bills_container:
             bills_container[bill.title] = [bill]
@@ -216,8 +217,9 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
 
         for bill in bills:
 
-            # get the sections
+            # get the sections, store in a dataframe
             df = pd.DataFrame(bill.get_sections())
+
             df['order'] = df.reset_index().index  # add column for current order
             data_frames.append(df)
 
@@ -233,7 +235,7 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
         # get the ordering columns (suffixes are added during join)
         order_cols = [col for col in df.columns if col.startswith("order")]
 
-        # add master order column with average order (NaN not included in ave.)
+        # add master order column with mean order (NaN not included in mean)
         df['order_master'] = df[order_cols].mean(axis=1)
         order_cols.append('order_master')
 
