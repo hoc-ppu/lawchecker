@@ -1,8 +1,10 @@
 import logging
 import re
+import sys
 from pathlib import Path
 
 import pandas as pd
+from dateutil import parser as date_parser
 from lxml import etree
 from lxml.etree import _Element
 
@@ -28,94 +30,214 @@ logger.addHandler(ch)  # add the handler to the logger
 # END LOGGER
 
 
+class Bill:
+
+    def __init__(self, file: Path):
+
+        self.root = etree.parse(str(file)).getroot()
+
+        self.file = file
+        self.version = self.get_version()
+        self.title = self.get_bill_title()
+        self.published_dt = self.get_published_date()
+
+    def get_published_date(self) -> str:
+
+        xpath = '//xmlns:FRBRManifestation/xmlns:FRBRdate[@name != "akn_xml"]/@date[not(.="")]'
+
+        try:
+            date_time: str = self.root.xpath(xpath, namespaces=NSMAP)[0]  # type: ignore
+            dt = date_parser.parse(date_time)
+            formatted = dt.strftime("%Y-%m-%d-%H-%M-%S")
+
+        except Exception:
+            logger.error(f"Date not found in {self.file.name}")
+            sys.exit(1)
+
+        return formatted
+
+    def get_version(self) -> str:
+
+        xpath_temp = '//xmlns:references/*[@eId="{}"]/@showAs'
+        stage_xp = xpath_temp.format("varStageVersion")
+        house_xp = xpath_temp.format("varHouse")
+
+        stage: str = self.root.xpath(stage_xp, namespaces=NSMAP)[0]  # type: ignore
+        house: str = self.root.xpath(house_xp, namespaces=NSMAP)[0]  # type: ignore
+
+        house = house.replace("House of ", "")
+
+        return f"{house}, {stage}"
+
+    def get_bill_title(self) -> str:
+
+        xpath = '//xmlns:TLCConcept[@eId="varBillTitle"]/@showAs'
+        try:
+            title: str = self.root.xpath(xpath, namespaces=NSMAP)[0]  # type: ignore
+            assert isinstance(title, str)
+        except Exception:
+            logger.error(f"Bill title not found in {self.file.name}")
+            sys.exit(1)
+
+        title = clean(title)
+
+        return title
+
+    def get_sections(self):
+
+        # sort_order_col_name = f"order_{self.published_dt}"
+        ref_col_name = clean(self.version, no_space=True)
+
+        # ref_col_name will contain eId
+        attrs = {"guid": [], ref_col_name: []}
+
+        xpath = (
+            "//xmlns:body//xmlns:section"          # sections
+            "[not(contains(@eId, 'subsec')) "      # skip subsections
+            "and not(contains(@eId, 'qstr'))]"     # skip qstr elements
+            "|//xmlns:body//xmlns:paragraph"       # paragraphs
+            "[contains(@eId, 'sched') "            # only keep the schedules
+            "and not(contains(@eId, 'subpara')) "  # remove subpara
+            "and not(contains(@eId, 'qstr'))]"     # and qstr (duplicated)
+        )
+
+        sections_paragraphs: list[_Element] = self.root.xpath(xpath, namespaces=NSMAP)  # type: ignore
+
+        if len(sections_paragraphs) == 0:
+            logger.warning("No sections or paragraphs found")
+
+        for element in sections_paragraphs:
+
+            guid = element.get('GUID', None)
+            eid = element.get('eId', None)
+
+            if guid is None or eid is None:
+                logger.warning("Section with no GUID or EID")
+                continue
+
+            element_name = etree.QName(element).localname
+
+            if element_name == "section":
+
+                # and oc notations (duplicated)
+                # I think here we are supposed to edit the eid value to remove '__' and anything after it
+                try:
+                    eid = eid.split("__")[0]
+                except IndexError:
+                    pass
+
+            if element_name == "paragraph":
+
+                # remove oc notations (__oc_#, sometimes at end and sometimes middle of string)
+                eid = re.sub(r"__oc_\d+", "", eid)
+
+            attrs[ref_col_name].append(eid)
+            attrs["guid"].append(guid)
+
+        return attrs
+
 def main():
 
     # get all the XML files in the current directory
     xml_files = Path(".").glob("*.xml")
 
-    data = []
+    bills_container: dict[str, list[Bill]] = {}
 
     for file in xml_files:
-        print(file)
-        xml = etree.parse(str(file))
-        root = xml.getroot()
 
-        # get the sections
-        data.append(get_sections(root))
+        # parse bills and sort into dictionary with bill title as key
 
-        print(get_version(root))
+        logger.info(file)
 
-    data_frames = [pd.DataFrame(d) for d in data]
+        bill = Bill(file)
 
-    if len(data_frames) == 2:
-        # data_frames[0].join(data_frames[1], how="left", on="guid")
-        df = data_frames[0].set_index('guid').join(data_frames[1].set_index('guid'), how="outer")
-        df.to_csv("data.csv")
+        if bill.title not in bills_container:
+            bills_container[bill.title] = [bill]
+        else:
+            bills_container[bill.title].append(bill)
 
+    # all bills are now sorted into a dictionary with the bill title as the key
+    # the value is a list of Bill objects. So different versions of the same
+    # bill are grouped together.
 
-def get_sections(root: _Element):
+    # we should further order the list of bills by the published date
+    for title, bills in bills_container.items():
 
-    attrs = {"eid": [], "guid": []}
-
-    xpath = (
-        "//xmlns:body//xmlns:section"          # sections
-        "[not(contains(@eId, 'subsec')) "      # skip subsections
-        "and not(contains(@eId, 'qstr'))]"     # skip qstr elements
-        "|//xmlns:body//xmlns:paragraph"       # paragraphs
-        "[contains(@eId, 'sched') "            # only keep the schedules
-        "and not(contains(@eId, 'subpara')) "  # remove subpara
-        "and not(contains(@eId, 'qstr'))]"     # and qstr (duplicated)
-    )
-
-    sections_paragraphs: list[_Element] = root.xpath(xpath, namespaces=NSMAP)  # type: ignore
-
-    if len(sections_paragraphs) == 0:
-        logger.warning("No sections or paragraphs found")
-        return attrs
-
-    for element in sections_paragraphs:
-
-        guid = element.get('GUID', None)
-        eid = element.get('eId', None)
-
-        if guid is None or eid is None:
-            logger.warning("Section with no GUID or EID")
+        # if there is less than 2 bills, we can't compare them
+        if len(bills) < 2:
+            logger.warning(f"Only one '{title}' bill found. Cannot compare.")
             continue
 
-        element_name = etree.QName(element).localname
+        bills.sort(key=lambda x: x.published_dt)  # sort by published date
 
-        if element_name == "section":
+        data_frames: list[pd.DataFrame] = []
 
-            # and oc notations (duplicated)
-            # I think here we are supposed to edit the eid value to remove '__' and anything after it
-            try:
-                eid = eid.split("__")[0]
-            except IndexError:
-                pass
+        for bill in bills:
 
-        if element_name == "paragraph":
+            # get the sections
+            df = pd.DataFrame(bill.get_sections())
+            df['order'] = df.reset_index().index  # add column for current order
+            data_frames.append(df)
 
-            # remove oc notations (__oc_#, sometimes at end and sometimes middle of string)
-            eid = re.sub(r"__oc_\d+", "", eid)
+        df = data_frames[0]
 
-        attrs["eid"].append(eid)
-        attrs["guid"].append(guid)
+        for x in data_frames[1:]:
+            # outer join all dataframes
+            # left_df = left_df.set_index('guid').join(df.set_index('guid'), how="outer", rsuffix="_r")
+            df = df.merge(
+                x,
+                how="outer",
+                on='guid',
+                suffixes=("_l", "_r")
+            )
 
-    return attrs
+        # sadly an outer join doesn't keep the order of the rows
+        # so we need to sort the rows by the order column
+
+        # get the ordering columns
+        order_cols = [col for col in df.columns if col.startswith("order")]
+
+        # add master order column with average order (NaN not included in ave.)
+        df['order_master'] = df[list(order_cols)].mean(axis=1)
+        order_cols.append('order_master')
+
+        df.sort_values(by=['order_master'], inplace=True)
+
+        # remove the order columns
+        df.drop(columns=order_cols, inplace=True)
+
+        file_name = f"{clean(title, file_name_safe=True)}_compare.csv"
+        df.to_csv(file_name, index=False)
+        print(f"{file_name=}")
 
 
-def get_version(xml_root: _Element) -> str:
+def clean(string: str, no_space=False, file_name_safe=False) -> str:
 
-    xpath_temp = '//xmlns:references/*[@eId="{}"]/@showAs'
-    stage_xp = xpath_temp.format("varStageVersion")
-    house_xp = xpath_temp.format("varHouse")
+    # some general cleaning
+    string = string.casefold()  # makes lowercase and removes accents
+    string = re.sub(r"\s+", " ", string)
+    string = string.replace(",", "")
 
-    stage: str = xml_root.xpath(stage_xp, namespaces=NSMAP)[0]  # type: ignore
-    house: str = xml_root.xpath(house_xp, namespaces=NSMAP)[0]  # type: ignore
+    # bill title cleaning
+    string = string.replace("[hl]", "")
 
-    house = house.replace("House of ", "")
+    # I don't like spaces in file names :P
+    if file_name_safe:
+        no_space = True
 
-    return f"{house}, {stage}"
+    if no_space:
+        # replace spaces with underscores
+        string = string.replace(" ", "_")
+
+    if file_name_safe:
+        keep = (".", "_")
+        string = "".join(
+            c for c in string if c.isalnum() or c in keep
+        )
+
+
+    return string.strip()
+
 
 
 if __name__ == "__main__":
