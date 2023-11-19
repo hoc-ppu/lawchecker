@@ -1,8 +1,10 @@
 import logging
 import re
 import sys
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+import click
 import pandas as pd
 from dateutil import parser as date_parser
 from lxml import etree
@@ -15,8 +17,16 @@ NSMAP = {
 }
 
 
-# BEGIN LOGGER
+# --------------------------- BEGIN LOGGER --------------------------- #
+
 logger = logging.getLogger('renumbered')
+
+log_file_Path = Path(Path.home(), 'logs', 'renumbered.log').absolute()
+log_file_Path.parent.mkdir(parents=True, exist_ok=True)
+
+# create file handler which logs even debug messages
+fh = RotatingFileHandler(str(log_file_Path), mode='a', maxBytes=1024 * 1024)
+fh.setLevel(logging.DEBUG)
 
 ch = logging.StreamHandler()  # create console handler
 ch.setLevel(logging.WARNING)
@@ -25,10 +35,37 @@ ch.setLevel(logging.WARNING)
 formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 # add formatter to the handler(s)
 ch.setFormatter(formatter)
+fh.setFormatter(formatter)
 
 logger.addHandler(ch)  # add the handler to the logger
-# END LOGGER
+logger.addHandler(fh)
 
+
+# -------------------- Begin comand line interface ------------------- #
+
+@click.command()
+@click.option(
+    '--input-folder',
+    help="Specify a different folder for finding bill XML."
+         " Defaults to current directory.",
+)
+@click.option(
+    "--output-folder",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
+    help="Specify a different folder for the output CSV file(s) to be saved in."
+         " Defaults to current directory.",
+)
+def cli(input_folder, output_folder):
+
+    """
+    Takes in a UK bill XML files. Return CSV file(s) comparing
+    the numbering of each version of the same bill.
+    """
+
+    compare_bills(input_folder, output_folder)
+
+
+# ------------------------ Begin main program ------------------------ #
 
 class Bill:
 
@@ -136,10 +173,15 @@ class Bill:
 
         return attrs
 
-def main():
+def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
 
-    # get all the XML files in the current directory
-    xml_files = Path(".").glob("*.xml")
+    if in_folder is None:
+        in_folder = Path(".")  # use current directory
+
+    logger.info(f"Folder path: {in_folder.resolve()}")
+
+    # get all the XML files
+    xml_files = in_folder.glob("*.xml")
 
     bills_container: dict[str, list[Bill]] = {}
 
@@ -183,22 +225,16 @@ def main():
 
         for x in data_frames[1:]:
             # outer join all dataframes
-            # left_df = left_df.set_index('guid').join(df.set_index('guid'), how="outer", rsuffix="_r")
-            df = df.merge(
-                x,
-                how="outer",
-                on='guid',
-                suffixes=("_l", "_r")
-            )
+            df = df.merge(x, how="outer", on='guid', suffixes=("_l", "_r"))
+            # df = df.set_index('guid').join(x.set_index('guid'), how="outer", rsuffix="_r")
 
-        # sadly an outer join doesn't keep the order of the rows
-        # so we need to sort the rows by the order column
+        # Need to sort rows as, sadly, an outer join doesn't keep the order.
 
-        # get the ordering columns
+        # get the ordering columns (suffixes are added during join)
         order_cols = [col for col in df.columns if col.startswith("order")]
 
         # add master order column with average order (NaN not included in ave.)
-        df['order_master'] = df[list(order_cols)].mean(axis=1)
+        df['order_master'] = df[order_cols].mean(axis=1)
         order_cols.append('order_master')
 
         df.sort_values(by=['order_master'], inplace=True)
@@ -207,8 +243,19 @@ def main():
         df.drop(columns=order_cols, inplace=True)
 
         file_name = f"{clean(title, file_name_safe=True)}_compare.csv"
+
+        if out_folder is not None:
+            file_name = out_folder / file_name
+        else:
+            file_name = Path(file_name)
+
         df.to_csv(file_name, index=False)
-        print(f"{file_name=}")
+
+        msg = f"Saved {file_name.resolve()}"
+        logger.info(msg)
+        print(msg)
+
+    print("Done")
 
 
 def clean(string: str, no_space=False, file_name_safe=False) -> str:
@@ -221,7 +268,7 @@ def clean(string: str, no_space=False, file_name_safe=False) -> str:
     # bill title cleaning
     string = string.replace("[hl]", "")
 
-    # I don't like spaces in file names :P
+    # I don't like spaces in file names 😛
     if file_name_safe:
         no_space = True
 
@@ -231,14 +278,10 @@ def clean(string: str, no_space=False, file_name_safe=False) -> str:
 
     if file_name_safe:
         keep = (".", "_")
-        string = "".join(
-            c for c in string if c.isalnum() or c in keep
-        )
-
+        string = "".join(c for c in string if c.isalnum() or c in keep)
 
     return string.strip()
 
 
-
 if __name__ == "__main__":
-    main()
+    cli()
