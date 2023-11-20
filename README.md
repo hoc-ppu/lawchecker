@@ -1,5 +1,5 @@
-# Make papers index
-Create the papers index for the House of Commons Journal. A python script can output XML (that can be typeset in InDesign) either from an existing input raw XML file or via querying the [papers laid API](http://services.paperslaid.parliament.uk/).
+# Compare bill numbering
+A python script that compares the numbering of sections and schedule paragraphs in two or more versions of a bill. The output is CSV file(s) which indicate when sections or schedule paragraphs are insearted or removed. You can can also process several different bills at once, e.g. bill A (with 3 versions) and bill B (with 2 versions).
 
 
 ## Before you start
@@ -24,7 +24,7 @@ To activate on Windows, run:
 venv\Scripts\Activate.ps1
 ```
 
-If you run into permission trouble, [this article](https://dev.to/aka_anoop/enabling-virtualenv-in-windows-powershell-ka3) may help.
+If you run into **permission trouble**, [this article](https://dev.to/aka_anoop/enabling-virtualenv-in-windows-powershell-ka3) may help.
 </details>
 
 <details>
@@ -52,14 +52,18 @@ pip install -e .[dev]
 ```
 
 ## Usage
-Once installed you can use the `compare_bills`. By default this will find XML files in the current folder, then create and save CSV file(s) with teh numbering of sections and schedule paragraphs listed. By default the CSV file(s) are saved in the current folder.
+Once installed you can use the `compare_bills` command line tool. By default this will find XML files in the current folder, then create and save CSV file(s) with the numbering of sections and schedule paragraphs listed. By default the CSV file(s) are saved in the current folder.
 
 For options/further help run:
 ```bash
 compare_bills --help
 ```
 
+### Example
 
+```bash
+compare_bills --input-folder example_files
+```
 
 
 
