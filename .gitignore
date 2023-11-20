@@ -1,6 +1,7 @@
 
 # R junk
 .Rapp.history
+R_example_fiels/
 
 # ignore CSV files
 *.csv
