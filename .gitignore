@@ -4,6 +4,9 @@
 R_example_files/
 packages.txt
 R console.txt
+.RData
+.Rhistory
+installPkgs.R
 
 # ignore CSV files
 *.csv
