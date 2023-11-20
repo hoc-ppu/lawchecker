@@ -68,6 +68,6 @@ compare_bills --input-folder example_files
 ```
 
 You should see two CSV files have been created: `data_protection_and_digital_information_no_2.csv` & `social_housing_regulation.csv`.
-You should notice that items are added and removed and that items are renumbered as a result. For example, in the `social_housing_regulation.csv` file you should see (amongst other changes) that the section (a.k.a. clause) '*Standards relating to energy demand*' [guid: _6b3c4b1c-9203-4a45-bdfa-c31570fc8636] was added in the Lords report stage and removed again at the commons committee stage.
+You should notice that items (sections [a.k.a clauses] and schedule paragraphs) are added and removed and that items are renumbered as a result. For example, in the `social_housing_regulation.csv` file you should see (amongst other changes) that the section '*Standards relating to energy demand*' [guid: _6b3c4b1c-9203-4a45-bdfa-c31570fc8636] was added in the Lords report stage and removed again at the [commons committee stage](https://publications.parliament.uk/pa/bills/cbill/58-03/0177/amend/socialregulation_rpro_pbc_1129.pdf#page=4).
 
 
