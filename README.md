@@ -1,5 +1,5 @@
 # Compare bill numbering
-A python script that compares the numbering of sections and schedule paragraphs in two or more versions of a bill. The output is CSV file(s) which indicate when sections or schedule paragraphs are insearted or removed. You can can also process several different bills at once, e.g. bill A (with 3 versions) and bill B (with 2 versions).
+A python script that compares the numbering of sections and schedule paragraphs in two or more versions of a UK parliament bill. The bills must be provided as LawMaker XML, the UK parliament can provide XML for recent bills. The output is CSV file(s) which indicate when sections or schedule paragraphs are insearted or removed. You can also process several different bills at once, e.g. bill A (with 3 versions) and bill B (with 2 versions).
 
 
 ## Before you start
