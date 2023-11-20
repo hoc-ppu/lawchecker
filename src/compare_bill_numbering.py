@@ -8,7 +8,6 @@ import click
 import pandas as pd
 from dateutil import parser as date_parser
 from lxml import etree
-from lxml.etree import _Element
 from pandas import Series
 
 NSMAP = {
@@ -129,7 +128,6 @@ class Bill:
 
     def get_sections(self):
 
-        # sort_order_col_name = f"order_{self.published_dt}"
         ref_col_name = clean(self.version, no_space=True)
 
         # ref_col_name will contain eId
@@ -145,12 +143,12 @@ class Bill:
             "and not(contains(@eId, 'qstr'))]"     # and qstr (duplicated)
         )
 
-        sections_paragraphs: list[_Element] = self.root.xpath(xpath, namespaces=NSMAP)  # type: ignore
+        secs_n_paras: list[etree._Element] = self.root.xpath(xpath, namespaces=NSMAP)  # type: ignore
 
-        if len(sections_paragraphs) == 0:
+        if len(secs_n_paras) == 0:
             logger.warning("No sections or paragraphs found")
 
-        for element in sections_paragraphs:
+        for element in secs_n_paras:
 
             guid = element.get('GUID', None)
             eid = element.get('eId', None)
@@ -192,9 +190,8 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
 
     bills_container: dict[str, list[Bill]] = {}
 
+    # parse each bill and store in dictionary
     for xml_file in xml_files:
-
-        # parse bills and sort into dictionary with bill title as key
 
         logger.info(f"{xml_file=}")
 
@@ -209,7 +206,6 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
     # The value is a list of Bill objects. So different versions of the same
     # bill are grouped together.
 
-    # we should further order the list of bills by the published date
     for title, bills in bills_container.items():
 
         # if there is less than 2 bills, we can't compare them
@@ -231,14 +227,14 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
 
             data_frames.append(df)
 
+        # outer join all dataframes
         df = data_frames[0]
-
         for i, x in enumerate(data_frames[1:]):
-            # outer join all dataframes
             # suffixes are added to column names to avoid collision when joining
             df = df.merge(x, how="outer", on='guid', suffixes=(f"_{i}l", f"_{i}r"))
 
-        # Need to sort rows as, sadly, an outer join doesn't keep the order.
+
+        # Need to sort rows as (sadly) an outer join doesn't keep the order.
 
         # get the ordering columns (suffixes are added during join)
         order_cols = [col for col in df.columns if col.startswith("order")]
@@ -247,26 +243,25 @@ def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
         df['order_master'] = df[order_cols].mean(axis=1)
         order_cols.append('order_master')
 
-        df.sort_values(by=['order_master'], inplace=True)
+        df.sort_values(by='order_master', inplace=True)
 
         # remove the order columns
         df.drop(columns=order_cols, inplace=True)
 
-        file_name = f"{clean(title, file_name_safe=True)}_compare.csv"
+        csv_file_name = f"{clean(title, file_name_safe=True)}.csv"
 
         if out_folder is not None:
-            file_name = out_folder / file_name
+            csv_file_name = out_folder / csv_file_name
         else:
-            file_name = Path(file_name)
+            csv_file_name = Path(csv_file_name)
 
-        df.to_csv(file_name, index=False)
+        df.to_csv(csv_file_name, index=False)
 
-        msg = f"Saved {file_name.resolve()}"
+        msg = f"Saved: {csv_file_name.resolve()}"
         logger.info(msg)
         print(msg)
 
     print("Done")
-
 
 
 def get_sort_number(row: Series) -> int:
@@ -283,7 +278,6 @@ def get_sort_number(row: Series) -> int:
         return int(string)
     except ValueError:
         return 0  # problem so put these at the top
-
 
 
 def clean(string: str, no_space=False, file_name_safe=False) -> str:
