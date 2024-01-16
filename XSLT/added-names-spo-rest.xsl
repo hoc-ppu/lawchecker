@@ -30,7 +30,7 @@
 
     <xsl:template match="m:properties">
         <item>
-            <xsl:apply-templates select="*[self::d:Amendments|self::d:Names|self::d:Id|self::d:Bill|self::d:Comments|self::d:Namestoremove|self::d:PPU_x002d_omitfromreport]"/>
+            <xsl:apply-templates select="*[self::d:Amendments|self::d:Names|self::d:FurtherNamestoadd|self::d:Id|self::d:Bill|self::d:Comments|self::d:Namestoremove|self::d:PPU_x002d_omitfromreport]"/>
         </item>
     </xsl:template>
 
@@ -168,8 +168,25 @@
 
 
     <!-- Names to add -->
-    <xsl:template match="d:Names[not(@m:null='true')]">
-        <names-to-add>
+    <!-- and Futher names to add -->
+    <xsl:template match="d:Names[not(@m:null='true')]|d:FurtherNamestoadd[not(@m:null='true')]">
+        <xsl:variable name="furtherName" select="local-name()='FurtherNamestoadd'"/>
+        <xsl:message><xsl:value-of select="$furtherName"/></xsl:message>
+        
+        <xsl:variable name="continingElement">
+            <xsl:choose>
+                <xsl:when test="$furtherName">
+                    <xsl:value-of select="'further-names-to-add'" />
+                </xsl:when>
+                <xsl:otherwise>
+                    <xsl:value-of select="'names-to-add'" />
+                </xsl:otherwise>
+            </xsl:choose>
+        </xsl:variable>
+
+        <xsl:message><xsl:value-of select="$continingElement"/></xsl:message>
+
+        <xsl:element name="{$continingElement}">
             <original-string><xsl:value-of select="normalize-space(.)"/></original-string>
             <matched-names>
                 <xsl:choose>
@@ -180,7 +197,8 @@
                                 <xsl:otherwise>
                                     <xsl:analyze-string select="." regex="^\s?(&#x2022;|&#x2d;|&#x2014;|&#x2015;|&#x2010;|&#x2011;|&#xad;|&#x2012;|&#x2013;|&#x2212;)?\s?(.+[^ MP])">
                                         <xsl:matching-substring>
-                                            <name><xsl:value-of select="regex-group(2)"/></name>
+                                            <xsl:if test="not($furtherName)"><name><xsl:value-of select="regex-group(2)"/></name></xsl:if>
+                                            <xsl:if test="$furtherName"><xsl:message>further name</xsl:message><furtherName><xsl:value-of select="regex-group(2)"/></furtherName></xsl:if>
                                         </xsl:matching-substring>
                                     </xsl:analyze-string>
                                 </xsl:otherwise>
@@ -191,9 +209,9 @@
                         <name><xsl:value-of select="normalize-space(.)"/></name>
                     </xsl:otherwise>
                 </xsl:choose>
-
+                
             </matched-names>
-        </names-to-add>
+        </xsl:element>
     </xsl:template>
 
 
