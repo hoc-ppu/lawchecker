@@ -24,7 +24,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(644, 960)
+        MainWindow.resize(644, 750)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.horizontalLayout = QHBoxLayout(self.centralwidget)
@@ -236,7 +236,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Added Names Report", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"SupCheck", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Change date:", None))
         self.createWorkingFolderBtn.setText(QCoreApplication.translate("MainWindow", u"Create Folder", None))
         self.label_5.setText(QCoreApplication.translate("MainWindow", u"Create working folder:", None))
