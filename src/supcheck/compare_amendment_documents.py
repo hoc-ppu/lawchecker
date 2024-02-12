@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import difflib
-import re
 import sys
 import webbrowser
 from collections.abc import Mapping
@@ -18,6 +16,7 @@ from supcheck import templates
 from supcheck import xpath_helpers as xp
 from supcheck.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
 from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
+from supcheck.utils import diff_xml_content
 
 # TODO: [x] put all sections in HTML document
 # Add messages for Nil return
@@ -40,10 +39,7 @@ from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 # check_amendments.py LM_XML/digital_rm_rep_0825.xml LM_XML/digital_rm_rep_0906.xml
 
 
-# html diff object
-html_diff = difflib.HtmlDiff(tabsize=6)
 
-nbsp = re.compile(r"(?<!&nbsp;)&nbsp;(?!</span>)(?!&nbsp;)")
 
 
 class ChangedNames(NamedTuple):
@@ -264,8 +260,8 @@ class Report:
         """
         Build up HTML document with various automated checks on amendments
         """
-
-        insert_point = self.html_root.find('.//div[@id="content-goes-here"]')
+        xp = './/div[@id="content-goes-here"]'
+        insert_point: _Element = self.html_root.find(xp)  # type: ignore
         # print(etr)
         insert_point.extend(
             (
@@ -578,7 +574,7 @@ class Report:
             logger.warning(f"{new_amdt.num}: no sponsors found")
             return
 
-        dif_html_str = self._diff_xml_content(
+        dif_html_str = diff_xml_content(
             new_amdt_heading,
             old_amdt_heading,
             fromdesc=old_amdt.parent_doc.file_name,
@@ -601,13 +597,13 @@ class Report:
         old_amdt_content = xp.get_amdt_content(old_amdt.xml)
 
         if len(new_amdt_content) == 0 or len(old_amdt_content) == 0:
-            logger.warning(f"{new_amdt.num}: no sponsors found")
+            logger.warning(f"{new_amdt.num}: has no content")
             return
         else:
             new_amdt_content = new_amdt_content[0]
             old_amdt_content = old_amdt_content[0]
 
-        dif_html_str = self._diff_xml_content(
+        dif_html_str = diff_xml_content(
             new_amdt_content,
             old_amdt_content,
             fromdesc=old_amdt.parent_doc.file_name,
@@ -616,45 +612,7 @@ class Report:
         if dif_html_str is not None:
             self.changed_amdts.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
-    def _diff_xml_content(
-        self,
-        new_xml: _Element,
-        old_xml: _Element,
-        fromdesc: str = "",
-        todesc: str = "",
-    ):
-        """
-        Return an HTML string containing a tables showing the differences
-        between old_xml and new_xml.
-        """
 
-        # remove the unnecessary whitespace before comparing the text content
-        old_text_content = xp.text_content(clean_whitespace(old_xml))
-        new_text_content = xp.text_content(clean_whitespace(new_xml))
-
-        if new_text_content == old_text_content:
-            # no changes
-            return
-
-        fromlines = old_text_content.splitlines()
-        tolines = new_text_content.splitlines()
-
-        dif_html_str = html_diff.make_table(
-            fromlines,
-            tolines,
-            fromdesc=fromdesc,
-            todesc=todesc,
-            context=True,
-            numlines=3,
-        )
-        dif_html_str = dif_html_str.replace('nowrap="nowrap"', "")
-
-        # remove nbsp but only when not in a span (as spans are used for changes
-        # e.g. <span class="diff_sub">) and not if this nbsp is folowed by
-        # another nbsp (as this is used for indentation)
-        dif_html_str = nbsp.sub(" ", dif_html_str)
-
-        return dif_html_str
 
 
 def main():
@@ -729,60 +687,6 @@ def find_duplicates(lst: list[str]) -> list[str]:
 
     return list()
 
-
-def clean_whitespace(parent_element: _Element) -> _Element:
-
-    """
-    Remove unwanted whitespace from parent_element and all its descendant
-    elements. Note: parent_element is modified in place.
-    Add a newline after parent_elements (which represent paragraphs)
-    """
-
-    # these are inline elements, we should leave them well alone
-    # I think defined here:
-    # https://docs.oasis-open.org/legaldocml/akn-core/v1.0/cos01/part2-specs/schemas/akomantoso30.xsd
-    # //xsd:schema/xsd:group[@name="HTMLinline"]/xsd:choice
-    inlines = ("b", "i", "a", "u", "sub", "sup", "abbr", "span")
-
-    # paragraph elements. Add new line after.
-    paragraphs = ("p", "docIntroducer", "docProponent", "heading",)  # "mod"?
-
-    for element in parent_element.iter("*"):
-        tag = QName(element).localname
-
-        if tag in inlines:
-            continue
-
-        # remove whitespace
-        if element.text:
-            element.text = element.text.strip()
-        if element.tail:
-            element.tail = element.tail.strip()
-
-
-        is_block_instruction = tag == "block" and element.get("name") == "instruction"
-
-        if tag in paragraphs or is_block_instruction:
-            # Add in newlines after each of these elements
-            try:
-                last_child = element[-1]
-            except IndexError:
-                last_child = None
-
-            if last_child is not None:
-                # add test for this.
-                if last_child.tail:
-                    last_child.tail = f"{last_child.tail}\n"
-                else:
-                    last_child.tail = "\n"
-            else:
-                element.text = f"{element.text}\n"
-
-        # Add in tab after num element
-        if tag == "num" and element.text:
-            element.text = f"{element.text}\t"
-
-    return parent_element
 
 
 if __name__ == "__main__":

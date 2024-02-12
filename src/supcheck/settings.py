@@ -1,6 +1,8 @@
 import sys
 from pathlib import Path
 
+from lxml import etree
+
 # ---------------------- default files and paths --------------------- #
 DEFAULT_OUTPUT_NAME = "Added_Names_Report.html"
 
@@ -32,7 +34,7 @@ XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
 
 COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath("compare_report_template.html")
 
-WORKING_FOLDER: Path | None = None
+ANR_WORKING_FOLDER: Path | None = None
 
 
 DASH_XML_URL = (
@@ -47,10 +49,12 @@ XMLNS = "http://docs.oasis-open.org/legaldocml/ns/akn/3.0"  # akn is default ns
 UKL = "https://www.legislation.gov.uk/namespaces/UK-AKN"
 XSI = "http://www.w3.org/2001/XMLSchema-instance"
 
-NSMAP: dict[str, str] = {"dns": XMLNS, "ukl": UKL, "xsi": XSI}
+NSMAP: dict[str, str] = {"xmlns": XMLNS, "ukl": UKL, "xsi": XSI}
 
 # empty prefix [i.e. key=""] is allowed in some lxml
 # methods/functions but not others. E.g. it's allowed in
 # find but not allowed in xpath
 NSMAP2 = NSMAP.copy()
 NSMAP2[""] = XMLNS
+
+PARSER = etree.XMLParser(remove_pis=True, remove_comments=True)
