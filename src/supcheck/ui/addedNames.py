@@ -16,9 +16,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDateEdit, QFrame,
-    QGridLayout, QHBoxLayout, QLabel, QMainWindow,
-    QPushButton, QSizePolicy, QSpacerItem, QTabWidget,
-    QVBoxLayout, QWidget)
+    QGridLayout, QLabel, QMainWindow, QPushButton,
+    QSizePolicy, QSpacerItem, QTabWidget, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -27,8 +27,8 @@ class Ui_MainWindow(object):
         MainWindow.resize(644, 750)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.horizontalLayout = QHBoxLayout(self.centralwidget)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.verticalLayout_6 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
         self.tabWidget = QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName(u"tabWidget")
         self.AddedNamesTab = QWidget()
@@ -221,14 +221,68 @@ class Ui_MainWindow(object):
         self.verticalLayout.addWidget(self.widget_2)
 
         self.tabWidget.addTab(self.CheckAmendmentsTab, "")
+        self.CompareBillsTab = QWidget()
+        self.CompareBillsTab.setObjectName(u"CompareBillsTab")
+        self.verticalLayout_7 = QVBoxLayout(self.CompareBillsTab)
+        self.verticalLayout_7.setObjectName(u"verticalLayout_7")
+        self.gridLayout_6 = QGridLayout()
+        self.gridLayout_6.setObjectName(u"gridLayout_6")
+        self.label_10 = QLabel(self.CompareBillsTab)
+        self.label_10.setObjectName(u"label_10")
+        self.label_10.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
-        self.horizontalLayout.addWidget(self.tabWidget)
+        self.gridLayout_6.addWidget(self.label_10, 1, 0, 1, 1)
+
+        self.new_bill_XML_btn = QPushButton(self.CompareBillsTab)
+        self.new_bill_XML_btn.setObjectName(u"new_bill_XML_btn")
+
+        self.gridLayout_6.addWidget(self.new_bill_XML_btn, 2, 1, 1, 1)
+
+        self.select_label_3 = QLabel(self.CompareBillsTab)
+        self.select_label_3.setObjectName(u"select_label_3")
+        self.select_label_3.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.gridLayout_6.addWidget(self.select_label_3, 2, 0, 1, 1)
+
+        self.old_bill_XML_btn = QPushButton(self.CompareBillsTab)
+        self.old_bill_XML_btn.setObjectName(u"old_bill_XML_btn")
+
+        self.gridLayout_6.addWidget(self.old_bill_XML_btn, 1, 1, 1, 1)
+
+        self.instruction_label_3 = QLabel(self.CompareBillsTab)
+        self.instruction_label_3.setObjectName(u"instruction_label_3")
+        self.instruction_label_3.setWordWrap(True)
+
+        self.gridLayout_6.addWidget(self.instruction_label_3, 0, 0, 1, 2)
+
+        self.vs_code_diff = QCheckBox(self.CompareBillsTab)
+        self.vs_code_diff.setObjectName(u"vs_code_diff")
+
+        self.gridLayout_6.addWidget(self.vs_code_diff, 3, 1, 1, 1)
+
+        self.gridLayout_6.setColumnStretch(0, 1)
+        self.gridLayout_6.setColumnStretch(1, 1)
+
+        self.verticalLayout_7.addLayout(self.gridLayout_6)
+
+        self.create_bill_compare_btn = QPushButton(self.CompareBillsTab)
+        self.create_bill_compare_btn.setObjectName(u"create_bill_compare_btn")
+
+        self.verticalLayout_7.addWidget(self.create_bill_compare_btn)
+
+        self.verticalSpacer1 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        self.verticalLayout_7.addItem(self.verticalSpacer1)
+
+        self.tabWidget.addTab(self.CompareBillsTab, "")
+
+        self.verticalLayout_6.addWidget(self.tabWidget)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
         self.run_btn.setDefault(False)
 
 
@@ -260,5 +314,13 @@ class Ui_MainWindow(object):
         self.days_between_chk.setText(QCoreApplication.translate("MainWindow", u"Days between papers", None))
         self.create_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Create compare report", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CheckAmendmentsTab), QCoreApplication.translate("MainWindow", u"Check Amendments", None))
+        self.label_10.setText(QCoreApplication.translate("MainWindow", u"Old XML file", None))
+        self.new_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
+        self.select_label_3.setText(QCoreApplication.translate("MainWindow", u"New XML file", None))
+        self.old_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
+        self.instruction_label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>You can create a report comparing different versions of a bill (e.g. the 2nd reading and as amended in committee). This report will show you: Added and removed clauses or schedule paragraphs, and standing clauses and schedule paragraphs with changes.</p><p>Below the old XML file is the XML downloaded from LawMaker for the older version of this bill. The new XML file is the XML downloaded from Lawmaker for the newer version of this bill.</p><p>Tick VS Code compare to create a comparison of the bills using the diff feature of <a href=\"https://code.visualstudio.com/\"><span style=\" text-decoration: underline; color:#094fd1;\">VS Code</span></a>. Note you must have VS Code installed to use this feature.</p><p><br/></p></body></html>", None))
+        self.vs_code_diff.setText(QCoreApplication.translate("MainWindow", u"VS Code compare", None))
+        self.create_bill_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Compare bills", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.CompareBillsTab), QCoreApplication.translate("MainWindow", u"Compare Bills", None))
     # retranslateUi
 

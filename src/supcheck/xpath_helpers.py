@@ -32,7 +32,23 @@ class XPath(etree.XPath, Generic[T]):
 
 
 get_amendments = XPath(
-    "//dns:component[dns:amendment]",
+    "//xmlns:component[xmlns:amendment]",
+    expected_type=list[_Element],
+)
+
+# here sections will include clauses and schedule paragraphs
+get_sections = XPath(
+    "//xmlns:section[not(ancestor::xmlns:mod)]",
+    expected_type=list[_Element],
+)
+
+get_schedules = XPath(
+    "//xmlns:hcontainer[@name='schedule'][not(ancestor::xmlns:mod)]",
+    expected_type=list[_Element],
+)
+
+get_sched_paras = XPath(
+    ".//xmlns:paragraph[not(ancestor::xmlns:mod)]",
     expected_type=list[_Element],
 )
 
@@ -41,18 +57,18 @@ text_content = XPath("string()", expected_type=type(str()))
 # get MP name elements. These are proposer and supporters elements
 get_name_elements = XPath(
     (
-        "dns:amendmentHeading/dns:block[@name='proposer' or"
+        "xmlns:amendmentHeading/xmlns:block[@name='proposer' or"
         " @name='supporters']/*[@refersTo]"
     ),
     expected_type=list[_Element],
 )
 
 get_amdt_heading = XPath(
-    "dns:amendmentHeading[1]",
+    "xmlns:amendmentHeading[1]",
     expected_type=list[_Element],
 )
 
 get_amdt_content = XPath(
-    "dns:amendmentContent[1]",
+    "xmlns:amendmentContent[1]",
     expected_type=list[_Element],
 )

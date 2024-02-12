@@ -7,11 +7,14 @@ from datetime import datetime
 from pathlib import Path
 
 from PySide6 import QtCore, QtWidgets
+from PySide6.QtWidgets import QMessageBox
 
 from supcheck.supcheck_logger import logger  # must be before submodules...
 from supcheck import added_names_report, settings
 from supcheck.compare_amendment_documents import Report
-from supcheck.settings import NSMAP, WORKING_FOLDER
+from supcheck.compare_bill_documents import Report as BillReport
+from supcheck.compare_bill_documents import diff_in_vscode
+from supcheck.settings import ANR_WORKING_FOLDER, NSMAP
 from supcheck.submodules.python_toolbox import pp_xml_lxml
 from supcheck.ui.addedNames import Ui_MainWindow
 
@@ -34,55 +37,71 @@ def main():
             self.dash_xml_file = ""  # will be the xml file path
             self.lm_xml_folder = ""  # will be the lm xml folder path
 
-            self.lm_new_xml_file = ""  # the new LM XML file for the compare
-            self.lm_old_xml_file = ""  # the old LM XML file for the compare
+            # LawMaker XML amendment files for the amenmet compare compare
+            self.lm_new_xml_file = ""
+            self.lm_old_xml_file = ""
+
+            # LawMaker XML bill files for the bill compare
+            self.new_bill_xml_file = ""
+            self.old_bill_xml_file = ""
 
             self.workingFolderDateEdit.setDate(QtCore.QDate.currentDate())
-            self.createWorkingFolderBtn.clicked.connect(self.create_working_folder)
+            self.createWorkingFolderBtn.clicked.connect(self.anr_create_working_folder)
 
-            self.openBrowser_btn.clicked.connect(self.open_browser)
+            self.openBrowser_btn.clicked.connect(self.open_dash_xml_in_browser)
 
             self.xmlFile_btn.clicked.connect(self.open_dash_xml_file)
 
-            self.fm_xml_btn.clicked.connect(self.open_amd_xml_dir)
+            self.fm_xml_btn.clicked.connect(self.anr_open_amd_xml_dir)
 
-            self.run_btn.clicked.connect(self.run_xslts)
+            self.run_btn.clicked.connect(self.anr_run_xslts)
 
-            # tab 2. compare tab
-            self.old_compare_XML_btn.clicked.connect(self.open_old_amd_xml)
-            self.new_compare_XML_btn.clicked.connect(self.open_new_amd_xml)
-            self.create_compare_btn.clicked.connect(self.create_compare)
+            # tab 2. compare amendments tab
+            self.old_compare_XML_btn.clicked.connect(self.amd_open_old_xml)
+            self.new_compare_XML_btn.clicked.connect(self.amd_open_new_xml)
+            self.create_compare_btn.clicked.connect(self.amd_create_compare)
             self.create_compare_btn.setFocus()  # focus this button
 
             self.dated_folder_Path: Path | None = None
 
-        def create_working_folder(self):
+            # tab 3. compare bills tab
+            self.new_bill_XML_btn.clicked.connect(self.bill_open_new_xml)
+            self.old_bill_XML_btn.clicked.connect(self.bill_open_old_xml)
+            self.create_bill_compare_btn.clicked.connect(self.bill_create_compare)
+
+        def anr_create_working_folder(self):
             date_obj: datetime = self.workingFolderDateEdit.date().toPython()  # type: ignore
             formatted_date = date_obj.strftime("%Y-%m-%d")
 
             try:
                 self.dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formatted_date)
                 self.dated_folder_Path.mkdir(parents=True, exist_ok=True)
-                QtWidgets.QMessageBox.information(
+                QMessageBox.information(
                     window, "Info", f"Working folder is:  {self.dated_folder_Path}"
                 )
 
-                global WORKING_FOLDER
-                WORKING_FOLDER = self.dated_folder_Path
+                global ANR_WORKING_FOLDER
+                ANR_WORKING_FOLDER = self.dated_folder_Path
 
                 # create subfolders for dashboard XML (and intermediate)
                 # as well as lawmaker/framemaker XML
-                lawmaker_xml = self.dated_folder_Path.joinpath(settings.XML_FOLDER)
-                lawmaker_xml.mkdir(parents=True, exist_ok=True)
+                anr_lawmaker_xml = self.dated_folder_Path.joinpath(settings.XML_FOLDER)
+                anr_lawmaker_xml.mkdir(parents=True, exist_ok=True)
                 dashboard_data = self.dated_folder_Path.joinpath(settings.DASHBOARD_DATA_FOLDER)
                 dashboard_data.mkdir(parents=True, exist_ok=True)
 
             except Exception as e:
-                QtWidgets.QMessageBox.critical(
+                QMessageBox.critical(
                     window, "Error", f"Could not create folder {repr(e)}"
                 )
 
-        def open_browser(self):
+        def open_dash_xml_in_browser(self):
+            """
+            Load the dashboard XML in the default web browser.
+
+            The user must download this first as there is security
+            so we cant request it directly
+            """
             webbrowser.open(settings.DASH_XML_URL)
 
         def open_dash_xml_file(self):
@@ -94,7 +113,7 @@ def main():
                 self, "Open dashboard data file", str(default_location)
             )
 
-        def open_amd_xml_dir(self):
+        def anr_open_amd_xml_dir(self):
             default_location = settings.PARENT_FOLDER
             if self.dated_folder_Path is not None:
                 default_location = self.dated_folder_Path
@@ -103,7 +122,7 @@ def main():
                 self, "Select Folder", str(default_location)
             )
 
-        def open_old_amd_xml(self):
+        def amd_open_old_xml(self):
             """Open the old amendment XML file.
 
             This is for the comparing the amendment paper the user is working
@@ -116,7 +135,7 @@ def main():
                 self, "Open old XML file", str(default_location), "XML files (*.xml)"
             )
 
-        def open_new_amd_xml(self):
+        def amd_open_new_xml(self):
             """Open the old amendment XML file.
 
             This is for the comparing the amendment paper the user is working
@@ -132,7 +151,36 @@ def main():
                 self, "Open old XML file", str(default_location), "XML files (*.xml)"
             )
 
-        def run_xslts(self):
+        def bill_open_old_xml(self):
+            """
+            Open the new bill XML file.
+            """
+
+            default_location = settings.PARENT_FOLDER
+
+            if self.dated_folder_Path is not None:
+                default_location = self.dated_folder_Path
+
+            self.old_bill_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Open old XML file", str(default_location), "XML files (*.xml)"
+            )
+
+        def bill_open_new_xml(self):
+            """
+            Open the new bill XML file.
+            """
+
+            default_location = settings.PARENT_FOLDER
+
+            old_bill_Path = Path(self.old_bill_xml_file)
+            if old_bill_Path.exists() and old_bill_Path.is_file():
+                default_location = old_bill_Path.parent
+
+            self.new_bill_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self, "Open new XML file", str(default_location), "XML files (*.xml)"
+            )
+
+        def anr_run_xslts(self):
             lm_xml_folder_Path: Path | None = None
 
             if self.lm_xml_folder:
@@ -147,27 +195,26 @@ def main():
                         input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
                     )
                 except Exception as e:
-                    QtWidgets.QMessageBox.critical(window, "Error", str(e))
+                    QMessageBox.critical(window, "Error", str(e))
                     print(traceback.print_exc(file=sys.stdout))
             else:
                 print("No XML file selected.")
 
-        def create_compare(self):
+        def amd_create_compare(self):
             """
-            Create the compare report
+            Create a report comparing the old and new amendment XML files.
             """
-
 
             # Check that Old and New XML fields have been populated
 
             if not self.lm_old_xml_file:
-                QtWidgets.QMessageBox.critical(
+                QMessageBox.critical(
                     window, "Error", "No old XML file selected."
                 )
                 return
 
             if not self.lm_new_xml_file:
-                QtWidgets.QMessageBox.critical(
+                QMessageBox.critical(
                     window, "Error", "No new XML file selected."
                 )
                 return
@@ -182,13 +229,13 @@ def main():
             new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
 
             if not old_xml:
-                QtWidgets.QMessageBox.critical(
+                QMessageBox.critical(
                     window, "Error", f"Old XML file is not valid XML: {old_xml_path}"
                 )
                 return
 
             if not new_xml:
-                QtWidgets.QMessageBox.critical(
+                QMessageBox.critical(
                     window, "Error", f"New XML file is not valid XML: {new_xml_path}"
                 )
                 return
@@ -198,17 +245,17 @@ def main():
             # element in both the Old and New XML is the same
 
             old_xml_uri = old_xml.find(
-                "//dns:FRBRWork/dns:FRBRalias[@name='alternateUri']",
+                "//xmlns:FRBRWork/xmlns:FRBRalias[@name='alternateUri']",
                 namespaces=NSMAP,
             )
             new_xml_uri = new_xml.find(
-                "//dns:FRBRWork/dns:FRBRalias[@name='alternateUri']",
+                "//xmlns:FRBRWork/xmlns:FRBRalias[@name='alternateUri']",
                 namespaces=NSMAP,
             )
 
             if old_xml_uri is not None and new_xml_uri is not None:
                 if old_xml_uri.attrib["value"] != new_xml_uri.attrib["value"]:
-                    QtWidgets.QMessageBox.critical(
+                    QMessageBox.critical(
                         window, "Error", "XML files do not represent the same bill"
                     )
                     return
@@ -216,15 +263,9 @@ def main():
 
             # Check that the date in the  <FRBRdate date="published" />
             # element in the New XML is more recent than the date in the Old XML
-
-            old_xml_date = old_xml.find(
-                "//dns:FRBRWork/dns:FRBRdate[@name='published']",
-                namespaces=NSMAP,
-            )
-            new_xml_date = new_xml.find(
-                "//dns:FRBRWork/dns:FRBRdate[@name='published']",
-                namespaces=NSMAP,
-            )
+            xpath = "//xmlns:FRBRWork/xmlns:FRBRdate[@name='published']"
+            old_xml_date = old_xml.find(xpath, namespaces=NSMAP)
+            new_xml_date = new_xml.find(xpath, namespaces=NSMAP)
 
             if old_xml_date is not None and new_xml_date is not None:
                 old_xml_date_obj = datetime.strptime(
@@ -235,20 +276,20 @@ def main():
                 )
 
                 if not (old_xml_date_obj < new_xml_date_obj):
-                    QtWidgets.QMessageBox.critical(
+                    QMessageBox.critical(
                         window,
                         "Error",
                         "New XML must be dated more recently than Old XML",
                     )
                     return
 
-            if WORKING_FOLDER is None:
+            if ANR_WORKING_FOLDER is None:
                 dated_folder_Path = settings.REPORTS_FOLDER.joinpath(
                     datetime.now().strftime("%Y-%m-%d")
                 ).resolve()
             else:
                 dated_folder_Path = (
-                    WORKING_FOLDER.resolve()
+                    ANR_WORKING_FOLDER.resolve()
                 )  # working folder selected in UI
             dated_folder_Path.mkdir(parents=True, exist_ok=True)
 
@@ -272,6 +313,66 @@ def main():
             )
 
             webbrowser.open(out_html_Path.resolve().as_uri())
+
+        def bill_create_compare(self):
+            """
+            Create the compare report for bills
+            """
+
+            if not self.old_bill_xml_file:
+                QMessageBox.critical(
+                    window, "Error", "No old XML file selected."
+                )
+                return
+
+            if not self.new_bill_xml_file:
+                QMessageBox.critical(
+                    window, "Error", "No new XML file selected."
+                )
+                return
+
+            old_xml_path = Path(self.old_bill_xml_file).resolve()
+            new_xml_path = Path(self.new_bill_xml_file).resolve()
+
+            # Check the Old and New XML files can both be parsed as XML
+
+            old_xml = pp_xml_lxml.load_xml(str(old_xml_path))
+            new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
+
+            print()
+
+            if not old_xml:
+                QMessageBox.critical(
+                    window, "Error", f"Old XML file is not valid XML: {old_xml_path}"
+                )
+                return
+
+            if not new_xml:
+                QMessageBox.critical(
+                    window, "Error", f"New XML file is not valid XML: {new_xml_path}"
+                )
+                return
+
+
+            out_html_Path = old_xml_path.parent.joinpath("Compare_Bills.html")
+
+            # checked status of checkbox
+            vs_code_diff: bool = self.vs_code_diff.isChecked()
+
+            report = BillReport(
+                old_xml_path,
+                new_xml_path,
+            )
+            report.html_tree.write(
+                str(out_html_Path),
+                encoding="utf-8",
+                doctype="<!DOCTYPE html>"
+            )
+
+            webbrowser.open(out_html_Path.resolve().as_uri())
+
+            if vs_code_diff:
+                diff_in_vscode(report.old_doc.root, report.new_doc.root)
 
 
     # use gui version

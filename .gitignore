@@ -10,8 +10,6 @@ junk/
 # we don't need PDFs i font think
 *.pdf
 
-# ignore .vscode project setting
-.vscode/
 
 # changed pyinstaller build folder
 python/pyinBuild/

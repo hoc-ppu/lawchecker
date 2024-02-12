@@ -207,10 +207,10 @@ def run_xslts(
     intermediate_file_name = f"{formated_date}_intermediate.xml"
     input_file_resave_name = f"{formated_date}_input_from_SP.xml"
 
-    if settings.WORKING_FOLDER is None:
+    if settings.ANR_WORKING_FOLDER is None:
         dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formated_date).resolve()
     else:
-        dated_folder_Path = settings.WORKING_FOLDER.resolve()  # working folder selected in UI
+        dated_folder_Path = settings.ANR_WORKING_FOLDER.resolve()  # working folder selected in UI
     dated_folder_Path.mkdir(parents=True, exist_ok=True)
 
     xml_folder_Path = dated_folder_Path.joinpath(settings.DASHBOARD_DATA_FOLDER)
