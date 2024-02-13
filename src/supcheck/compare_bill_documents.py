@@ -22,7 +22,8 @@ from supcheck.utils import diff_xml_content
 
 class ChangedSect(NamedTuple):
     guid: str
-    num: str
+    old_num: str
+    new_num: str
     html_diff: str
 
 class Section:
@@ -45,9 +46,9 @@ class Section:
 
         if schedule_number:
             # get the schedule number
-            self.num = f"{schedule_number} para {self.num}"
+            self.num = f"{schedule_number} p {self.num}"
         else:
-            self.num = f"Clause {self.num}"
+            self.num = f"C {self.num}"
 
         # for sorting
         self._sort_list: list[str | int] = []
@@ -104,6 +105,8 @@ class Bill(Mapping):
             schedule_number = schedules_xml.findtext("xmlns:num", namespaces=NSMAP)
             if not schedule_number:
                 schedule_number = "No number"
+            else:
+                schedule_number = schedule_number.replace("Schedule", "S")
 
             for schedule_paragraphs in xp.get_sched_paras(schedules_xml):
                 try:
@@ -287,7 +290,7 @@ class Report:
         # ----------- Removed and added amendments section ----------- #
 
         # create spans with section number add guid as tooltip.
-        span_template = '<span data-toggle="tooltip" title="{guid}">{num}</span> '
+        span_template = '<span class="col-12 col-sm-6 col-md-4 col-lg-3" data-toggle="tooltip" title="{guid}">{num}</span> '
         removed_spans = [
             span_template.format(guid=x.guid, num=x.num) for x in self.removed_sects
         ]
@@ -298,21 +301,22 @@ class Report:
         # build up text content
         removed_content = "Removed content: <strong>None</strong>"
         if self.removed_sects:
+
             removed_content = (
-                f"Removed content: <strong>{len(self.removed_sects)}</strong><br />"
-                f"{',&ensp;'.join(removed_spans)}"
+                f"<p class='h5'>Removed content: <span class='red'>{len(self.removed_sects)}</span><br />"
+                f"<div class='row'>{''.join(removed_spans)}</div><br />"
             )
         added_content = "Added content: <strong>None</strong>"
         if self.added_sects:
             added_content = (
-                f"Added content: <strong>{len(self.added_sects)}</strong><br />"
-                f"{',&ensp;'.join(added_spans)}"
+                f"<p class='h5'>Added content: <span class='red'>{len(self.added_sects)}</span><br /></p>"
+                f"<div class='row'>{''.join(added_spans)}</div><br />"
             )
 
         card = templates.Card("Added and removed clauses and schedule paragraphs")
         card.secondary_info.extend([
-            html.fromstring(f"<p>{added_content}</p>"),
-            html.fromstring(f"<p>{removed_content}</p>")
+            html.fromstring(f"<div>{added_content}</div>"),
+            html.fromstring(f"<div>{removed_content}</div>")
         ])
         return card.html
 
@@ -328,12 +332,29 @@ class Report:
                 f'<p><strong class="red">{len(self.changed_sects)}</strong>'
                 " clauses or schedule paragraphs have changed content: </p>\n"
             )
-            for item in self.changed_sects:
-                changed_sects += f"{item.html_diff}<br/>\n"
+
+            html_diffs: str = ""
+            grid_element = html.Element('div')
+            grid_element.classes.add('row')
+            for i, item in enumerate(self.changed_sects):
+                num_span = etree.SubElement(grid_element, 'span')
+                num_span.classes.update(('col-12', "col-sm-6", "col-md-4", "col-lg-3"))
+                anchor = etree.SubElement(num_span, 'a', attrib={"href": f"#diff-table-{i}"})
+                anchor.classes.add('hidden-until-hover')
+                if item.old_num == item.new_num:
+                    anchor.text = item.old_num
+                else:
+                    anchor.text = f"{item.old_num} ({item.new_num})"
+
+                # changed_nums += f"{item.num}<br/>\n"
+                html_diffs += f"<br/><div id=diff-table-{i}>{item.html_diff}</div>\n"
+
+            changed_sects += html.tostring(grid_element, encoding=str) + html_diffs
 
         card = templates.Card("Changed clauses  or schedule paragraphs")
         card.secondary_info.extend(html.fragments_fromstring(changed_sects))
-
+        b = set()
+        b.update
         return card.html
 
 
@@ -373,7 +394,7 @@ class Report:
         )
         if dif_html_str is not None:
             self.changed_sects.append(
-                ChangedSect(new_sect.guid, new_sect.num, dif_html_str)
+                ChangedSect(new_sect.guid, old_sect.num, new_sect.num, dif_html_str)
             )
             # print(f"{new_sect.guid=}\n{new_sect.num=}\n{dif_html_str=}")
 

@@ -10,7 +10,7 @@ dependencies = [
 requires-python = ">=3.10"
 
 [project.optional-dependencies]
-dev = ["pytest", "pyinstaller", "lxml-stubs"]
+dev = ["pytest", "pyinstaller", "types-lxml"]
 
 [build-system]
 requires = ["setuptools"]
