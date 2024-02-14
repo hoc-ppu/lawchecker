@@ -14,11 +14,11 @@
    <string>SupCheck</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_6">
+   <layout class="QVBoxLayout" name="verticalLayout_5">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>2</number>
+       <number>3</number>
       </property>
       <widget class="QWidget" name="AddedNamesTab">
        <attribute name="title">
@@ -368,6 +368,76 @@
         </item>
         <item>
          <spacer name="verticalSpacer1">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QWidget" name="Numbering">
+       <attribute name="title">
+        <string>Numbering</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_8">
+        <item>
+         <layout class="QGridLayout" name="gridLayout_4">
+          <item row="3" column="1">
+           <widget class="QPushButton" name="createCSVs">
+            <property name="text">
+             <string>Create CSV(s)</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QPushButton" name="selectNumberingFolder">
+            <property name="text">
+             <string>Select Folder</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_8">
+            <property name="text">
+             <string>Select folder containing XML:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Compare the numbering of sections (a.k.a. clauses) and schedule paragraphs in two or more versions of a UK parliament bill. The bills must be provided as LawMaker XML. The output is CSV file(s) which indicate when sections or schedule paragraphs are insearted or removed. You can also process several different bills at once, e.g. bill A (with 3 versions) and bill B (with 2 versions).
+
+Use the button below to select a folder which contains Bill XML files. </string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QLabel" name="label_12">
+            <property name="text">
+             <string>Use the button below to create CSV file(s) showing numbering changes between a versions of (a) bill(s).</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <spacer name="verticalSpacer_2">
           <property name="orientation">
            <enum>Qt::Vertical</enum>
           </property>

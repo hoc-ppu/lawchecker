@@ -6,6 +6,9 @@ dependencies = [
     "lxml",
     "pyside6-essentials",
     "saxonche",
+    "click",
+    "pandas",
+    "python-dateutil",
 ]
 requires-python = ">=3.10"
 
@@ -22,6 +25,7 @@ an_report = "supcheck.added_names_report:main"
 compare_report = "supcheck.compare_amendment_documents:main"
 startgui = "supcheck.supcheck_gui:main"
 compare_bills = "supcheck.compare_bill_documents:main"
+bill_numbering = "supcheck.compare_bill_numbering:cli"
 
 [tool.isort]
 profile = "black"

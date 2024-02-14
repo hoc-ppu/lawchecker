@@ -27,8 +27,8 @@ class Ui_MainWindow(object):
         MainWindow.resize(644, 750)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
-        self.verticalLayout_6 = QVBoxLayout(self.centralwidget)
-        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.verticalLayout_5 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.tabWidget = QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName(u"tabWidget")
         self.AddedNamesTab = QWidget()
@@ -275,14 +275,56 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.addItem(self.verticalSpacer1)
 
         self.tabWidget.addTab(self.CompareBillsTab, "")
+        self.Numbering = QWidget()
+        self.Numbering.setObjectName(u"Numbering")
+        self.verticalLayout_8 = QVBoxLayout(self.Numbering)
+        self.verticalLayout_8.setObjectName(u"verticalLayout_8")
+        self.gridLayout_4 = QGridLayout()
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
+        self.createCSVs = QPushButton(self.Numbering)
+        self.createCSVs.setObjectName(u"createCSVs")
 
-        self.verticalLayout_6.addWidget(self.tabWidget)
+        self.gridLayout_4.addWidget(self.createCSVs, 3, 1, 1, 1)
+
+        self.selectNumberingFolder = QPushButton(self.Numbering)
+        self.selectNumberingFolder.setObjectName(u"selectNumberingFolder")
+
+        self.gridLayout_4.addWidget(self.selectNumberingFolder, 1, 1, 1, 1)
+
+        self.label_8 = QLabel(self.Numbering)
+        self.label_8.setObjectName(u"label_8")
+        self.label_8.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.gridLayout_4.addWidget(self.label_8, 1, 0, 1, 1)
+
+        self.label_7 = QLabel(self.Numbering)
+        self.label_7.setObjectName(u"label_7")
+        self.label_7.setWordWrap(True)
+
+        self.gridLayout_4.addWidget(self.label_7, 0, 0, 1, 2)
+
+        self.label_12 = QLabel(self.Numbering)
+        self.label_12.setObjectName(u"label_12")
+        self.label_12.setWordWrap(True)
+
+        self.gridLayout_4.addWidget(self.label_12, 2, 0, 1, 2)
+
+
+        self.verticalLayout_8.addLayout(self.gridLayout_4)
+
+        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        self.verticalLayout_8.addItem(self.verticalSpacer_2)
+
+        self.tabWidget.addTab(self.Numbering, "")
+
+        self.verticalLayout_5.addWidget(self.tabWidget)
 
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(3)
         self.run_btn.setDefault(False)
 
 
@@ -322,5 +364,13 @@ class Ui_MainWindow(object):
         self.vs_code_diff.setText(QCoreApplication.translate("MainWindow", u"VS Code compare", None))
         self.create_bill_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Compare bills", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CompareBillsTab), QCoreApplication.translate("MainWindow", u"Compare Bills", None))
+        self.createCSVs.setText(QCoreApplication.translate("MainWindow", u"Create CSV(s)", None))
+        self.selectNumberingFolder.setText(QCoreApplication.translate("MainWindow", u"Select Folder", None))
+        self.label_8.setText(QCoreApplication.translate("MainWindow", u"Select folder containing XML:", None))
+        self.label_7.setText(QCoreApplication.translate("MainWindow", u"Compare the numbering of sections (a.k.a. clauses) and schedule paragraphs in two or more versions of a UK parliament bill. The bills must be provided as LawMaker XML. The output is CSV file(s) which indicate when sections or schedule paragraphs are insearted or removed. You can also process several different bills at once, e.g. bill A (with 3 versions) and bill B (with 2 versions).\n"
+"\n"
+"Use the button below to select a folder which contains Bill XML files. ", None))
+        self.label_12.setText(QCoreApplication.translate("MainWindow", u"Use the button below to create CSV file(s) showing numbering changes between a versions of (a) bill(s).", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.Numbering), QCoreApplication.translate("MainWindow", u"Numbering", None))
     # retranslateUi
 

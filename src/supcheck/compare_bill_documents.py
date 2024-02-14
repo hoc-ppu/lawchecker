@@ -16,6 +16,7 @@ from lxml.etree import _Element
 from supcheck.supcheck_logger import logger
 from supcheck import templates
 from supcheck import xpath_helpers as xp
+from supcheck.compare_bill_numbering import CompareBillNumbering
 from supcheck.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, PARSER
 from supcheck.utils import diff_xml_content
 
@@ -247,6 +248,7 @@ class Report:
                 self.render_intro(),
                 self.render_added_and_removed_sect(),
                 self.render_changed_sects(),
+                self.render_numbering_changes(),
             )
         )
 
@@ -344,7 +346,7 @@ class Report:
                 if item.old_num == item.new_num:
                     anchor.text = item.old_num
                 else:
-                    anchor.text = f"{item.old_num} ({item.new_num})"
+                    anchor.text = f"{item.old_num} [{item.new_num}]"
 
                 # changed_nums += f"{item.num}<br/>\n"
                 html_diffs += f"<br/><div id=diff-table-{i}>{item.html_diff}</div>\n"
@@ -352,10 +354,44 @@ class Report:
             changed_sects += html.tostring(grid_element, encoding=str) + html_diffs
 
         card = templates.Card("Changed clauses  or schedule paragraphs")
-        card.secondary_info.extend(html.fragments_fromstring(changed_sects))
+        info = ("<p>Listed below are any Clauses or Schedule paragraphs with changed content."
+                " The items are listed with their number from the old bill and if changed, the"
+                " number from the new bill in square brackets. Clicking on each item will take"
+                " you to a table showing the changes in context.</p>")
+        card.secondary_info.extend(html.fragments_fromstring(info + changed_sects))
         b = set()
         b.update
         return card.html
+
+    def render_numbering_changes(self) -> _Element:
+
+        _bill_renumbering = CompareBillNumbering(
+            [
+                (self.old_doc.root, self.old_doc.file_name),
+                (self.new_doc.root, self.new_doc.file_name),
+            ]
+        )
+
+        # we only expect one table but the to_html method returns a list of tables...
+        bill_numbering_html_tables = '\n'.join(_bill_renumbering.to_html())
+
+        bill_numbering_html_tables = re.sub(r"sec_(\d+)", r"C \1", bill_numbering_html_tables)
+        bill_numbering_html_tables = re.sub(r"sched_", "S ", bill_numbering_html_tables)
+        bill_numbering_html_tables = re.sub(r"__para_?", " p ", bill_numbering_html_tables)
+        bill_numbering_html_tables = re.sub(r"([a-z])_([a-z])", r"\1 \2", bill_numbering_html_tables)
+
+        card = templates.Card("Clauses or schedule paragraphs numbering changes")
+        info = ("<p>Each clause and schedule paragraph has a GUID (or global unique identifier)"
+                " which should stay the same even as a bill is renumbered. The table below "
+                "shows any changes in the numbering (of each clause or schedule paragraph) "
+                "between the two bills.</p>")
+        card.secondary_info.extend(
+            # html.fromstring('<div>' + '\n'.join(_bill_renumbering.to_html()) + '</div>')
+            html.fragments_fromstring(info + bill_numbering_html_tables)
+        )
+
+        return card.html
+
 
 
     def added_and_removed_sects(self, old_doc: "Bill", new_doc: "Bill"):
