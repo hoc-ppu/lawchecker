@@ -1,14 +1,16 @@
-import logging
 import re
 import sys
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from typing import Iterable
 
 import click
 import pandas as pd
 from dateutil import parser as date_parser
 from lxml import etree
+from lxml.etree import _Element
 from pandas import Series
+
+from supcheck.supcheck_logger import logger  # must be imported before any other
 
 NSMAP = {
     "xmlns": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
@@ -16,30 +18,6 @@ NSMAP = {
     "ukl": "https://www.legislation.gov.uk/namespaces/UK-AKN"
 }
 
-
-# --------------------------- BEGIN LOGGER --------------------------- #
-
-logger = logging.getLogger('renumbered')
-logger.setLevel(logging.DEBUG)
-
-log_file_Path = Path(Path.home(), 'logs', 'renumbered.log').absolute()
-log_file_Path.parent.mkdir(parents=True, exist_ok=True)
-
-# create file handler which logs even debug messages
-fh = RotatingFileHandler(str(log_file_Path), mode='a', maxBytes=1024 * 1024)
-fh.setLevel(logging.DEBUG)
-
-ch = logging.StreamHandler()  # create console handler
-ch.setLevel(logging.WARNING)
-
-# create formatter
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-# add formatter to the handler(s)
-ch.setFormatter(formatter)
-fh.setFormatter(formatter)
-
-logger.addHandler(ch)  # add the handler to the logger
-logger.addHandler(fh)
 
 # -------------------- Begin comand line interface ------------------- #
 
@@ -68,23 +46,25 @@ def cli(input_folder, output_folder):
     if output_folder is not None:
         output_folder = Path(output_folder)
 
-    compare_bills(input_folder, output_folder)
+    CompareBillNumbering.from_folder(input_folder).save_csv(output_folder)
 
 
 # ------------------------ Begin main program ------------------------ #
 
 class Bill:
 
-    def __init__(self, file: Path):
+    def __init__(self, bill_xml: _Element, file_name: str):
 
-        self.root = etree.parse(str(file)).getroot()
+        # self.root = etree.parse(str(file)).getroot()
+        self.root = bill_xml
 
-        self.file = file
+        # self.file = file
+        self.file_name = file_name
         self.version = self.get_version()
         self.title = self.get_bill_title()
         self.published_dt = self.get_published_date()
 
-    def get_published_date(self) -> str:
+    def get_published_date(self) -> str | None:
 
         xpath = '//xmlns:FRBRManifestation/xmlns:FRBRdate[@name != "akn_xml"]/@date[not(.="")]'
 
@@ -94,8 +74,9 @@ class Bill:
             formatted = dt.strftime("%Y-%m-%d-%H-%M-%S")
 
         except Exception:
-            logger.error(f"Date not found in {self.file.name}")
-            sys.exit(1)
+            # logger.error(f"Date not found in {self.file.name}")
+            logger.warning(f"Date not found in {self.file_name}")
+            return None
 
         return formatted
 
@@ -119,7 +100,8 @@ class Bill:
             title: str = self.root.xpath(xpath, namespaces=NSMAP)[0]  # type: ignore
             assert isinstance(title, str)
         except Exception:
-            logger.error(f"Bill title not found in {self.file.name}")
+            # logger.error(f"Bill title not found in {self.file.name}")
+            logger.error(f"Date not found in {self.file_name}")
             sys.exit(1)
 
         title = clean(title)
@@ -177,92 +159,145 @@ class Bill:
 
         return attrs
 
+class CompareBillNumbering:
+    def __init__(self, xml_files: Iterable[tuple[_Element, str]]):
 
-def compare_bills(in_folder: Path | None, out_folder: Path | None) -> None:
+        # Sort all bills into a dictionary with the bill title as the key.
+        # The value is a list of Bill objects. So different versions of the same
+        # bill are grouped together.
 
-    if in_folder is None:
-        in_folder = Path(".")  # use current directory
+        self.bills_container = {}
 
-    logger.info(f"Folder path: {in_folder.resolve()}")
+        # parse each bill and store in dictionary
+        for xml_file in xml_files:
 
-    # get all the XML files
-    xml_files = in_folder.glob("*.xml")
+            logger.info(f"file_name: {xml_file[1]}")
 
-    bills_container: dict[str, list[Bill]] = {}
+            bill = Bill(*xml_file)
 
-    # parse each bill and store in dictionary
-    for xml_file in xml_files:
+            if bill.title not in self.bills_container:
+                self.bills_container[bill.title] = [bill]
+            else:
+                self.bills_container[bill.title].append(bill)
 
-        logger.info(f"{xml_file=}")
+        self.bill_comparison_dict: dict[str, pd.DataFrame] = self._create_comparison_df()
 
-        bill = Bill(xml_file)
-
-        if bill.title not in bills_container:
-            bills_container[bill.title] = [bill]
+    @classmethod
+    def from_folder(cls, in_folder: Path | None):
+        if in_folder is None:
+            in_folder = Path(".")
         else:
-            bills_container[bill.title].append(bill)
+            in_folder = in_folder
 
-    # all bills are now sorted into a dictionary with the bill title as the key.
-    # The value is a list of Bill objects. So different versions of the same
-    # bill are grouped together.
+        logger.info(f"Folder path: {in_folder.resolve()}")
 
-    for title, bills in bills_container.items():
+        # get all the XML files in the input folder
+        xml_files = in_folder.glob("*.xml")
 
-        # if there is less than 2 bills, we can't compare them
-        if len(bills) < 2:
-            logger.warning(f"Only one '{title}' bill found. Cannot compare.")
-            continue
+        xml_files2 = [(etree.parse(str(file)).getroot(), file.name) for file in xml_files]
 
-        bills.sort(key=lambda x: x.published_dt)  # sort by published date
-
-        data_frames: list[pd.DataFrame] = []
-
-        for bill in bills:
-
-            # get the sections, store in a dataframe
-            df = pd.DataFrame(bill.get_sections())
-
-            # add col for later sorting
-            df['order'] = df.apply(get_sort_number, axis=1)
-
-            data_frames.append(df)
-
-        # outer join all dataframes
-        df = data_frames[0]
-        for i, x in enumerate(data_frames[1:]):
-            # suffixes are added to column names to avoid collision when joining
-            df = df.merge(x, how="outer", on='guid', suffixes=(f"_{i}l", f"_{i}r"))
+        return CompareBillNumbering(xml_files2)
 
 
-        # Need to sort rows as (sadly) an outer join doesn't keep the order.
+    def _create_comparison_df(self) -> dict[str, pd.DataFrame]:
 
-        # get the ordering columns (suffixes are added during join)
-        order_cols = [col for col in df.columns if col.startswith("order")]
+        bill_comparison_dict: dict[str, pd.DataFrame] = {}
 
-        # add master order column with mean order (NaN not included in mean)
-        df['order_master'] = df[order_cols].mean(axis=1)
-        order_cols.append('order_master')
+        df = pd.DataFrame()  # empty dataframe
 
-        df.sort_values(by='order_master', inplace=True)
+        for title, bills in self.bills_container.items():
 
-        # remove the order columns
-        df.drop(columns=order_cols, inplace=True)
+            # if there is less than 2 bills, we can't compare them
+            if len(bills) < 2:
+                logger.warning(f"Only one '{title}' bill found. Cannot compare.")
+                continue
 
-        csv_file_name = f"{clean(title, file_name_safe=True)}.csv"
+            if not all(bill.published_dt for bill in bills):
+                logger.warning("Published date not found for all bills. Bills may note be ordered correctly.")
+            else:
+                bills.sort(key=lambda x: x.published_dt)  # sort by published date
 
-        if out_folder is not None:
-            csv_file_name = out_folder / csv_file_name
-        else:
-            csv_file_name = Path(csv_file_name)
+            data_frames: list[pd.DataFrame] = []
 
-        df.to_csv(csv_file_name, index=False)
+            for bill in bills:
 
-        msg = f"Saved: {csv_file_name.resolve()}"
-        logger.info(msg)
-        print(msg)
+                # get the sections, store in a dataframe
+                df = pd.DataFrame(bill.get_sections())
 
-    print("Done")
+                # add col for later sorting
+                df['order'] = df.apply(get_sort_number, axis=1)
 
+                data_frames.append(df)
+
+            # outer join all dataframes
+            df = data_frames[0]
+            for i, x in enumerate(data_frames[1:]):
+                # suffixes are added to column names to avoid collision when joining
+                df = df.merge(x, how="outer", on='guid', suffixes=(f"_{i}l", f"_{i}r"))
+
+
+            # Need to sort rows as (sadly) an outer join doesn't keep the order.
+
+            # get the ordering columns (suffixes are added during join)
+            order_cols = [col for col in df.columns if col.startswith("order")]
+
+            # add master order column with mean order (NaN not included in mean)
+            df['order_master'] = df[order_cols].mean(axis=1)
+            order_cols.append('order_master')
+
+            df.sort_values(by='order_master', inplace=True)
+
+            # remove the order columns
+            df.drop(columns=order_cols, inplace=True)
+
+            bill_comparison_dict[title] = df
+
+        return bill_comparison_dict
+
+    def save_csv(self, out_folder: Path | None) -> list[Path]:
+
+        saved_csv_files: list[Path] = []
+
+        for title, df in self.bill_comparison_dict.items():
+
+            csv_file_name = f"{clean(title, file_name_safe=True)}.csv"
+
+            if out_folder is not None:
+                csv_file_name = out_folder / csv_file_name
+            else:
+                csv_file_name = Path(csv_file_name)
+
+            df.to_csv(csv_file_name, index=False)
+
+            saved_csv_files.append(csv_file_name)
+
+            msg = f"Saved: {csv_file_name.resolve()}"
+            logger.info(msg)
+            print(msg)
+
+        print("Done")
+        return saved_csv_files
+
+    def to_html(self) -> list[str]:
+
+        html_list = []
+
+        for _, df in self.bill_comparison_dict.items():
+
+            html = df.to_html(
+                index=False,
+                na_rep='-',  # replace NaN with a dash
+                justify="left",
+                classes=("sticky-head", "table-responsive-md", "table")
+            )
+            # print(html)
+            html_list.append(html)
+
+        return html_list
+
+
+
+# ------------------------ Begin helper functions ------------------------ #
 
 def get_sort_number(row: Series) -> int:
 
