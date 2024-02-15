@@ -11,9 +11,9 @@ from lxml.etree import ElementTree, _Element
 # the below line is only needed if you don't pip install the package
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
-from supcheck import compare_amendment_documents as compare
-from supcheck.settings import NSMAP2
-from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR
+from lawchecker import compare_amendment_documents as compare
+from lawchecker.settings import NSMAP2
+from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR
 
 
 @pytest.fixture

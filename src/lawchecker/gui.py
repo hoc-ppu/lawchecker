@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
+import platform
 import sys
 import traceback
 import webbrowser
 from datetime import datetime
 from pathlib import Path
-import platform
 
-from PySide6 import QtCore, QtWidgets, QtGui
+from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtWidgets import QMessageBox
 
-from supcheck.supcheck_logger import logger  # must be before submodules...
-from supcheck import added_names_report, settings
-from supcheck.compare_amendment_documents import Report
-from supcheck.compare_bill_documents import Report as BillReport
-from supcheck.compare_bill_documents import diff_in_vscode
-from supcheck.compare_bill_numbering import CompareBillNumbering
-from supcheck.settings import ANR_WORKING_FOLDER, NSMAP
-from supcheck.submodules.python_toolbox import pp_xml_lxml
-from supcheck.ui.addedNames import Ui_MainWindow
+from lawchecker import added_names_report, settings
+from lawchecker.compare_amendment_documents import Report
+from lawchecker.compare_bill_documents import Report as BillReport
+from lawchecker.compare_bill_documents import diff_in_vscode
+from lawchecker.compare_bill_numbering import CompareBillNumbering
+from lawchecker.lawchecker_logger import logger  # must be before submodules...
+from lawchecker.settings import ANR_WORKING_FOLDER, NSMAP
+from lawchecker.submodules.python_toolbox import pp_xml_lxml
+from lawchecker.ui.addedNames import Ui_MainWindow
 
 
 class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):

@@ -3,7 +3,7 @@ import re
 
 from lxml.etree import Element, QName, _Element
 
-from supcheck import xpath_helpers as xp
+from lawchecker import xpath_helpers as xp
 
 
 def is_line_junk(line: str) -> bool:

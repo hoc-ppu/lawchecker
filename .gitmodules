@@ -1,4 +1,4 @@
-[submodule "src/supcheck/submodules/python_toolbox"]
+[submodule "src/lawchecker/submodules/python_toolbox"]
 	path = src/lawchecker/submodules/python_toolbox
 	url = https://github.com/hoc-ppu/python_toolbox
 	branch = mark

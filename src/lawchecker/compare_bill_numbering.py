@@ -10,7 +10,7 @@ from lxml import etree
 from lxml.etree import _Element
 from pandas import Series
 
-from supcheck.supcheck_logger import logger  # must be imported before any other
+from lawchecker.lawchecker_logger import logger  # must be imported before any other
 
 NSMAP = {
     "xmlns": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",

@@ -11,12 +11,12 @@ from typing import NamedTuple
 from lxml import etree, html
 from lxml.etree import QName, _Element
 
-from supcheck.supcheck_logger import logger
-from supcheck import templates
-from supcheck import xpath_helpers as xp
-from supcheck.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
-from supcheck.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
-from supcheck.utils import diff_xml_content
+from lawchecker import templates
+from lawchecker import xpath_helpers as xp
+from lawchecker.lawchecker_logger import logger
+from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
+from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
+from lawchecker.utils import diff_xml_content
 
 # TODO: [x] put all sections in HTML document
 # Add messages for Nil return
