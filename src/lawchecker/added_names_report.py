@@ -11,8 +11,8 @@ from typing import Optional
 # 3rd party saxon imports
 import saxonche
 
-from supcheck.supcheck_logger import logger
-from supcheck import settings
+from lawchecker import settings
+from lawchecker.lawchecker_logger import logger
 
 
 def main():

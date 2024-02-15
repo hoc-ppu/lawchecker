@@ -13,12 +13,12 @@ from typing import NamedTuple
 from lxml import etree, html
 from lxml.etree import _Element
 
-from supcheck.supcheck_logger import logger
-from supcheck import templates
-from supcheck import xpath_helpers as xp
-from supcheck.compare_bill_numbering import CompareBillNumbering
-from supcheck.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, PARSER
-from supcheck.utils import diff_xml_content
+from lawchecker import templates
+from lawchecker import xpath_helpers as xp
+from lawchecker.compare_bill_numbering import CompareBillNumbering
+from lawchecker.lawchecker_logger import logger
+from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, PARSER
+from lawchecker.utils import diff_xml_content
 
 
 class ChangedSect(NamedTuple):

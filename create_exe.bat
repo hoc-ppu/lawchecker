@@ -3,5 +3,5 @@ pyinstaller --onefile ^
 --icon .\icon\icon.ico ^
 --noconfirm ^
 --add-data=.\icon\icon.ico;. ^
---name Lawchecker ^
-.\src\supcheck\supcheck_gui.py
+--name LawChecker ^
+.\src\lawchecker\gui.py

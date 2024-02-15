@@ -1,5 +1,5 @@
 [project]
-name = "supcheck"
+name = "lawchecker"
 version = "1.1.1"
 license = { file = "LICENCE" }
 dependencies = [
@@ -21,12 +21,12 @@ build-backend = "setuptools.build_meta"
 
 # these are entry points for the command line
 [project.scripts]
-an_report = "supcheck.added_names_report:main"
-compare_report = "supcheck.compare_amendment_documents:main"
-startgui = "supcheck.supcheck_gui:main"
-compare_bills = "supcheck.compare_bill_documents:main"
-bill_numbering = "supcheck.compare_bill_numbering:cli"
+an_report = "lawchecker.added_names_report:main"
+compare_report = "lawchecker.compare_amendment_documents:main"
+startgui = "lawchecker.gui:main"
+compare_bills = "lawchecker.compare_bill_documents:main"
+bill_numbering = "lawchecker.compare_bill_numbering:cli"
 
 [tool.isort]
 profile = "black"
-force_to_top = ["supcheck.supcheck_logger"]
+force_to_top = ["lawchecker.lawchecker_logger"]

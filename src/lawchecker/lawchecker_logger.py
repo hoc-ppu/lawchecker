@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from supcheck.submodules.python_toolbox import _pp_log_base as pp_log_base
+from lawchecker.submodules.python_toolbox import _pp_log_base as pp_log_base
 
 log_file_path = Path("logs", os.getlogin(), "SupCheck.log").resolve()
 
