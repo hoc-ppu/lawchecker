@@ -8,15 +8,16 @@ import webbrowser
 from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
+from tempfile import mkstemp
 from typing import NamedTuple
 
 from lxml import etree, html
 from lxml.etree import _Element
 
+from lawchecker.lawchecker_logger import logger
 from lawchecker import templates
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_bill_numbering import CompareBillNumbering
-from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, PARSER
 from lawchecker.utils import diff_xml_content
 
@@ -488,13 +489,16 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
     cleaned_bill_1 = clean_bill_xml(old_doc)
     cleaned_bill_2 = clean_bill_xml(new_doc)
 
+    tempfile1, temp_1_path = mkstemp(suffix=".txt", prefix="Bill1_", text=True)
+    tempfile2, temp_2_path = mkstemp(suffix=".txt", prefix="Bill2_", text=True)
+
     # output cleaned files
-    with open('cleaned_bill_1.txt', 'w') as f:
+    with open(tempfile1, 'w') as f:
         f.write(cleaned_bill_1)
-    with open('cleaned_bill_2.txt', 'w') as f:
+    with open(tempfile2, 'w') as f:
         f.write(cleaned_bill_2)
 
-    subprocess.call(["code", "--diff", 'cleaned_bill_1.txt', 'cleaned_bill_2.txt'])
+    subprocess.call(["code", "--diff", temp_1_path, temp_2_path])
 
     # bill_3 = etree.parse('LM_XML/bills/Leasehold_2023_11_24-16-09-21.xml', parser=PARSER)
     # bill_4 = etree.parse('LM_XML/bills/Leasehold_2024_02_02-12-18-20_Apply_amends.xml', parser=PARSER)
