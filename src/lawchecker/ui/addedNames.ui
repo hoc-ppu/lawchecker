@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>SupCheck</string>
+   <string>LawChecker</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout_5">
@@ -306,6 +306,16 @@
        <layout class="QVBoxLayout" name="verticalLayout_7">
         <item>
          <layout class="QGridLayout" name="gridLayout_6" columnstretch="1,1">
+          <item row="0" column="0" colspan="2">
+           <widget class="QLabel" name="instruction_label_3">
+            <property name="text">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can create a report comparing different versions of a bill (e.g. the 2nd reading and as amended in committee). This report will show you: Added and removed clauses or schedule paragraphs, and standing clauses and schedule paragraphs with changes.&lt;/p&gt;&lt;p&gt;Below the old XML file is the XML downloaded from LawMaker for the older version of this bill. The new XML file is the XML downloaded from Lawmaker for the newer version of this bill.&lt;/p&gt;&lt;p&gt;Tick VS Code compare to create a comparison of the bills using the diff feature of &lt;a href=&quot;https://code.visualstudio.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;VS Code&lt;/span&gt;&lt;/a&gt;. Note you must have VS Code installed to use this feature.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="wordWrap">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="0">
            <widget class="QLabel" name="label_10">
             <property name="text">
@@ -316,11 +326,42 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1">
-           <widget class="QPushButton" name="new_bill_XML_btn">
-            <property name="text">
-             <string>Select File</string>
+          <item row="1" column="1">
+           <widget class="QWidget" name="widget_5" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>15</height>
+             </size>
             </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout">
+             <item>
+              <widget class="QPushButton" name="old_bill_XML_btn">
+               <property name="text">
+                <string>Select File</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_3">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </widget>
           </item>
           <item row="2" column="0">
@@ -333,37 +374,103 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QPushButton" name="old_bill_XML_btn">
-            <property name="text">
-             <string>Select File</string>
+          <item row="2" column="1">
+           <widget class="QWidget" name="widget_6" native="true">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>15</height>
+             </size>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="0" colspan="2">
-           <widget class="QLabel" name="instruction_label_3">
-            <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;You can create a report comparing different versions of a bill (e.g. the 2nd reading and as amended in committee). This report will show you: Added and removed clauses or schedule paragraphs, and standing clauses and schedule paragraphs with changes.&lt;/p&gt;&lt;p&gt;Below the old XML file is the XML downloaded from LawMaker for the older version of this bill. The new XML file is the XML downloaded from Lawmaker for the newer version of this bill.&lt;/p&gt;&lt;p&gt;Tick VS Code compare to create a comparison of the bills using the diff feature of &lt;a href=&quot;https://code.visualstudio.com/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;VS Code&lt;/span&gt;&lt;/a&gt;. Note you must have VS Code installed to use this feature.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="wordWrap">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="1">
-           <widget class="QCheckBox" name="vs_code_diff">
-            <property name="text">
-             <string>VS Code compare</string>
-            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_2">
+             <item>
+              <widget class="QPushButton" name="new_bill_XML_btn">
+               <property name="text">
+                <string>Select File</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </widget>
           </item>
          </layout>
         </item>
         <item>
-         <widget class="QPushButton" name="create_bill_compare_btn">
-          <property name="text">
-           <string>Compare bills</string>
-          </property>
+         <widget class="QWidget" name="widget_3" native="true">
+          <layout class="QGridLayout" name="gridLayout_7">
+           <item row="1" column="2">
+            <spacer name="horizontalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="1" column="1">
+            <widget class="QWidget" name="widget_4" native="true">
+             <layout class="QVBoxLayout" name="verticalLayout_6">
+              <item>
+               <widget class="QPushButton" name="create_bill_compare_btn">
+                <property name="text">
+                 <string>Create HTML compare report</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="compare_vs_code_btn">
+                <property name="text">
+                 <string>Compare in VS Code</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="0" column="1">
+            <spacer name="verticalSpacer_3">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </widget>
         </item>
         <item>
