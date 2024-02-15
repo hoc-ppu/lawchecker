@@ -10,12 +10,12 @@ from pathlib import Path
 from PySide6 import QtCore, QtGui, QtWidgets
 from PySide6.QtWidgets import QMessageBox
 
+from lawchecker.lawchecker_logger import logger  # must be before submodules...
 from lawchecker import added_names_report, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
 from lawchecker.compare_bill_numbering import CompareBillNumbering
-from lawchecker.lawchecker_logger import logger  # must be before submodules...
 from lawchecker.settings import ANR_WORKING_FOLDER, NSMAP
 from lawchecker.submodules.python_toolbox import pp_xml_lxml
 from lawchecker.ui.addedNames import Ui_MainWindow
@@ -81,7 +81,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # tab 3. compare bills tab
         self.new_bill_XML_btn.clicked.connect(self.bill_open_new_xml)
         self.old_bill_XML_btn.clicked.connect(self.bill_open_old_xml)
-        self.create_bill_compare_btn.clicked.connect(self.bill_create_compare)
+        self.create_bill_compare_btn.clicked.connect(self.bill_create_html_compare)
+        self.compare_vs_code_btn.clicked.connect(self.bill_compare_in_vs_code)
 
         # tab 4. numbering tab
         self.selectNumberingFolder.clicked.connect(self.numbering_open_xml_dir)
@@ -332,7 +333,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         webbrowser.open(out_html_Path.resolve().as_uri())
 
-    def bill_create_compare(self):
+    def bill_create_html_compare(self):
         """
         Create the compare report for bills
         """
@@ -374,9 +375,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         out_html_Path = old_xml_path.parent.joinpath("Compare_Bills.html")
 
-        # checked status of checkbox
-        vs_code_diff: bool = self.vs_code_diff.isChecked()
-
         report = BillReport(
             old_xml_path,
             new_xml_path,
@@ -389,8 +387,47 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         webbrowser.open(out_html_Path.resolve().as_uri())
 
-        if vs_code_diff:
-            diff_in_vscode(report.old_doc.root, report.new_doc.root)
+    def bill_compare_in_vs_code(self):
+
+
+        if not self.old_bill_xml_file:
+            QMessageBox.critical(
+                self, "Error", "No old XML file selected."
+            )
+            return
+
+        if not self.new_bill_xml_file:
+            QMessageBox.critical(
+                self, "Error", "No new XML file selected."
+            )
+            return
+
+        old_xml_path = Path(self.old_bill_xml_file).resolve()
+        new_xml_path = Path(self.new_bill_xml_file).resolve()
+
+        # Check the Old and New XML files can both be parsed as XML
+
+        old_xml = pp_xml_lxml.load_xml(str(old_xml_path))
+        new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
+
+        if not old_xml:
+            QMessageBox.critical(
+                self, "Error", f"Old XML file is not valid XML: {old_xml_path}"
+            )
+            return
+
+        if not new_xml:
+            QMessageBox.critical(
+                self, "Error", f"New XML file is not valid XML: {new_xml_path}"
+            )
+            return
+
+        report = BillReport(
+            old_xml_path,
+            new_xml_path,
+        )
+
+        diff_in_vscode(report.old_doc.root, report.new_doc.root)
 
     def numbering_create_csv(self):
         _folder_path = Path(self.numbering_xml_folder)

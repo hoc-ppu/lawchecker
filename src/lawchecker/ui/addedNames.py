@@ -16,9 +16,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QCheckBox, QDateEdit, QFrame,
-    QGridLayout, QLabel, QMainWindow, QPushButton,
-    QSizePolicy, QSpacerItem, QTabWidget, QVBoxLayout,
-    QWidget)
+    QGridLayout, QHBoxLayout, QLabel, QMainWindow,
+    QPushButton, QSizePolicy, QSpacerItem, QTabWidget,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -227,16 +227,35 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.gridLayout_6 = QGridLayout()
         self.gridLayout_6.setObjectName(u"gridLayout_6")
+        self.instruction_label_3 = QLabel(self.CompareBillsTab)
+        self.instruction_label_3.setObjectName(u"instruction_label_3")
+        self.instruction_label_3.setWordWrap(True)
+
+        self.gridLayout_6.addWidget(self.instruction_label_3, 0, 0, 1, 2)
+
         self.label_10 = QLabel(self.CompareBillsTab)
         self.label_10.setObjectName(u"label_10")
         self.label_10.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.gridLayout_6.addWidget(self.label_10, 1, 0, 1, 1)
 
-        self.new_bill_XML_btn = QPushButton(self.CompareBillsTab)
-        self.new_bill_XML_btn.setObjectName(u"new_bill_XML_btn")
+        self.widget_5 = QWidget(self.CompareBillsTab)
+        self.widget_5.setObjectName(u"widget_5")
+        self.widget_5.setMinimumSize(QSize(0, 15))
+        self.widget_5.setMaximumSize(QSize(16777215, 16777215))
+        self.horizontalLayout = QHBoxLayout(self.widget_5)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.old_bill_XML_btn = QPushButton(self.widget_5)
+        self.old_bill_XML_btn.setObjectName(u"old_bill_XML_btn")
 
-        self.gridLayout_6.addWidget(self.new_bill_XML_btn, 2, 1, 1, 1)
+        self.horizontalLayout.addWidget(self.old_bill_XML_btn)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_3)
+
+
+        self.gridLayout_6.addWidget(self.widget_5, 1, 1, 1, 1)
 
         self.select_label_3 = QLabel(self.CompareBillsTab)
         self.select_label_3.setObjectName(u"select_label_3")
@@ -244,31 +263,63 @@ class Ui_MainWindow(object):
 
         self.gridLayout_6.addWidget(self.select_label_3, 2, 0, 1, 1)
 
-        self.old_bill_XML_btn = QPushButton(self.CompareBillsTab)
-        self.old_bill_XML_btn.setObjectName(u"old_bill_XML_btn")
+        self.widget_6 = QWidget(self.CompareBillsTab)
+        self.widget_6.setObjectName(u"widget_6")
+        self.widget_6.setMinimumSize(QSize(0, 15))
+        self.horizontalLayout_2 = QHBoxLayout(self.widget_6)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.new_bill_XML_btn = QPushButton(self.widget_6)
+        self.new_bill_XML_btn.setObjectName(u"new_bill_XML_btn")
 
-        self.gridLayout_6.addWidget(self.old_bill_XML_btn, 1, 1, 1, 1)
+        self.horizontalLayout_2.addWidget(self.new_bill_XML_btn)
 
-        self.instruction_label_3 = QLabel(self.CompareBillsTab)
-        self.instruction_label_3.setObjectName(u"instruction_label_3")
-        self.instruction_label_3.setWordWrap(True)
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
-        self.gridLayout_6.addWidget(self.instruction_label_3, 0, 0, 1, 2)
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_4)
 
-        self.vs_code_diff = QCheckBox(self.CompareBillsTab)
-        self.vs_code_diff.setObjectName(u"vs_code_diff")
 
-        self.gridLayout_6.addWidget(self.vs_code_diff, 3, 1, 1, 1)
+        self.gridLayout_6.addWidget(self.widget_6, 2, 1, 1, 1)
 
         self.gridLayout_6.setColumnStretch(0, 1)
         self.gridLayout_6.setColumnStretch(1, 1)
 
         self.verticalLayout_7.addLayout(self.gridLayout_6)
 
-        self.create_bill_compare_btn = QPushButton(self.CompareBillsTab)
+        self.widget_3 = QWidget(self.CompareBillsTab)
+        self.widget_3.setObjectName(u"widget_3")
+        self.gridLayout_7 = QGridLayout(self.widget_3)
+        self.gridLayout_7.setObjectName(u"gridLayout_7")
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_7.addItem(self.horizontalSpacer_2, 1, 2, 1, 1)
+
+        self.widget_4 = QWidget(self.widget_3)
+        self.widget_4.setObjectName(u"widget_4")
+        self.verticalLayout_6 = QVBoxLayout(self.widget_4)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.create_bill_compare_btn = QPushButton(self.widget_4)
         self.create_bill_compare_btn.setObjectName(u"create_bill_compare_btn")
 
-        self.verticalLayout_7.addWidget(self.create_bill_compare_btn)
+        self.verticalLayout_6.addWidget(self.create_bill_compare_btn)
+
+        self.compare_vs_code_btn = QPushButton(self.widget_4)
+        self.compare_vs_code_btn.setObjectName(u"compare_vs_code_btn")
+
+        self.verticalLayout_6.addWidget(self.compare_vs_code_btn)
+
+
+        self.gridLayout_7.addWidget(self.widget_4, 1, 1, 1, 1)
+
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_7.addItem(self.horizontalSpacer, 1, 0, 1, 1)
+
+        self.verticalSpacer_3 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.gridLayout_7.addItem(self.verticalSpacer_3, 0, 1, 1, 1)
+
+
+        self.verticalLayout_7.addWidget(self.widget_3)
 
         self.verticalSpacer1 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
@@ -332,7 +383,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"SupCheck", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"LawChecker", None))
         self.label_4.setText(QCoreApplication.translate("MainWindow", u"Change date:", None))
         self.createWorkingFolderBtn.setText(QCoreApplication.translate("MainWindow", u"Create Folder", None))
         self.label_5.setText(QCoreApplication.translate("MainWindow", u"Create working folder:", None))
@@ -356,13 +407,13 @@ class Ui_MainWindow(object):
         self.days_between_chk.setText(QCoreApplication.translate("MainWindow", u"Days between papers", None))
         self.create_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Create compare report", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CheckAmendmentsTab), QCoreApplication.translate("MainWindow", u"Check Amendments", None))
-        self.label_10.setText(QCoreApplication.translate("MainWindow", u"Old XML file", None))
-        self.new_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
-        self.select_label_3.setText(QCoreApplication.translate("MainWindow", u"New XML file", None))
-        self.old_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
         self.instruction_label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>You can create a report comparing different versions of a bill (e.g. the 2nd reading and as amended in committee). This report will show you: Added and removed clauses or schedule paragraphs, and standing clauses and schedule paragraphs with changes.</p><p>Below the old XML file is the XML downloaded from LawMaker for the older version of this bill. The new XML file is the XML downloaded from Lawmaker for the newer version of this bill.</p><p>Tick VS Code compare to create a comparison of the bills using the diff feature of <a href=\"https://code.visualstudio.com/\"><span style=\" text-decoration: underline; color:#094fd1;\">VS Code</span></a>. Note you must have VS Code installed to use this feature.</p><p><br/></p></body></html>", None))
-        self.vs_code_diff.setText(QCoreApplication.translate("MainWindow", u"VS Code compare", None))
-        self.create_bill_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Compare bills", None))
+        self.label_10.setText(QCoreApplication.translate("MainWindow", u"Old XML file", None))
+        self.old_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
+        self.select_label_3.setText(QCoreApplication.translate("MainWindow", u"New XML file", None))
+        self.new_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
+        self.create_bill_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Create HTML compare report", None))
+        self.compare_vs_code_btn.setText(QCoreApplication.translate("MainWindow", u"Compare in VS Code", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CompareBillsTab), QCoreApplication.translate("MainWindow", u"Compare Bills", None))
         self.createCSVs.setText(QCoreApplication.translate("MainWindow", u"Create CSV(s)", None))
         self.selectNumberingFolder.setText(QCoreApplication.translate("MainWindow", u"Select Folder", None))
