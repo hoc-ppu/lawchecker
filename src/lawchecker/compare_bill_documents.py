@@ -493,9 +493,9 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
     tempfile2, temp_2_path = mkstemp(suffix=".txt", prefix="Bill2_", text=True)
 
     # output cleaned files
-    with open(tempfile1, 'w') as f:
+    with open(tempfile1, 'w', encoding='utf-8') as f:
         f.write(cleaned_bill_1)
-    with open(tempfile2, 'w') as f:
+    with open(tempfile2, 'w', encoding='utf-8') as f:
         f.write(cleaned_bill_2)
 
     subprocess.call(["code", "--diff", temp_1_path, temp_2_path])
