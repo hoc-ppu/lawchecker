@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'addedNames.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.2
+## Created by: Qt User Interface Compiler version 6.6.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -150,7 +150,7 @@ class Ui_MainWindow(object):
 
         self.run_btn = QPushButton(self.AddedNamesTab)
         self.run_btn.setObjectName(u"run_btn")
-        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(1)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.run_btn.sizePolicy().hasHeightForWidth())
@@ -213,7 +213,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_4.addWidget(self.create_compare_btn)
 
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout_4.addItem(self.verticalSpacer)
 
@@ -270,7 +270,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_7.addWidget(self.create_bill_compare_btn)
 
-        self.verticalSpacer1 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.verticalSpacer1 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout_7.addItem(self.verticalSpacer1)
 
@@ -312,7 +312,7 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_8.addLayout(self.gridLayout_4)
 
-        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
         self.verticalLayout_8.addItem(self.verticalSpacer_2)
 
@@ -324,7 +324,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(3)
+        self.tabWidget.setCurrentIndex(0)
         self.run_btn.setDefault(False)
 
 
