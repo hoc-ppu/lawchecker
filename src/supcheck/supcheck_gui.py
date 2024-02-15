@@ -5,8 +5,9 @@ import traceback
 import webbrowser
 from datetime import datetime
 from pathlib import Path
+import platform
 
-from PySide6 import QtCore, QtWidgets
+from PySide6 import QtCore, QtWidgets, QtGui
 from PySide6.QtWidgets import QMessageBox
 
 from supcheck.supcheck_logger import logger  # must be before submodules...
@@ -25,7 +26,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainWindow, self).__init__(*args, **kwargs)
         self.setupUi(self)
 
-        if sys.platform == "darwin":
+        # set the icon in the Windows taskbar
+        if hasattr(sys, "_MEIPASS"):  # if we are using the bundled app
+
+            print("bundled app")
+
+            # when creating the bundled app use --add-data=.\icons\icon.ico;.
+            # the above assumes we have an icon.ico file in an icons folder
+            # logger.info(sys._MEIPASS)
+            if platform.system() == "Windows":
+                print("on windows")
+                # if platform.system() == "Windows":
+                path_to_icon = Path(sys._MEIPASS) / "icon.ico"  # type: ignore
+                self.setWindowIcon(QtGui.QIcon(str(path_to_icon)))
+
+        if platform.system() == "Darwin":
             # annoyingly sizing works differently on macOS and windows
             self.resize(self.size().width(), 740)  # fit widgets on mac
             # pass
