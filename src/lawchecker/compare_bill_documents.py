@@ -489,16 +489,22 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
     cleaned_bill_1 = clean_bill_xml(old_doc)
     cleaned_bill_2 = clean_bill_xml(new_doc)
 
-    tempfile1, temp_1_path = mkstemp(suffix=".txt", prefix="Bill1_", text=True)
-    tempfile2, temp_2_path = mkstemp(suffix=".txt", prefix="Bill2_", text=True)
+    _, _temp_1_path = mkstemp(suffix=".txt", prefix="Bill1_", text=True)
+    _, _temp_2_path = mkstemp(suffix=".txt", prefix="Bill2_", text=True)
+
+    temp_1_Path = Path(_temp_1_path).resolve()
+    temp_2_Path = Path(_temp_2_path).resolve()
 
     # output cleaned files
-    with open(tempfile1, 'w', encoding='utf-8') as f:
+    # with open("temp_1_Path.txt", 'w', encoding='utf-8') as f:
+    with open(temp_1_Path, 'w', encoding='utf-8') as f:
         f.write(cleaned_bill_1)
-    with open(tempfile2, 'w', encoding='utf-8') as f:
+    with open(temp_2_Path, 'w', encoding='utf-8') as f:
         f.write(cleaned_bill_2)
 
-    subprocess.call(["code", "--diff", temp_1_path, temp_2_path])
+    subprocess_args = ["code", "--diff", str(temp_1_Path), str(temp_2_Path)]
+
+    subprocess.run(subprocess_args, shell=True)
 
     # bill_3 = etree.parse('LM_XML/bills/Leasehold_2023_11_24-16-09-21.xml', parser=PARSER)
     # bill_4 = etree.parse('LM_XML/bills/Leasehold_2024_02_02-12-18-20_Apply_amends.xml', parser=PARSER)

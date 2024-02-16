@@ -1,4 +1,5 @@
 pyinstaller --onefile ^
+--distpath . ^
 --log-level WARN ^
 --icon .\icon\icon.ico ^
 --noconfirm ^
