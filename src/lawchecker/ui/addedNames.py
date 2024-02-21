@@ -227,36 +227,6 @@ class Ui_MainWindow(object):
         self.verticalLayout_7.setObjectName(u"verticalLayout_7")
         self.gridLayout_6 = QGridLayout()
         self.gridLayout_6.setObjectName(u"gridLayout_6")
-        self.instruction_label_3 = QLabel(self.CompareBillsTab)
-        self.instruction_label_3.setObjectName(u"instruction_label_3")
-        self.instruction_label_3.setWordWrap(True)
-
-        self.gridLayout_6.addWidget(self.instruction_label_3, 0, 0, 1, 2)
-
-        self.label_10 = QLabel(self.CompareBillsTab)
-        self.label_10.setObjectName(u"label_10")
-        self.label_10.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-
-        self.gridLayout_6.addWidget(self.label_10, 1, 0, 1, 1)
-
-        self.widget_5 = QWidget(self.CompareBillsTab)
-        self.widget_5.setObjectName(u"widget_5")
-        self.widget_5.setMinimumSize(QSize(0, 15))
-        self.widget_5.setMaximumSize(QSize(16777215, 16777215))
-        self.horizontalLayout = QHBoxLayout(self.widget_5)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.old_bill_XML_btn = QPushButton(self.widget_5)
-        self.old_bill_XML_btn.setObjectName(u"old_bill_XML_btn")
-
-        self.horizontalLayout.addWidget(self.old_bill_XML_btn)
-
-        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout.addItem(self.horizontalSpacer_3)
-
-
-        self.gridLayout_6.addWidget(self.widget_5, 1, 1, 1, 1)
-
         self.select_label_3 = QLabel(self.CompareBillsTab)
         self.select_label_3.setObjectName(u"select_label_3")
         self.select_label_3.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
@@ -273,6 +243,11 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_2.addWidget(self.new_bill_XML_btn)
 
+        self.bill_new_xml_lbl = QLabel(self.widget_6)
+        self.bill_new_xml_lbl.setObjectName(u"bill_new_xml_lbl")
+
+        self.horizontalLayout_2.addWidget(self.bill_new_xml_lbl)
+
         self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer_4)
@@ -280,8 +255,43 @@ class Ui_MainWindow(object):
 
         self.gridLayout_6.addWidget(self.widget_6, 2, 1, 1, 1)
 
+        self.widget_5 = QWidget(self.CompareBillsTab)
+        self.widget_5.setObjectName(u"widget_5")
+        self.widget_5.setMinimumSize(QSize(0, 15))
+        self.widget_5.setMaximumSize(QSize(16777215, 16777215))
+        self.horizontalLayout = QHBoxLayout(self.widget_5)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.old_bill_XML_btn = QPushButton(self.widget_5)
+        self.old_bill_XML_btn.setObjectName(u"old_bill_XML_btn")
+
+        self.horizontalLayout.addWidget(self.old_bill_XML_btn)
+
+        self.bill_old_xml_lbl = QLabel(self.widget_5)
+        self.bill_old_xml_lbl.setObjectName(u"bill_old_xml_lbl")
+
+        self.horizontalLayout.addWidget(self.bill_old_xml_lbl)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_3)
+
+
+        self.gridLayout_6.addWidget(self.widget_5, 1, 1, 1, 1)
+
+        self.instruction_label_3 = QLabel(self.CompareBillsTab)
+        self.instruction_label_3.setObjectName(u"instruction_label_3")
+        self.instruction_label_3.setWordWrap(True)
+
+        self.gridLayout_6.addWidget(self.instruction_label_3, 0, 0, 1, 2)
+
+        self.label_10 = QLabel(self.CompareBillsTab)
+        self.label_10.setObjectName(u"label_10")
+        self.label_10.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+
+        self.gridLayout_6.addWidget(self.label_10, 1, 0, 1, 1)
+
         self.gridLayout_6.setColumnStretch(0, 1)
-        self.gridLayout_6.setColumnStretch(1, 1)
+        self.gridLayout_6.setColumnStretch(1, 3)
 
         self.verticalLayout_7.addLayout(self.gridLayout_6)
 
@@ -375,7 +385,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(2)
         self.run_btn.setDefault(False)
 
 
@@ -407,11 +417,13 @@ class Ui_MainWindow(object):
         self.days_between_chk.setText(QCoreApplication.translate("MainWindow", u"Days between papers", None))
         self.create_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Create compare report", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CheckAmendmentsTab), QCoreApplication.translate("MainWindow", u"Check Amendments", None))
-        self.instruction_label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>You can create a report comparing different versions of a bill (e.g. the 2nd reading and as amended in committee). This report will show you: Added and removed clauses or schedule paragraphs, and standing clauses and schedule paragraphs with changes.</p><p>Below the old XML file is the XML downloaded from LawMaker for the older version of this bill. The new XML file is the XML downloaded from Lawmaker for the newer version of this bill.</p><p>Tick VS Code compare to create a comparison of the bills using the diff feature of <a href=\"https://code.visualstudio.com/\"><span style=\" text-decoration: underline; color:#094fd1;\">VS Code</span></a>. Note you must have VS Code installed to use this feature.</p><p><br/></p></body></html>", None))
-        self.label_10.setText(QCoreApplication.translate("MainWindow", u"Old XML file", None))
-        self.old_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
         self.select_label_3.setText(QCoreApplication.translate("MainWindow", u"New XML file", None))
         self.new_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
+        self.bill_new_xml_lbl.setText("")
+        self.old_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
+        self.bill_old_xml_lbl.setText("")
+        self.instruction_label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>You can create a report comparing different versions of a bill (e.g. the 2nd reading and as amended in committee). This report will show you: Added and removed clauses or schedule paragraphs, and standing clauses and schedule paragraphs with changes.</p><p>Below the old XML file is the XML downloaded from LawMaker for the older version of this bill. The new XML file is the XML downloaded from Lawmaker for the newer version of this bill.</p><p>Tick VS Code compare to create a comparison of the bills using the diff feature of <a href=\"https://code.visualstudio.com/\"><span style=\" text-decoration: underline; color:#094fd1;\">VS Code</span></a>. Note you must have VS Code installed to use this feature.</p><p><br/></p></body></html>", None))
+        self.label_10.setText(QCoreApplication.translate("MainWindow", u"Old XML file", None))
         self.create_bill_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Create HTML compare report", None))
         self.compare_vs_code_btn.setText(QCoreApplication.translate("MainWindow", u"Compare in VS Code", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.CompareBillsTab), QCoreApplication.translate("MainWindow", u"Compare Bills", None))

@@ -19,8 +19,8 @@ from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR
 @pytest.fixture
 def report() -> compare.Report:
     report = compare.Report(
-        Path("LM_XML/energy_rm_rep_0904.xml").resolve(),
-        Path("LM_XML/energy_day_rep_0905.xml").resolve(),
+        Path("example_files/amendments/energy_rm_rep_0904.xml").resolve(),
+        Path("example_files/amendments/energy_day_rep_0905.xml").resolve(),
     )
 
     return report
