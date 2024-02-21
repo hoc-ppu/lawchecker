@@ -11,8 +11,8 @@ from typing import Optional
 # 3rd party saxon imports
 import saxonche
 
-from lawchecker import settings
 from lawchecker.lawchecker_logger import logger
+from lawchecker import settings
 
 
 def main():
@@ -225,6 +225,7 @@ def run_xslts(
     resave_Path = xml_folder_Path.joinpath(input_file_resave_name)
     with open(resave_Path, "w") as f:
         f.write(input_Path.read_text())
+
 
     with saxonche.PySaxonProcessor(license=False) as proc:
 

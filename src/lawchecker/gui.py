@@ -183,6 +183,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.old_bill_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Open old XML file", str(default_location), "XML files (*.xml)"
         )
+        if self.old_bill_xml_file:
+            self.bill_old_xml_lbl.setText(
+                f"Selected file:  {Path(self.old_bill_xml_file).name}"
+            )
 
     def bill_open_new_xml(self):
         """
@@ -198,6 +202,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.new_bill_xml_file, _ = QtWidgets.QFileDialog.getOpenFileName(
             self, "Open new XML file", str(default_location), "XML files (*.xml)"
         )
+
+        if self.new_bill_xml_file:
+            self.bill_new_xml_lbl.setText(
+                f"Selected file:  {Path(self.new_bill_xml_file).name}"
+            )
 
     def anr_run_xslts(self):
         lm_xml_folder_Path: Path | None = None
