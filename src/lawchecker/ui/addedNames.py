@@ -385,7 +385,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         self.run_btn.setDefault(False)
 
 
@@ -422,7 +422,7 @@ class Ui_MainWindow(object):
         self.bill_new_xml_lbl.setText("")
         self.old_bill_XML_btn.setText(QCoreApplication.translate("MainWindow", u"Select File", None))
         self.bill_old_xml_lbl.setText("")
-        self.instruction_label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>You can create a report comparing different versions of a bill (e.g. the 2nd reading and as amended in committee). This report will show you: Added and removed clauses or schedule paragraphs, and standing clauses and schedule paragraphs with changes.</p><p>Below the old XML file is the XML downloaded from LawMaker for the older version of this bill. The new XML file is the XML downloaded from Lawmaker for the newer version of this bill.</p><p>Tick VS Code compare to create a comparison of the bills using the diff feature of <a href=\"https://code.visualstudio.com/\"><span style=\" text-decoration: underline; color:#094fd1;\">VS Code</span></a>. Note you must have VS Code installed to use this feature.</p><p><br/></p></body></html>", None))
+        self.instruction_label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>You can create a report comparing different versions of a bill (e.g. the 2nd reading and as amended in committee). This report will show you: Added and removed clauses or schedule paragraphs, and standing clauses and schedule paragraphs with changes.</p><p>Below the old XML file is the XML downloaded from LawMaker for the older version of this bill. The new XML file is the XML downloaded from Lawmaker for the newer version of this bill.</p><p>You can also use VS Code to create a comparison of the bills using the diff feature of <a href=\"https://code.visualstudio.com/\"><span style=\" text-decoration: underline; color:#094fd1;\">VS Code</span></a>. Note you must have VS Code installed to use this feature.</p><p><br/></p></body></html>", None))
         self.label_10.setText(QCoreApplication.translate("MainWindow", u"Old XML file", None))
         self.create_bill_compare_btn.setText(QCoreApplication.translate("MainWindow", u"Create HTML compare report", None))
         self.compare_vs_code_btn.setText(QCoreApplication.translate("MainWindow", u"Compare in VS Code", None))
