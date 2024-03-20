@@ -80,6 +80,8 @@ compare_report example_files/amendments/energy_rm_rep_0901.xml example_files/ame
 compare_bills "example_files/bills/Data Protection and Digital Information Bill - commons introduced.xml" "example_files/bills/Data Protection and Digital Information Bill - commons committee.xml"
 ```
 
+See `examples.md` for more
+
 ## Tests
 To run tests `pytest tests/`
 
