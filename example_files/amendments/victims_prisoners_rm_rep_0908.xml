@@ -1,0 +1,858 @@
+<?xml version="1.0" encoding="UTF-8"?><akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://docs.oasis-open.org/legaldocml/ns/akn/3.0 ../schemas/akomantoso30.xsd"><?LDAPP-Component componentId="0fd8a8a4-a32e-49ac-9399-9639ccb11f86" seriesId="0fd8a8a4-a32e-49ac-9399-9639ccb11f86" versionNumber=""?>
+ 
+ <amendmentList contains="originalVersion" name="hcmarsh">
+  <meta>
+   <identification source="#source">
+    <FRBRWork>
+     <FRBRthis value="#varWork"/>
+     <FRBRuri value="#varWorkUri"/>
+     <FRBRalias name="ttflConfigHistory" value="#varCHOiid"/>
+     <FRBRalias name="alternateUri" value="https://lawmaker.legislation.gov.uk/pdr/ukpubb/HC/58_3/351/bill"/>
+     <FRBRdate date="9999-01-01" name="draft"/>
+     <FRBRdate date="2023-09-08" name="published"/>
+     <FRBRauthor href="#varAuthor"/>
+     <FRBRcountry value="GB"/>
+     <FRBRnumber value="#varListNo"/>
+     <FRBRname value="Bill #varBillNo-#varListType#varListNo"/>
+    </FRBRWork>
+    <FRBRExpression>
+     <FRBRthis value="#varExpression"/>
+     <FRBRuri value="#varExpressionUri"/>
+     <FRBRalias name="ttflVersionDescription" value="#varVDOiid"/><FRBRalias name="alternateUri" value="https://lawmaker.legislation.gov.uk/pdr/ukpubb/HC/58_3/351/bill/hcmarsh@2023-09-08"/><FRBRdate date="9999-01-01" name="draft"/>
+     <FRBRdate date="2023-09-08" name="published"/>
+     <FRBRauthor href="#varAuthor"/>
+     <FRBRversionNumber value="public-committee/hcmarsh@2023-09-08"/>
+     <FRBRauthoritative value="false"/>
+     <FRBRmasterExpression href="" showAs=""/>
+     <FRBRlanguage language="eng"/>
+    </FRBRExpression>
+    <FRBRManifestation>
+     <FRBRthis value="#varManifestation"/>
+     <FRBRuri value="#varManifestationUri"/>
+     <FRBRdate date="9999-01-01" name="akn_xml"/>
+     <FRBRdate date="2023-09-08" name="published"/>
+     <FRBRauthor href="#varAuthor"/>
+     <FRBRformat value="application/akn+xml"/>
+    </FRBRManifestation>
+   </identification>
+   <references source="#author">
+    <TLCConcept eId="varBillTitle" href="#varOntologies" showAs="Victims and Prisoners Bill"/>
+    <TLCConcept eId="varHouse" href="#varOntologies" showAs="House of Commons"/>
+    <TLCConcept eId="varDraftListDescription" href="#varOntologies" showAs="victims_prisoners_rm_rep_0908"/>
+    <TLCProcess eId="varBillStageVersion" href="#varOntologies" showAs="As amended in Public Bill Committee"/>
+    <TLCProcess eId="varStageVersion" href="#varOntologies" showAs="Report Stage"/>
+    <TLCProcess eId="varProjectId" href="#varOntologies" showAs="UK000348"/>
+    <TLCProcess eId="varWork" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill"/>
+    <TLCProcess eId="varWorkUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill"/>
+    <TLCProcess eId="varCHOiid" href="#varOntologies" showAs=""/>
+    <TLCProcess eId="varExpression" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee/hcmarsh@2023-09-08"/>
+    <TLCProcess eId="varExpressionUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee/hcmarsh@2023-09-08"/>
+    <TLCProcess eId="varVDOiid" href="#varOntologies" showAs=""/>
+    <TLCProcess eId="varManifestation" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee/hcmarsh@2023-09-08/xml"/>
+    <TLCProcess eId="varManifestationUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee/hcmarsh@2023-09-08/xml"/>
+    <TLCConcept eId="varPublishDate" href="#varOntologies" showAs="2023-09-08"/>
+    <TLCConcept eId="varDocType" href="#varOntologies" showAs="hcmarsh"/>
+    <TLCProcess eId="varSystem" href="#varOntologies" showAs="LawMaker"/>
+    <TLCOrganization eId="varAuthor" href="#varOntologies" showAs="House of Commons"/>
+    <TLCLocation eId="varJurisdiction" href="#varOntologies" showAs="United Kingdom"/>
+    <TLCConcept eId="varOntologies" href="http://legislation.gov.uk/ontologies/legis" showAs="http://legislation.gov.uk/ontologies/legis"/>
+    <TLCConcept eId="varListType" href="#varOntologies" showAs="ML"/>
+    <TLCConcept eId="varListNo" href="#varOntologies" showAs=""/>
+    <TLCConcept eId="varVersionLabel" href="#varOntologies" showAs=""/>
+    <TLCConcept eId="varBillNoComp" href="#varOntologies" showAs="351"/>
+    <TLCConcept eId="varBillNo" href="#varOntologies" showAs="Bill 351"/>
+    <TLCConcept eId="varSessionNo" href="#varOntologies" showAs="58/3"/>
+    <TLCConcept eId="varBillYear" href="#varOntologies" showAs="2023"/>
+    <TLCConcept eId="varSession" href="#varOntologies" showAs="58/3"/>
+    <TLCConcept eId="varBillName" href="#varOntologies" showAs="ukpubb"/>
+   </references>
+  </meta>
+  <preface GUID="_c0591927-6bd3-4910-9d4f-9cd3376aff65" eId="preface">
+   <block name="stage"><docStage>Report Stage</docStage>: <docDate date="9999-12-31"><ref class="placeholder" href="#varPublishDate" ukl:dateFormat="EEEE d MMMM yyyy">Friday 8 September 2023</ref></docDate></block>
+   <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee"><ref class="placeholder" href="#varBillTitle"/>, As Amended</affectedDocument></block>
+   <block name="listType">(Amendment Paper)</block>
+   <blockContainer class="legend">
+    <p>This document lists all amendments tabled to the <affectedDocument href="#varBillProject"><ref class="placeholder" href="#varBillTitle"/></affectedDocument>. Any withdrawn amendments are listed at the end of the document. The amendments are arranged in the order in which it is expected they will be decided.</p>
+   </blockContainer>
+  </preface>
+  <collectionBody>
+   <component class="amendment">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="449ff01b-e905-4bac-a94b-9c9eefd6a3dd" seriesId="449ff01b-e905-4bac-a94b-9c9eefd6a3dd" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_5845a700-200d-495f-9f4b-79039e8b9aae" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_NC1__step" outcome="#draft"/>
+       <step GUID="_02d1cdbf-15db-4a40-bfaf-c3895c4d49cc" by="#proponent" date="2023-07-18T10:30:59.581Z" eId="amnd_NC1__step__oc_1" outcome="#submitted"/>
+       <step GUID="_f235157d-aa00-4e6a-a504-3df2aef8fe04" by="#proponent" date="2023-07-18T10:31:12.701Z" eId="amnd_NC1__step__oc_2" outcome="#tabled"/>
+       <step GUID="_f3d2f658-cf1f-45f0-be0b-87cc613541fe" by="#proponent" date="2023-07-18T10:31:26.153Z" eId="amnd_NC1__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_ddb3bfe6-1778-4c48-a0ae-6074842d83db" by="#parliament" date="2023-07-18T11:37:45.137Z" eId="amnd_NC1__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/e46712e8-14ce-4616-be59-1d8580df710c/victims_prisoners_rm_rep_0719.ef461f5f-7a19-44a6-a71a-584cb9cbd59f/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_454b4438-a79a-498c-9309-c864669c4979" by="#parliament" date="2023-07-18T19:19:23.966Z" eId="amnd_NC1__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/c3110ebd-ebf0-40d8-a105-26f20bdccc69/victims_prisoners_rm_rep_0719.11a4c598-ecb3-46ef-80cf-4bcebe887cff/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_e4524bdd-90bf-48ab-a5b5-62fd16426f07" by="#parliament" date="2023-07-19T19:34:41.581Z" eId="amnd_NC1__step__oc_6" href="/ldapp-rest-api/ldapp/document/download/7b26e1e4-b6d1-4095-95bc-17ac6077bfe4/victims_prisoners_rm_rep_0720.0445a9f3-018e-453e-a43e-89ce7153b246/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_506211b9-fcbc-4d84-86f0-4f54720cf05b" by="#parliament" date="2023-07-20T17:47:59.290Z" eId="amnd_NC1__step__oc_7" href="/ldapp-rest-api/ldapp/document/download/b86966dc-efcc-4bc0-ad74-131febe099bc/victims_prisoners_rm_rep_0721.22e8da2e-1903-4dee-9064-687271d6bdbd/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_143839cc-5f28-4f98-8961-70ff5f176112" by="#parliament" date="2023-08-24T16:27:11.634Z" eId="amnd_NC1__step__oc_8" href="/ldapp-rest-api/ldapp/document/download/ea5aab23-f92c-4e7e-a547-a000f83e74b8/victims_prisoners_rm_rep_0825.8f42788d-7db9-4ceb-b217-8046e63be33b/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_6c06617e-98ad-4435-b496-1e175befb64d" by="#parliament" date="2023-08-30T16:16:01.942Z" eId="amnd_NC1__step__oc_9" href="/ldapp-rest-api/ldapp/document/download/844757a3-4133-4567-ba40-1287df713925/victims_prisoners_rm_rep_0831.9724e566-158a-4661-a917-c005df7bbe4c/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_7e81bade-d84f-466a-a419-f22f3dba3dc9" by="#parliament" date="2023-08-31T17:28:37.477Z" eId="amnd_NC1__step__oc_10" href="/ldapp-rest-api/ldapp/document/download/588634fa-253e-4ea3-8fb9-9783b506d617/victims_prisoners_rm_rep_0901.25653c3e-0607-4dfb-8f1a-4089e8b54f97/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_3b0d84cc-7b51-44bb-844e-c3bf7196f3a3" by="#parliament" date="2023-09-05T20:10:51.089Z" eId="amnd_NC1__step__oc_11" href="/ldapp-rest-api/ldapp/document/download/b3904c24-4c84-4e10-bebf-e5f7dbb0e4a3/victims_prisoners_rm_rep_0906.2bc7759f-aa63-4da1-947f-ea66dedea105/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_dfa35273-d0c7-4221-b559-3d1d88436cd2" by="#parliament" date="2023-09-07T17:33:24.896Z" eId="amnd_NC1__step__oc_12" href="/ldapp-rest-api/ldapp/document/download/ea419296-524e-4d21-9005-6d91757650c1/victims_prisoners_rm_rep_0908.8c10ea14-d22d-4ea6-b587-099f007ca052/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_93a381bd-9fef-4060-8401-0c04c23574fc" eId="amnd_NC1#person-1601" href="#Sir_Robert_Neill" showAs="Sir Robert Neill" ukl:class="varProposer"/>
+       <TLCPerson GUID="_1b62ebe4-63e5-4d76-9538-375ea808f0a8" eId="amnd_NC1#person-150" href="#Ms_Harriet_Harman" showAs="Ms Harriet Harman" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_b89ed616-37f0-4ca2-876f-9c150792082d" eId="amnd_NC1#person-1585" href="#Stephen_Hammond" showAs="Stephen Hammond" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_8e93d6ea-9a46-4571-b6bf-c1eaf72d4ccd" eId="amnd_NC1#person-1442" href="#Mr_Alistair_Carmichael" showAs="Mr Alistair Carmichael" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_75666a38-8cb9-4310-8096-4b880a91939a" eId="amnd_NC1#person-3926" href="#Paul_Maynard" showAs="Paul Maynard" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_e8324f52-1407-4d52-b5b7-289aa167ed1f" eId="amnd_NC1#person-178" href="#John_McDonnell" showAs="John McDonnell" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_861692f8-6f03-4ed1-8e34-1c55b2830bbb" eId="amnd_NC1#person-4831" href="#Ian_Byrne" showAs="Ian Byrne" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_1b2a20a2-c6b3-4014-929d-72856088c2f2" eId="amnd_NC1#person-4791" href="#Andy_Carter" showAs="Andy Carter" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_d3f9a1a0-ff0d-49c5-b336-be4b1fa0820c" eId="amnd_NC1#person-4824" href="#Kim_Johnson" showAs="Kim Johnson" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_3c452014-3bf0-40a6-9cac-853503417823" eId="amnd_NC1#person-4790" href="#Apsana_Begum" showAs="Apsana Begum" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_41c50212-5925-4d97-bce9-0c0f65bee1bf" eId="amnd_NC1#person-4525" href="#Christina_Rees" showAs="Christina Rees" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_dc8fda28-0414-405a-a372-f939caeafdf5" eId="amnd_NC1#person-4521" href="#Liz_Saville_Roberts" showAs="Liz Saville Roberts" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_9c7e565b-67df-48fd-b297-f8c50119193e" eId="amnd_NC1#person-1606" href="#John_Howell" showAs="John Howell" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_b19d3850-340f-42fc-b2b3-313a2065173a" eId="amnd_NC1#person-69" href="#Sir_Oliver_Heald" showAs="Sir Oliver Heald" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_8943166b-8f84-4197-84e6-14f08ba272cd" eId="amnd_NC1#person-4363" href="#Kate_Hollern" showAs="Kate Hollern" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_00692496-e011-47f1-a4d5-f7930768c6ea" eId="amnd_NC1#person-4615" href="#Lloyd_Russell-Moyle" showAs="Lloyd Russell-Moyle" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_c6e61443-2fe1-4a2d-8121-08e2e8991b39" eId="amnd_NC1#person-4755" href="#Mick_Whitley" showAs="Mick Whitley" ukl:class="varSupporters"/>
+      </references>
+     </meta>
+     <preface GUID="_edb9dd59-2fe1-4f6e-8d07-72a41ddaba6e" eId="amnd_NC1__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_201df396-c4a8-4c6c-b74e-17c62d9a6186" eId="amnd_NC1" ukl:location="" ukl:targetPage="" ukl:targetProvision="" ukl:targetSortKey="A01" ukl:type="newClause">
+      <amendmentHeading GUID="_7d3977ad-8a9b-4c2d-95a8-eac75da55a58" eId="amnd_NC1__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_NC1#person-1601">Sir Robert Neill</docIntroducer></block>
+       <block name="supporters"><docProponent refersTo="amnd_NC1#person-150">Ms Harriet Harman</docProponent><docProponent refersTo="amnd_NC1#person-1585">Stephen Hammond</docProponent><docProponent refersTo="amnd_NC1#person-1442">Mr Alistair Carmichael</docProponent><docProponent refersTo="amnd_NC1#person-3926">Paul Maynard</docProponent><docProponent refersTo="amnd_NC1#person-178">John McDonnell</docProponent><docProponent refersTo="amnd_NC1#person-4831">Ian Byrne</docProponent><docProponent refersTo="amnd_NC1#person-4791">Andy Carter</docProponent><docProponent refersTo="amnd_NC1#person-4824">Kim Johnson</docProponent><docProponent refersTo="amnd_NC1#person-4790">Apsana Begum</docProponent><docProponent refersTo="amnd_NC1#person-4525">Christina Rees</docProponent><docProponent refersTo="amnd_NC1#person-4521">Liz Saville Roberts</docProponent><docProponent refersTo="amnd_NC1#person-1606">John Howell</docProponent><docProponent refersTo="amnd_NC1#person-69">Sir Oliver Heald</docProponent><docProponent refersTo="amnd_NC1#person-4363">Kate Hollern</docProponent><docProponent refersTo="amnd_NC1#person-4615">Lloyd Russell-Moyle</docProponent><docProponent refersTo="amnd_NC1#person-4755">Mick Whitley</docProponent></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_9e57685b-a3e9-4da0-962f-87d5a6a535d4" eId="amnd_NC1__cont">
+       <tblock>
+        <num ukl:dnum="HoC218">NC1</num>
+        <block name="instruction"> <mod>To move the following Clause—<quotedStructure GUID="_4f8aed65-baac-4f99-9618-04f6ea09541c" eId="amnd_NC1__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+         <section GUID="_ace1fb90-1eb5-4c09-80ff-70b105fb91e5" class="prov1" eId="amnd_NC1__cont__qstr__sec">
+          <num ukl:autonumber="no"/>
+          <heading GUID="_1988b3cf-88bc-4d4e-8ace-2541676e105a" eId="amnd_NC1__cont__qstr__sec__hdg">Re-sentencing those serving a sentence of imprisonment for public protection</heading>
+          <subsection GUID="_7cf87920-b205-4858-b881-aeac636b2c28" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_1">
+           <num>(1)</num>
+           <content>
+            <p>The Lord Chancellor must make arrangements for, and relating to, the re-sentencing of all prisoners serving IPP sentences within 18 months beginning on the day on which this Act is passed.</p>
+           </content>
+          </subsection>
+          <subsection GUID="_9dd02a71-f33d-48c4-a2a4-723dd0c44236" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2">
+           <num>(2)</num>
+           <content>
+            <p>Those arrangements must include arrangements relating to the establishment of a committee to provide advice regarding the discharge of the Lord Chancellor’s duty under subsection (1).</p>
+           </content>
+          </subsection>
+          <subsection GUID="_4bcb4dfb-4708-4f39-b725-683aff07386e" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_3">
+           <num>(3)</num>
+           <content>
+            <p>The committee established by virtue of subsection (2) must include a judge nominated by the Lord Chief Justice.</p>
+           </content>
+          </subsection>
+          <subsection GUID="_a208b3f0-6f1f-4d13-8521-6d2d797d1fe3" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_4">
+           <num>(4)</num>
+           <content>
+            <p>A court that imposed an IPP sentence has the power to re-sentence the prisoner in relation to the original offence.</p>
+           </content>
+          </subsection>
+          <subsection GUID="_87c4a0da-bdc1-41ae-b7ed-ebfb3d7cc75a" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_5">
+           <num>(5)</num>
+           <content>
+            <p>But the court may not impose a sentence that is a heavier penalty than the sentence that was imposed for the original offence.</p>
+           </content>
+          </subsection>
+          <subsection GUID="_bbbd5e26-715e-4597-84d3-95083da6b04c" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_6">
+           <num>(6)</num>
+           <intro GUID="_9f7fe719-5eea-4ef6-833a-b9d01bfb353e" eId="amnd_NC1__cont__qstr__sec__subsec_6__intro">
+            <p>In relation to the exercise of the power in subsection (4)—</p>
+           </intro>
+           <level GUID="_fde6dd19-28eb-48e0-9813-892b3d306e7a" class="para1" eId="amnd_NC1__cont__qstr__sec__subsec_6__para_a">
+            <num>(a)</num>
+            <content>
+             <p>that power is to be treated as a power to re-sentence under the Sentencing Code (see section 402(1) of the Sentencing Act 2020);</p>
+            </content>
+           </level>
+           <level GUID="_37b97540-7921-478c-aae6-f9e3cf6a199e" class="para1" eId="amnd_NC1__cont__qstr__sec__subsec_6__para_b">
+            <num>(b)</num>
+            <content>
+             <p>the Code applies for the purposes of this section (and, accordingly, it does not matter that a person serving an IPP sentence was convicted of an offence before 1 December 2020).</p>
+            </content>
+           </level>
+          </subsection>
+          <subsection GUID="_34bd1100-d778-421c-9927-b2504f411d3a" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_7">
+           <num>(7)</num>
+           <intro GUID="_b68606bc-98ce-4aeb-97fc-d6980fecb589" eId="amnd_NC1__cont__qstr__sec__subsec_7__intro">
+            <p>In this section—</p>
+           </intro>
+           <hcontainer GUID="_76c31210-dde4-400e-bab5-09602ee96b6f" class="definition" eId="amnd_NC1__cont__qstr__sec__subsec_7__def_IPPsentence_" name="definition">
+            <content>
+             <p><def GUID="_cd37f188-90dc-4546-8e18-78fce01f564d" eId="amnd_NC1__cont__qstr__sec__subsec_7__def_IPPsentence" ukl:endQuote="”" ukl:startQuote="“">IPP sentence</def> means a sentence of imprisonment or detention in a young offender institution for public protection under section 225 of the Criminal Justice Act 2003 or a sentence of detention for public protection under section 226 of that Act (including such a sentence of imprisonment or detention passed as a result of section 219 or 221 of the Armed Forces Act 2006);</p>
+            </content>
+           </hcontainer>
+           <hcontainer GUID="_38ba5942-4923-4fa5-a78f-90132d2ec940" class="definition" eId="amnd_NC1__cont__qstr__sec__subsec_7__def_originaloffence_" name="definition">
+            <content>
+             <p><def GUID="_007e2e39-6aaa-4737-9127-a7a2c21599e1" eId="amnd_NC1__cont__qstr__sec__subsec_7__def_originaloffence" ukl:endQuote="”" ukl:startQuote="“">original offence</def> means the offence in relation to which the IPP sentence was imposed.</p>
+            </content>
+           </hcontainer>
+          </subsection>
+          <subsection GUID="_c4a71a95-a36c-4cc8-b52a-b23e6a44f3a8" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_8">
+           <num>(8)</num>
+           <content>
+            <p>This section comes into force at the end of the period of two months beginning with the day on which this Act is passed.</p>
+           </content>
+          </subsection>
+         </section>
+         </quotedStructure><inline name="AppendText"/></mod> </block>
+       </tblock>
+      </amendmentContent>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="b71cf36d-ff10-402a-a48d-6e24eea714c4" seriesId="b71cf36d-ff10-402a-a48d-6e24eea714c4" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_a000c907-5d4e-40c1-9abc-718927606fe8" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_NC2__step" outcome="#draft"/>
+       <step GUID="_008c9879-0de4-4040-a036-1c17811761d4" by="#proponent" date="2023-07-31T14:20:41.571Z" eId="amnd_NC2__step__oc_1" outcome="#submitted"/>
+       <step GUID="_bba4ca6d-8cf5-4a01-b012-550a50aabbac" by="#proponent" date="2023-07-31T14:20:54.255Z" eId="amnd_NC2__step__oc_2" outcome="#tabled"/>
+       <step GUID="_090cf308-0522-47a5-a3cd-663fd38fadb6" by="#proponent" date="2023-07-31T14:21:08.848Z" eId="amnd_NC2__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_69183e0a-1380-4500-9ff8-0d464b7e9651" by="#parliament" date="2023-08-24T16:27:11.695Z" eId="amnd_NC2__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/ea5aab23-f92c-4e7e-a547-a000f83e74b8/victims_prisoners_rm_rep_0825.8f42788d-7db9-4ceb-b217-8046e63be33b/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_2943194d-7651-4ad8-ad91-6a7cc2c0e737" by="#parliament" date="2023-08-30T16:16:02.034Z" eId="amnd_NC2__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/844757a3-4133-4567-ba40-1287df713925/victims_prisoners_rm_rep_0831.9724e566-158a-4661-a917-c005df7bbe4c/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_c85994f8-ac60-4244-adb7-aacd23751e65" by="#parliament" date="2023-08-31T17:28:37.572Z" eId="amnd_NC2__step__oc_6" href="/ldapp-rest-api/ldapp/document/download/588634fa-253e-4ea3-8fb9-9783b506d617/victims_prisoners_rm_rep_0901.25653c3e-0607-4dfb-8f1a-4089e8b54f97/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_3c511c1a-a5bd-430f-ad7b-28610f0929e9" by="#parliament" date="2023-09-05T20:10:51.183Z" eId="amnd_NC2__step__oc_7" href="/ldapp-rest-api/ldapp/document/download/b3904c24-4c84-4e10-bebf-e5f7dbb0e4a3/victims_prisoners_rm_rep_0906.2bc7759f-aa63-4da1-947f-ea66dedea105/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_fa43e9b8-ab3e-4ac0-80ce-db49182c5bb3" by="#parliament" date="2023-09-07T17:33:24.999Z" eId="amnd_NC2__step__oc_8" href="/ldapp-rest-api/ldapp/document/download/ea419296-524e-4d21-9005-6d91757650c1/victims_prisoners_rm_rep_0908.8c10ea14-d22d-4ea6-b587-099f007ca052/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_356f7ae1-0a00-407c-86de-045ddc22688f" eId="amnd_NC2#person-178" href="#John_McDonnell" showAs="John McDonnell" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_fb8d8704-052c-47f7-a7f2-668b60b67b09" eId="amnd_NC2__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_88fc901a-f3f2-4e22-9e8e-919468747c73" eId="amnd_NC2" ukl:location="" ukl:targetPage="" ukl:targetProvision="" ukl:targetSortKey="A02" ukl:type="newClause">
+      <amendmentHeading GUID="_711fa9e5-3ddb-485f-b059-6bcde4e59eed" eId="amnd_NC2__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_NC2#person-178">John McDonnell</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_762347e8-65f5-44e0-a1a8-5d0f5939f509" eId="amnd_NC2__cont">
+       <tblock>
+        <num ukl:dnum="HoC222">NC2</num>
+        <block name="instruction"> <mod>To move the following Clause—<quotedStructure GUID="_544f966c-cf96-431d-a7ca-af22ab9a465d" eId="amnd_NC2__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+         <section GUID="_3b559a7d-b749-43e8-babf-4d0eae2898ad" class="prov1" eId="amnd_NC2__cont__qstr__sec">
+          <num/>
+          <heading GUID="_d053228a-b65d-455e-b4d6-a0cb03fcdc2b" eId="amnd_NC2__cont__qstr__sec__hdg">Appointment of an advocate to represent IPP prisoners’ interests</heading>
+          <subsection GUID="_3c219551-2382-4065-b750-cb35beb0f937" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_1">
+           <num>(1)</num>
+           <content>
+            <p>The Secretary of State may, by regulations, establish a list of advocates to further the interests of prisoners serving imprisonment for public protection (IPP) sentences.</p>
+           </content>
+          </subsection>
+          <subsection GUID="_22d01407-1a8a-402c-9d31-01d369461a32" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_2">
+           <num>(2)</num>
+           <content>
+            <p>For the purposes of subsection (1), the Secretary of State may set out minimum qualifications for any person to be appointed as an IPP advocate.</p>
+           </content>
+          </subsection>
+          <subsection GUID="_c757945d-abf2-4b08-b94e-fb9dbe484084" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_3">
+           <num>(3)</num>
+           <intro GUID="_b4bf425d-b378-4ae4-aafe-2ccf665f5d2a" eId="amnd_NC2__cont__qstr__sec__subsec_3__intro">
+            <p>A person may only act as an IPP advocate if the Secretary of State considers that the following conditions are satisfied—</p>
+           </intro>
+           <level GUID="_2d8c92a3-4b98-4c28-a4cd-a2038dfdb2f6" class="para1" eId="amnd_NC2__cont__qstr__sec__subsec_3__para_a">
+            <num>(a)</num>
+            <content>
+             <p>they have had appropriate experience or training or an appropriate combination of experience and training;</p>
+            </content>
+           </level>
+           <level GUID="_2301a2b0-338b-46c6-bef4-c464814fa55c" class="para1" eId="amnd_NC2__cont__qstr__sec__subsec_3__para_b">
+            <num>(b)</num>
+            <content>
+             <p>they are of integrity and good character; and</p>
+            </content>
+           </level>
+           <level GUID="_dc4afa55-5493-4595-a8c6-6098df585212" class="para1" eId="amnd_NC2__cont__qstr__sec__subsec_3__para_c">
+            <num>(c)</num>
+            <content>
+             <p>they are able to act independently of any other person who is professionally concerned with the qualifying prisoner’s continuing imprisonment.</p>
+            </content>
+           </level>
+          </subsection>
+          <subsection GUID="_55f7e5e7-5e71-45f8-8a58-f41bc554dc7e" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_4">
+           <num>(4)</num>
+           <intro GUID="_15b7bddb-1f5f-4a58-af72-0b30d11f379c" eId="amnd_NC2__cont__qstr__sec__subsec_4__intro">
+            <p>The Secretary of State may pay to, or in respect of, such a person—</p>
+           </intro>
+           <level GUID="_5af8318a-6f15-4a06-8509-7e7eea276f52" class="para1" eId="amnd_NC2__cont__qstr__sec__subsec_4__para_a">
+            <num>(a)</num>
+            <content>
+             <p>amounts by way of remuneration, pensions, allowances or gratuities, and</p>
+            </content>
+           </level>
+           <level GUID="_d85c0b6c-5a7d-48c1-8fd1-127f3eaa58e5" class="para1" eId="amnd_NC2__cont__qstr__sec__subsec_4__para_b">
+            <num>(b)</num>
+            <content>
+             <p>sums in respect of the expenses of the IPP advocate.</p>
+            </content>
+           </level>
+          </subsection>
+          <subsection GUID="_4847a2e5-9f2a-49f0-96aa-0f0ba420ddad" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_5">
+           <num>(5)</num>
+           <content>
+            <p>Regulations under this section are to be made by statutory instrument; and an instrument containing regulations made under this section is subject to annulment in pursuance of a resolution of either House of Parliament.</p>
+           </content>
+          </subsection>
+         </section>
+         </quotedStructure><inline name="AppendText"/></mod> </block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_87ea1cf1-7a62-475e-b803-4b2b51c4bba1" eId="amnd_NC2__hdg__oc_1">Member's explanatory statement</heading>
+        <p>This new clause, and new clause NC3 would allow the Secretary of State to appoint a number of independent advocates to act on behalf of over-tariff prisoners sentenced to imprisonment for public protection.</p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="47c55dcb-0a90-4adb-81ab-68e251c43520" seriesId="47c55dcb-0a90-4adb-81ab-68e251c43520" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_134b6b70-296e-416d-a05d-7957002c8679" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_NC3__step" outcome="#draft"/>
+       <step GUID="_24c6ff46-fc93-4ad2-b94c-f69874426466" by="#proponent" date="2023-07-31T14:20:41.589Z" eId="amnd_NC3__step__oc_1" outcome="#submitted"/>
+       <step GUID="_da12974e-7080-4968-9dde-f5ae8b5508f3" by="#proponent" date="2023-07-31T14:20:54.274Z" eId="amnd_NC3__step__oc_2" outcome="#tabled"/>
+       <step GUID="_705f96a7-2127-4e89-953c-f8204d95dff2" by="#proponent" date="2023-07-31T14:21:08.866Z" eId="amnd_NC3__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_d9212286-42de-430a-86af-9b7ae3f52bb1" by="#parliament" date="2023-08-24T16:27:11.787Z" eId="amnd_NC3__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/ea5aab23-f92c-4e7e-a547-a000f83e74b8/victims_prisoners_rm_rep_0825.8f42788d-7db9-4ceb-b217-8046e63be33b/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_54f6fe55-7e2b-4319-ae06-e189ad8ed594" by="#parliament" date="2023-08-30T16:16:02.086Z" eId="amnd_NC3__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/844757a3-4133-4567-ba40-1287df713925/victims_prisoners_rm_rep_0831.9724e566-158a-4661-a917-c005df7bbe4c/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_90b9adf1-8667-4fec-8d0e-fb0c7b1f8511" by="#parliament" date="2023-08-31T17:28:37.634Z" eId="amnd_NC3__step__oc_6" href="/ldapp-rest-api/ldapp/document/download/588634fa-253e-4ea3-8fb9-9783b506d617/victims_prisoners_rm_rep_0901.25653c3e-0607-4dfb-8f1a-4089e8b54f97/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_fc870503-7761-40bf-b590-5592104ae4cf" by="#parliament" date="2023-09-05T20:10:51.263Z" eId="amnd_NC3__step__oc_7" href="/ldapp-rest-api/ldapp/document/download/b3904c24-4c84-4e10-bebf-e5f7dbb0e4a3/victims_prisoners_rm_rep_0906.2bc7759f-aa63-4da1-947f-ea66dedea105/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_c61f405e-2c8c-4764-82ff-b6f39686ad78" by="#parliament" date="2023-09-07T17:33:25.083Z" eId="amnd_NC3__step__oc_8" href="/ldapp-rest-api/ldapp/document/download/ea419296-524e-4d21-9005-6d91757650c1/victims_prisoners_rm_rep_0908.8c10ea14-d22d-4ea6-b587-099f007ca052/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_3873a4d6-2f55-4e92-bf87-57bebf1bcbdf" eId="amnd_NC3#person-178" href="#John_McDonnell" showAs="John McDonnell" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_3125d904-7091-405d-b122-cdc43a27c653" eId="amnd_NC3__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_918e17fb-f9a6-4796-a47c-95cc38a359ce" eId="amnd_NC3" ukl:location="" ukl:targetPage="" ukl:targetProvision="" ukl:targetSortKey="A03" ukl:type="newClause">
+      <amendmentHeading GUID="_d4a1a001-6e76-4892-a994-675dd76f752e" eId="amnd_NC3__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_NC3#person-178">John McDonnell</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_1401ce14-6463-4a28-9ba0-3ee7dbeabaa7" eId="amnd_NC3__cont">
+       <tblock>
+        <num ukl:dnum="HoC223">NC3</num>
+        <block name="instruction"> <mod>To move the following Clause—<quotedStructure GUID="_64061328-5a18-4c2b-8199-b308c1c14c94" eId="amnd_NC3__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+         <section GUID="_3e7963eb-3d92-4a4f-9a8d-3ac6c38fa5db" class="prov1" eId="amnd_NC3__cont__qstr__sec">
+          <num/>
+          <heading GUID="_812c059a-9611-4702-ad6d-67a5e46ad048" eId="amnd_NC3__cont__qstr__sec__hdg">Functions of an IPP advocate</heading>
+          <subsection GUID="_e3286c81-ce1d-4aee-b706-c0330b7e46f1" class="prov2" eId="amnd_NC3__cont__qstr__sec__subsec_1">
+           <num>(1)</num>
+           <content>
+            <p>Any IPP prisoner who has exceeded their minimum tariff period is entitled to ask for the assistance of an IPP advocate.</p>
+           </content>
+          </subsection>
+          <subsection GUID="_c7f0450a-60dc-44e2-9b7f-ff6f6c40be63" class="prov2" eId="amnd_NC3__cont__qstr__sec__subsec_2">
+           <num>(2)</num>
+           <content>
+            <p>An IPP advocate may not provide legal services or advice to an IPP prisoner.</p>
+           </content>
+          </subsection>
+          <subsection GUID="_940e6b0e-b0e5-4969-bdee-11007e7490c2" class="prov2" eId="amnd_NC3__cont__qstr__sec__subsec_3">
+           <num>(3)</num>
+           <intro GUID="_b612e38b-58f0-4dba-9993-d301fc057c55" eId="amnd_NC3__cont__qstr__sec__subsec_3__intro">
+            <p>An IPP advocate may—</p>
+           </intro>
+           <level GUID="_f9dab1c9-80a5-4411-8d58-ba1bf358b980" class="para1" eId="amnd_NC3__cont__qstr__sec__subsec_3__para_a">
+            <num>(a)</num>
+            <content>
+             <p>visit and advise an IPP prisoner at the facility where they are imprisoned;</p>
+            </content>
+           </level>
+           <level GUID="_b3c48d50-aaeb-41a7-99ce-bb7fea48da29" class="para1" eId="amnd_NC3__cont__qstr__sec__subsec_3__para_b">
+            <num>(b)</num>
+            <content>
+             <p>subject to subsection (2), appear before the Parole Board on behalf of an IPP prisoner;</p>
+            </content>
+           </level>
+           <level GUID="_dfd7c2fb-8e85-4c66-9722-f0474d57d92a" class="para1" eId="amnd_NC3__cont__qstr__sec__subsec_3__para_c">
+            <num>(c)</num>
+            <content>
+             <p>visit and advise an IPP prisoner who has been released on licence.</p>
+            </content>
+           </level>
+          </subsection>
+          <subsection GUID="_414d4bfb-baf6-4e79-99b2-88d8c0846506" class="prov2" eId="amnd_NC3__cont__qstr__sec__subsec_4">
+           <num>(4)</num>
+           <content>
+            <p>For the purposes of this Act, “IPP prisoner” means a person sentenced to imprisonment for public protection under the Criminal Justice Act, or any successor Act.</p>
+           </content>
+          </subsection>
+         </section>
+         </quotedStructure><inline name="AppendText"/></mod> </block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_7d560a69-04a1-4712-a9d8-0a0e4c71765c" eId="amnd_NC3__hdg__oc_1">Member's explanatory statement</heading>
+        <p>This new clause sets out the functions of an IPP advocate. They will not provide legal advice, but will provide practical advice, support them at the Parole Board and on release.</p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="f1c00b44-6f49-4012-b147-45ed8b0b7618" seriesId="f1c00b44-6f49-4012-b147-45ed8b0b7618" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_d9074890-78af-454a-bebc-109b1f2e5f99" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_1__step" outcome="#draft"/>
+       <step GUID="_2aa972a9-f21a-40f5-a43c-ea62d7d6c4cc" by="#proponent" date="2023-07-18T11:05:22.794Z" eId="amnd_1__step__oc_1" outcome="#submitted"/>
+       <step GUID="_56463507-e7d7-4811-8ea8-69e9b637d121" by="#proponent" date="2023-07-18T11:05:31.840Z" eId="amnd_1__step__oc_2" outcome="#tabled"/>
+       <step GUID="_a3466141-afc0-4bb1-8944-9e2d7c03b9b7" by="#proponent" date="2023-07-18T11:05:46.811Z" eId="amnd_1__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_cfd42b47-7e7c-40a5-a71b-86e9856b6545" by="#parliament" date="2023-07-18T11:37:45.201Z" eId="amnd_1__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/e46712e8-14ce-4616-be59-1d8580df710c/victims_prisoners_rm_rep_0719.ef461f5f-7a19-44a6-a71a-584cb9cbd59f/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_b3e5cf75-2009-4937-839c-4e0540f28cd8" by="#parliament" date="2023-07-18T19:19:24.021Z" eId="amnd_1__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/c3110ebd-ebf0-40d8-a105-26f20bdccc69/victims_prisoners_rm_rep_0719.11a4c598-ecb3-46ef-80cf-4bcebe887cff/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_dc14b675-fc14-4255-9a33-7838efbc57ec" by="#parliament" date="2023-07-19T19:34:41.637Z" eId="amnd_1__step__oc_6" href="/ldapp-rest-api/ldapp/document/download/7b26e1e4-b6d1-4095-95bc-17ac6077bfe4/victims_prisoners_rm_rep_0720.0445a9f3-018e-453e-a43e-89ce7153b246/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_0917816f-2979-43fc-94a1-aa9f5fd0480b" by="#parliament" date="2023-07-20T17:47:59.356Z" eId="amnd_1__step__oc_7" href="/ldapp-rest-api/ldapp/document/download/b86966dc-efcc-4bc0-ad74-131febe099bc/victims_prisoners_rm_rep_0721.22e8da2e-1903-4dee-9064-687271d6bdbd/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_849ac3b0-c284-4929-9ab3-68e8a619b381" by="#parliament" date="2023-08-24T16:27:11.857Z" eId="amnd_1__step__oc_8" href="/ldapp-rest-api/ldapp/document/download/ea5aab23-f92c-4e7e-a547-a000f83e74b8/victims_prisoners_rm_rep_0825.8f42788d-7db9-4ceb-b217-8046e63be33b/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_ab95b930-6288-4f06-97b6-9140649ad1a3" by="#parliament" date="2023-08-30T16:16:02.136Z" eId="amnd_1__step__oc_9" href="/ldapp-rest-api/ldapp/document/download/844757a3-4133-4567-ba40-1287df713925/victims_prisoners_rm_rep_0831.9724e566-158a-4661-a917-c005df7bbe4c/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_7988554c-929c-414a-aeee-beec4d2d003c" by="#parliament" date="2023-08-31T17:28:37.685Z" eId="amnd_1__step__oc_10" href="/ldapp-rest-api/ldapp/document/download/588634fa-253e-4ea3-8fb9-9783b506d617/victims_prisoners_rm_rep_0901.25653c3e-0607-4dfb-8f1a-4089e8b54f97/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_97335754-1701-4b87-89a3-66798d9b6821" by="#parliament" date="2023-09-05T20:10:51.318Z" eId="amnd_1__step__oc_11" href="/ldapp-rest-api/ldapp/document/download/b3904c24-4c84-4e10-bebf-e5f7dbb0e4a3/victims_prisoners_rm_rep_0906.2bc7759f-aa63-4da1-947f-ea66dedea105/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_1fd14c9a-6321-40d5-94c5-7f2cac0eeb75" by="#parliament" date="2023-09-07T17:33:25.147Z" eId="amnd_1__step__oc_12" href="/ldapp-rest-api/ldapp/document/download/ea419296-524e-4d21-9005-6d91757650c1/victims_prisoners_rm_rep_0908.8c10ea14-d22d-4ea6-b587-099f007ca052/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_cddfd1e8-1b05-479f-a828-883852dc542b" eId="amnd_1#person-1480" href="#Dame_Maria_Miller" showAs="Dame Maria Miller" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_00a1866b-4702-42fb-9f4e-8a413f995f5a" eId="amnd_1__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_b1cdc579-1776-4461-9e78-7e1e962b2710" eId="amnd_1" ukl:location="" ukl:targetPage="p_1__ln_16" ukl:targetProvision="sec_1" ukl:targetSortKey="A01" ukl:type="insert">
+      <amendmentHeading GUID="_497fbf46-c1fa-44c7-a0e8-377b9eff5948" eId="amnd_1__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_1#person-1480">Dame Maria Miller</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_bd32a38e-8c68-43d2-b59f-683a839574ce" eId="amnd_1__cont">
+       <tblock>
+        <num ukl:dnum="HoC220">1</num>
+        <block name="instruction"> <mod>Clause 1, page 1, line 16, at end insert—<quotedStructure GUID="_c52503cf-ad0a-4e9b-9978-405e87b600a7" eId="amnd_1__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+         <level GUID="_c61d9b21-8d26-4ad3-8379-6c4a4e60b28e" class="para1" eId="amnd_1__cont__qstr__para_e">
+          <num ukl:autonumber="no">(e)</num>
+          <content>
+           <p>where a person has entered into a non-disclosure agreement that has the effect of preventing that person from speaking about behaviour that may be criminal misconduct.</p>
+          </content>
+         </level>
+         </quotedStructure><inline name="AppendText"/></mod> </block>
+       </tblock>
+      </amendmentContent>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="7d8bedf9-4378-47f5-9c8a-f45033ff9e40" seriesId="7d8bedf9-4378-47f5-9c8a-f45033ff9e40" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_96b05296-92aa-4346-bdbb-55411e8064ac" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_2__step" outcome="#draft"/>
+       <step GUID="_04d3a9a6-f13f-4ccc-b9a8-dd5cdd006d96" by="#proponent" date="2023-09-05T15:46:27.173Z" eId="amnd_2__step__oc_1" outcome="#submitted"/>
+       <step GUID="_8d9477f5-5c3b-48b4-8dd4-babe7529cfd6" by="#proponent" date="2023-09-05T15:46:39.892Z" eId="amnd_2__step__oc_2" outcome="#tabled"/>
+       <step GUID="_3dd29125-4ed4-431d-a3b2-a1f29b50568b" by="#proponent" date="2023-09-05T15:46:52.190Z" eId="amnd_2__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_46516978-25a8-4ffe-a859-1897a1fd579c" by="#parliament" date="2023-09-05T20:10:51.371Z" eId="amnd_2__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/b3904c24-4c84-4e10-bebf-e5f7dbb0e4a3/victims_prisoners_rm_rep_0906.2bc7759f-aa63-4da1-947f-ea66dedea105/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_7ca888a7-9a6b-4eb4-a1de-a9402b03dde2" by="#parliament" date="2023-09-07T17:33:25.217Z" eId="amnd_2__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/ea419296-524e-4d21-9005-6d91757650c1/victims_prisoners_rm_rep_0908.8c10ea14-d22d-4ea6-b587-099f007ca052/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_42ac0c54-505f-4100-9b2f-0102a542ff7b" eId="amnd_2#person-4656" href="#Layla_Moran" showAs="Layla Moran" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_314cef7c-03d1-41a5-8b83-8bb88a7a6a7e" eId="amnd_2__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_b18f28f8-63fa-4e16-93ad-0ea177f25a26" eId="amnd_2" ukl:location="" ukl:targetPage="p_1__ln_16" ukl:targetProvision="sec_1" ukl:targetSortKey="A02" ukl:type="insert">
+      <amendmentHeading GUID="_6d0aed9c-9814-4c47-8619-b2a452f771a5" eId="amnd_2__hdg">
+       <block name="proposer"><docIntroducer refersTo="#person-4656">Layla Moran</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_ce21ac8f-14e9-4302-896b-376b78bad307" eId="amnd_2__cont">
+       <tblock>
+        <num ukl:dnum="HoC238">2</num>
+        <block name="instruction"><mod>Clause 1, page 1, line 16, at end insert— <quotedStructure GUID="_38fa628b-719b-4c28-9e66-429878cf6751" eId="amnd_2__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+         <level GUID="_64b85110-a2aa-4504-b5ff-16609885b7a8" class="para1" eId="amnd_2__cont__qstr__para_e">
+          <num ukl:autonumber="no">(e)</num>
+          <intro GUID="_2e577d15-0655-417b-907e-43ec9f696387" eId="amnd_2__cont__qstr__para_e__intro">
+           <p>where the person has experienced, or made allegations that they have experienced—</p>
+          </intro>
+          <level GUID="_a2a34f2e-45e2-4772-9d95-cbc46d1ce1fd" class="para2" eId="amnd_2__cont__qstr__para_e__subpara_i">
+           <num>(i)</num>
+           <content>
+            <p>sexual abuse, sexual harassment or sexual misconduct, or</p>
+           </content>
+          </level>
+          <level GUID="_d0b3968a-a06e-487e-ba2b-fe4fa28e9098" class="para2" eId="amnd_2__cont__qstr__para_e__subpara_ii">
+           <num>(ii)</num>
+           <content>
+            <p>bullying or harassment not falling within paragraph (i).</p>
+           </content>
+          </level>
+         </level>
+         </quotedStructure><inline name="AppendText"/></mod></block>
+       </tblock>
+      </amendmentContent>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="91218fa4-3569-4f4d-b35b-da957248c028" seriesId="91218fa4-3569-4f4d-b35b-da957248c028" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_d3ada92b-a462-4a9f-9c64-6220d64b9970" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_3__step" outcome="#draft"/>
+       <step GUID="_45983dd2-487e-4c08-bc9e-cb326c9e4957" by="#proponent" date="2023-09-05T15:46:27.202Z" eId="amnd_3__step__oc_1" outcome="#submitted"/>
+       <step GUID="_0ac44bac-d15a-4340-ba19-36a98627b200" by="#proponent" date="2023-09-05T15:46:39.919Z" eId="amnd_3__step__oc_2" outcome="#tabled"/>
+       <step GUID="_e291d99f-b963-48f8-a448-71c1839a7e46" by="#proponent" date="2023-09-05T15:46:52.220Z" eId="amnd_3__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_6d791035-9bfe-4210-bb05-d46564eb103e" by="#parliament" date="2023-09-05T20:10:51.481Z" eId="amnd_3__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/b3904c24-4c84-4e10-bebf-e5f7dbb0e4a3/victims_prisoners_rm_rep_0906.2bc7759f-aa63-4da1-947f-ea66dedea105/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_7d04b1a8-fde0-4b4d-892c-5fbd4029ac02" by="#parliament" date="2023-09-07T17:33:25.280Z" eId="amnd_3__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/ea419296-524e-4d21-9005-6d91757650c1/victims_prisoners_rm_rep_0908.8c10ea14-d22d-4ea6-b587-099f007ca052/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_42c52e70-e106-4ce6-b5de-61a8810a97b0" eId="amnd_3#person-4656" href="#Layla_Moran" showAs="Layla Moran" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_e03f70ce-6b00-4b87-82d9-c42d27a88213" eId="amnd_3__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000348/bill@public-committee-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_e5defed2-ecff-4987-97f5-b172a32e3978" eId="amnd_3" ukl:location="" ukl:targetPage="p_2__ln_25" ukl:targetProvision="sec_2" ukl:targetSortKey="A03" ukl:type="insert">
+      <amendmentHeading GUID="_12d32387-82ae-4dd2-aafe-3e9949c4cf80" eId="amnd_3__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_3#person-4656">Layla Moran</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_8dba8bb4-05fc-4660-9e3d-51cfff6a4f3d" eId="amnd_3__cont">
+       <tblock>
+        <num ukl:dnum="HoC239">3</num>
+        <block name="instruction"><mod>Clause 2, page 2, line 25, at end insert— <quotedStructure GUID="_ce5f1039-cb2f-495e-a39f-d909abe9730e" eId="amnd_3__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+         <subsection GUID="_5a0074b5-4a6d-4fc5-8b0a-fbb9db9e8f31" class="prov2" eId="amnd_3__cont__qstr__subsec_3A">
+          <num ukl:autonumber="no">(3A)</num>
+          <intro GUID="_89e58154-a54c-4ca4-ba3c-f37433f59419" eId="amnd_3__cont__qstr__subsec_3A__intro">
+           <p>The victims’ code must make provision in relation to people who have experienced, or made allegations that they have experienced—</p>
+          </intro>
+          <level GUID="_7823b8d9-6d1a-4ab5-a01a-bec07c1a6ee8" class="para1" eId="amnd_3__cont__qstr__subsec_3A__para_a">
+           <num>(a)</num>
+           <content>
+            <p>sexual abuse, sexual harassment or sexual misconduct, or</p>
+           </content>
+          </level>
+          <level GUID="_13313e60-2d91-46bb-a42a-38e58f53bcce" class="para1" eId="amnd_3__cont__qstr__subsec_3A__para_b">
+           <num>(b)</num>
+           <content>
+            <p>bullying or harassment not falling within paragraph (a).</p>
+           </content>
+          </level>
+         </subsection>
+         <subsection GUID="_3c78c2bd-61d6-475f-9596-2d2af7b9c79a" class="prov2" eId="amnd_3__cont__qstr__subsec_3B">
+          <num>(3B)</num>
+          <intro GUID="_4b081b59-023b-49a6-a193-1a128a195e7b" eId="amnd_3__cont__qstr__subsec_3B__intro">
+           <p>Provision under subsection (3A) must include—</p>
+          </intro>
+          <level GUID="_7ab8f577-c522-419f-99a7-bfb2582465a9" class="para1" eId="amnd_3__cont__qstr__subsec_3B__para_a">
+           <num>(a)</num>
+           <content>
+            <p>provision relating to the enforcement of non-disclosure agreements signed by such victims, and</p>
+           </content>
+          </level>
+          <level GUID="_a6d9037c-a353-4ef6-b94d-1b7e86d01d45" class="para1" eId="amnd_3__cont__qstr__subsec_3B__para_b">
+           <num>(b)</num>
+           <content>
+            <p>provision about legal advice and other support for such victims in cases where they are asked to sign, or have signed, a non-disclosure agreement.</p>
+           </content>
+          </level>
+         </subsection>
+         <subsection GUID="_37a964a9-e226-412e-86d1-8cf481d0946c" class="prov2" eId="amnd_3__cont__qstr__subsec_3C">
+          <num>(3C)</num>
+          <intro GUID="_c43bdbf8-7fc0-4785-8663-e33083b9e2e1" eId="amnd_3__cont__qstr__subsec_3C__intro">
+           <p>In this section—</p>
+          </intro>
+          <hcontainer GUID="_177428de-e7c4-466a-bc90-cf87aa3a5dda" class="definition" eId="amnd_3__cont__qstr__subsec_3C__def_non-disclosureagreement_" name="definition">
+           <intro GUID="_5fe88c1d-f85c-489d-9f8b-3695ab74cc8c" eId="amnd_3__cont__qstr__subsec_3C__def_non-disclosureagreement__intro">
+            <p><def GUID="_675174d4-16dd-4f1d-9567-5374c256c014" eId="amnd_3__cont__qstr__subsec_3C__def_non-disclosureagreement" ukl:endQuote="”" ukl:startQuote="“">non-disclosure agreement</def> means an agreement which purports to any extent to preclude a victim from—</p>
+           </intro>
+           <level GUID="_9594d524-e72c-4ce8-9f51-a4f4d8fb6f7a" class="para1" eId="amnd_3__cont__qstr__subsec_3C__def_non-disclosureagreement__para_a">
+            <num>(a)</num>
+            <content>
+             <p>publishing information about a relevant complaint, or</p>
+            </content>
+           </level>
+           <level GUID="_cf195ace-552c-4961-a1e7-d18783d14743" class="para1" eId="amnd_3__cont__qstr__subsec_3C__def_non-disclosureagreement__para_b">
+            <num>(b)</num>
+            <content>
+             <p>disclosing information about the relevant complaint to any one or more other persons;</p>
+            </content>
+           </level>
+          </hcontainer>
+          <hcontainer GUID="_4b7d8d97-d9c5-4000-b6c7-f1655a1a5bd1" class="definition" eId="amnd_3__cont__qstr__subsec_3C__def_misconduct_" name="definition">
+           <intro GUID="_bd8d277e-74bd-4eb9-9590-a89adcdb9406" eId="amnd_3__cont__qstr__subsec_3C__def_misconduct__intro">
+            <p><def GUID="_d1bc33ef-9a0a-4af6-be06-8df587c64e35" eId="amnd_3__cont__qstr__subsec_3C__def_misconduct" ukl:endQuote="”" ukl:startQuote="“">misconduct</def> means—</p>
+           </intro>
+           <level GUID="_17d3c784-af0d-440d-94ff-08fe4e26bff1" class="para1" eId="amnd_3__cont__qstr__subsec_3C__def_misconduct__para_a">
+            <num>(a)</num>
+            <content>
+             <p>sexual abuse, sexual harassment or sexual misconduct, and</p>
+            </content>
+           </level>
+           <level GUID="_e0af8f13-955d-453f-964e-838622a9e9cb" class="para1" eId="amnd_3__cont__qstr__subsec_3C__def_misconduct__para_b">
+            <num>(b)</num>
+            <content>
+             <p>bullying or harassment not falling within paragraph(a);</p>
+            </content>
+           </level>
+          </hcontainer>
+          <hcontainer GUID="_1bacb59c-1610-491c-9316-9757da317687" class="definition" eId="amnd_3__cont__qstr__subsec_3C__def_relevantcomplaint_" name="definition">
+           <content>
+            <p><def GUID="_4983e587-510a-418d-8665-310b8c86528d" eId="amnd_3__cont__qstr__subsec_3C__def_relevantcomplaint" ukl:endQuote="”" ukl:startQuote="“">relevant complaint</def> means a complaint relating to misconduct or alleged misconduct by any person.</p>
+           </content>
+          </hcontainer>
+         </subsection>
+         </quotedStructure><inline name="AppendText"/></mod></block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_036e7ad0-1b38-4090-ab6c-d8f3acede0d7" eId="amnd_3__hdg__oc_1">Member's explanatory statement</heading>
+        <p>This amendment would require the victims’ code to include specific provision for people who have experienced, or made allegations that they have experienced, sexual abuse, sexual harassment or sexual misconduct, or other bullying or harassment.</p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="order">
+    <statement contains="originalVersion" name="hcOrder">
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="UK"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_1d8c8340-b249-4fb8-9307-7f1b987fa807" by="#proponent" date="9999-01-01T00:00:00" eId="order__step" outcome="#draft"/>
+      </workflow>
+     </meta>
+     <mainBody GUID="_1659acb0-be8f-42e7-bf79-21c79feeb8ac" class="hcOrder" eId="order">
+      <blockContainer GUID="_c77db894-c278-4c5b-8a37-1de2b7f533d2" class="hcMotionBody" eId="order__body">
+       <heading GUID="_b719cd2f-15a7-445f-86bb-57e5769190bc" eId="order__body__hdg">Order of the House</heading>
+       <block name="hcOrderDate">[<docDate GUID="_bd0671d5-8c47-4c84-b022-656f87197802" date="9999-01-01" eId="order__body__ddate">15 May 2023</docDate>]</block>
+       <p>That the following provisions shall apply to the Victims and Prisoners Bill:</p>
+       <blockContainer GUID="_9b4f1f46-9528-4e58-977a-c4f678fd0e0b" class="group1" eId="order__body__group">
+        <heading GUID="_8b528e50-9ac1-4a51-a500-a7648ce0d136" eId="order__body__group__hdg">Committal</heading>
+        <blockContainer GUID="_a449b26c-6e06-441a-a18a-22ab7724ef00" class="resProv1" eId="order__body__para_1">
+         <num>1.</num>
+         <p>The Bill shall be committed to a Public Bill Committee.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_86881819-5956-40be-a838-3894a4e1fec7" class="group1" eId="order__body__group__oc_3">
+        <heading GUID="_6a4bd36a-5db1-4272-aba3-3885e4354cc3" eId="order__body__group__oc_3__hdg">Proceedings in Public Bill Committee.</heading>
+        <blockContainer GUID="_1623f995-a689-42c5-94b5-2a78390a431a" class="resProv1" eId="order__body__para_2">
+         <num>2.</num>
+         <p>Proceedings in the Public Bill Committee shall (so far as not previously concluded) be brought to a conclusion on Thursday 13 July 2023.</p>
+        </blockContainer>
+        <blockContainer GUID="_231fa644-d6c4-4788-aacd-1e6147f97652" class="resProv1" eId="order__body__para_3">
+         <num>3.</num>
+         <p>The Public Bill Committee shall have leave to sit twice on the first day on which it meets.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_c2dddcf5-9a2a-4e22-b437-c1fd57efe3ff" class="group1" eId="order__body__group__oc_1">
+        <heading GUID="_4cd32a44-28a8-4326-9fd3-666250a6ea5e" eId="order__body__group__oc_1__hdg">Consideration and Third Reading</heading>
+        <blockContainer GUID="_2b9c573c-8ac7-4adb-9e63-60e0d86fe4de" class="resProv1" eId="order__body__para_4">
+         <num>4.</num>
+         <p>Proceedings on Consideration shall (so far as not previously concluded) be brought to a conclusion one hour before the moment of interruption on the day on which those proceedings are commenced.</p>
+        </blockContainer>
+        <blockContainer GUID="_c310c09c-fe82-4318-bc24-560ae18dde1c" class="resProv1" eId="order__body__para_5">
+         <num>5.</num>
+         <p>Proceedings on Third Reading shall (so far as not previously concluded) be brought to a conclusion at the moment of interruption on that day.</p>
+        </blockContainer>
+        <blockContainer GUID="_32e93831-3076-4c9a-ba21-78691721269a" class="resProv1" eId="order__body__para_6">
+         <num>6.</num>
+         <p>Standing Order No. 83B (Programming committees) shall not apply to proceedings on Consideration and Third Reading.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_dacff690-d82f-4a36-8bdb-173aeb3e47ab" class="group1" eId="order__body__group__oc_2">
+        <heading GUID="_14c35960-40e0-4472-992a-6e4f0e9ab62a" eId="order__body__group__oc_2__hdg">Other proceedings</heading>
+        <blockContainer GUID="_4fb5c063-b559-489d-bc88-92cfb00b1bac" class="resProv1" eId="order__body__para_7">
+         <num>7.</num>
+         <p>Any other proceedings on the Bill may be programmed.</p>
+        </blockContainer>
+       </blockContainer>
+      </blockContainer>
+     </mainBody>
+    </statement>
+   </component>
+  </collectionBody>
+ </amendmentList>
+</akomaNtoso>

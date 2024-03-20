@@ -1,0 +1,585 @@
+<?xml version="1.0" encoding="UTF-8"?><akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://docs.oasis-open.org/legaldocml/ns/akn/3.0 ../schemas/akomantoso30.xsd"><?LDAPP-Component componentId="086b8ff4-74a7-4232-a363-5daf1c041360" seriesId="086b8ff4-74a7-4232-a363-5daf1c041360" versionNumber=""?>
+ 
+ <amendmentList contains="originalVersion" name="hcmarsh">
+  <meta>
+   <identification source="#source">
+    <FRBRWork>
+     <FRBRthis value="#varWork"/>
+     <FRBRuri value="#varWorkUri"/>
+     <FRBRalias name="ttflConfigHistory" value="#varCHOiid"/>
+     <FRBRalias name="alternateUri" value="https://lawmaker.legislation.gov.uk/pdr/ukpubb/HC/58_3/325/bill"/><FRBRdate date="9999-01-01" name="draft"/>
+     <FRBRdate date="2023-09-18" name="published"/><FRBRauthor href="#varAuthor"/>
+     <FRBRcountry value="GB"/>
+     <FRBRnumber value="#varListNo"/>
+     <FRBRname value="Bill #varBillNo-#varListType#varListNo"/>
+    </FRBRWork>
+    <FRBRExpression>
+     <FRBRthis value="#varExpression"/>
+     <FRBRuri value="#varExpressionUri"/>
+     <FRBRalias name="ttflVersionDescription" value="#varVDOiid"/>
+     <FRBRalias name="alternateUri" value="https://lawmaker.legislation.gov.uk/pdr/ukpubb/HC/58_3/325/bill/hcmarsh@2023-09-18"/><FRBRdate date="9999-01-01" name="draft"/>
+     <FRBRdate date="2023-09-18" name="published"/><FRBRauthor href="#varAuthor"/>
+     <FRBRversionNumber value="as_introduced_report_stage-hc/hcmarsh@2023-09-18"/>
+     <FRBRauthoritative value="false"/>
+     <FRBRmasterExpression href="" showAs=""/>
+     <FRBRlanguage language="eng"/>
+    </FRBRExpression>
+    <FRBRManifestation>
+     <FRBRthis value="#varManifestation"/>
+     <FRBRuri value="#varManifestationUri"/>
+     <FRBRdate date="9999-01-01" name="akn_xml"/>
+     <FRBRdate date="2023-09-18" name="published"/><FRBRauthor href="#varAuthor"/>
+     <FRBRformat value="application/akn+xml"/>
+    </FRBRManifestation>
+   </identification>
+   <references source="#author">
+    <TLCConcept eId="varBillTitle" href="#varOntologies" showAs="Economic Activity of Public Bodies (Overseas Matters) Bill"/>
+    <TLCConcept eId="varHouse" href="#varOntologies" showAs="House of Commons"/>
+    <TLCConcept eId="varDraftListDescription" href="#varOntologies" showAs="econactivity_rm_rep_0918"/>
+    <TLCProcess eId="varBillStageVersion" href="#varOntologies" showAs="As Introduced Report Stage"/>
+    <TLCProcess eId="varStageVersion" href="#varOntologies" showAs="Report Stage"/>
+    <TLCProcess eId="varProjectId" href="#varOntologies" showAs="UK000383"/>
+    <TLCProcess eId="varWork" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill"/>
+    <TLCProcess eId="varWorkUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill"/>
+    <TLCProcess eId="varCHOiid" href="#varOntologies" showAs=""/>
+    <TLCProcess eId="varExpression" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc/hcmarsh@2023-09-18"/>
+    <TLCProcess eId="varExpressionUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc/hcmarsh@2023-09-18"/>
+    <TLCProcess eId="varVDOiid" href="#varOntologies" showAs=""/>
+    <TLCProcess eId="varManifestation" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc/hcmarsh@2023-09-18/xml"/>
+    <TLCProcess eId="varManifestationUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc/hcmarsh@2023-09-18/xml"/>
+    <TLCConcept eId="varPublishDate" href="#varOntologies" showAs="2023-09-18"/>
+    <TLCConcept eId="varDocType" href="#varOntologies" showAs="hcmarsh"/>
+    <TLCProcess eId="varSystem" href="#varOntologies" showAs="LawMaker"/>
+    <TLCOrganization eId="varAuthor" href="#varOntologies" showAs="House of Commons"/>
+    <TLCLocation eId="varJurisdiction" href="#varOntologies" showAs="United Kingdom"/>
+    <TLCConcept eId="varOntologies" href="http://legislation.gov.uk/ontologies/legis" showAs="http://legislation.gov.uk/ontologies/legis"/>
+    <TLCConcept eId="varListType" href="#varOntologies" showAs="ML"/>
+    <TLCConcept eId="varListNo" href="#varOntologies" showAs=""/>
+    <TLCConcept eId="varVersionLabel" href="#varOntologies" showAs=""/>
+    <TLCConcept eId="varBillNoComp" href="#varOntologies" showAs="325"/>
+    <TLCConcept eId="varBillNo" href="#varOntologies" showAs="Bill 325"/>
+    <TLCConcept eId="varSessionNo" href="#varOntologies" showAs="58/3"/>
+    <TLCConcept eId="varBillYear" href="#varOntologies" showAs="2023"/>
+    <TLCConcept eId="varSession" href="#varOntologies" showAs="58/3"/>
+    <TLCConcept eId="varBillName" href="#varOntologies" showAs="ukpubb"/>
+   </references>
+  </meta>
+  <preface GUID="_5cba19ef-ea79-4736-88b2-4b231aed8929" eId="preface">
+   <block name="stage"><docStage>Report Stage</docStage>: <docDate date="9999-12-31"><ref class="placeholder" href="#varPublishDate" ukl:dateFormat="EEEE d MMMM yyyy">Monday 18 September 2023</ref></docDate></block>
+   <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument></block>
+   <block name="listType">(Amendment Paper)</block>
+   <blockContainer class="legend">
+    <p>This document lists all amendments tabled to the <affectedDocument href="#varBillProject"><ref class="placeholder" href="#varBillTitle"/></affectedDocument>. Any withdrawn amendments are listed at the end of the document. The amendments are arranged in the order in which it is expected they will be decided.</p>
+    <p>★ New Amendments.</p>
+    <p>☆ Amendments which will comply with the required notice period at their next appearance.</p>
+    <p>New Amendments: 3 to 6 </p>
+   </blockContainer>
+  </preface>
+  <collectionBody>
+   <component class="amendment" ukl:statusIndicator="☆">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="34f6fb9e-0eef-43f7-b5b9-0b2c3853b71a" seriesId="34f6fb9e-0eef-43f7-b5b9-0b2c3853b71a" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_cb7ee850-3ffc-4cd7-a89f-2187ed9033d7" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_1__step" outcome="#draft"/>
+       <step GUID="_76b3196e-1965-4068-b272-22868a4b52c4" by="#proponent" date="2023-09-14T14:33:39.343Z" eId="amnd_1__step__oc_1" outcome="#submitted"/>
+       <step GUID="_4150ba53-db2e-4a91-95ea-8e342c628a13" by="#proponent" date="2023-09-14T14:33:49.126Z" eId="amnd_1__step__oc_2" outcome="#tabled"/>
+       <step GUID="_46926e29-f035-42a7-a9bd-bfdd5d782b0b" by="#proponent" date="2023-09-14T15:50:24.448Z" eId="amnd_1__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_ff06b38a-5d41-460b-a58b-f382e4b87758" by="#parliament" date="2023-09-14T16:49:56.013Z" eId="amnd_1__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/c7bc9956-4271-4548-ab54-a2fd8ef8b43d/econactivity_rm_rep_0915.44090a09-ba6d-4ab8-a062-0cc47365deb0/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_97f3faf4-8a76-4642-a3ff-b8e403cf5fa3" by="#parliament" date="2023-09-15T15:31:30.052Z" eId="amnd_1__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/a04f7c52-9fb0-44b0-a975-b1d1dbb27339/econactivity_rm_rep_0918.1d5d271b-4c16-4092-b6a9-0163c8d6dc2e/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_4c7f6ea7-e54c-4bfe-85af-c3783dc52b01" eId="amnd_1#person-55" href="#Sir_Desmond_Swayne" showAs="Sir Desmond Swayne" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_5abec64e-68ae-4873-9598-12229d9ee7f3" eId="amnd_1__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_23fe9c26-d2ff-4fb6-a404-adcdece78c41" eId="amnd_1" ukl:location="" ukl:targetPage="p_3__ln_7" ukl:targetProvision="sec_3" ukl:type="leaveOut">
+      <amendmentHeading GUID="_0661062e-b789-4d40-9fad-2419aa3950da" eId="amnd_1__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_1#person-55">Sir Desmond Swayne</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_4f0592df-5d97-47c4-8284-03ed243a9862" eId="amnd_1__cont">
+       <tblock>
+        <num ukl:dnum="HoC72">1</num>
+        <block name="instruction">Clause 3, page 3, line 7, leave out subsection (7)</block>
+       </tblock>
+      </amendmentContent>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment" ukl:statusIndicator="☆">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="8d150fa6-189a-43fa-b8b4-6b5503fa4cb1" seriesId="8d150fa6-189a-43fa-b8b4-6b5503fa4cb1" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_708e88a2-c09f-4a89-a9eb-eb733fa49106" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_2__step" outcome="#draft"/>
+       <step GUID="_2d2a8ac8-154b-4fe2-b2d4-dc4640a17506" by="#proponent" date="2023-09-14T14:33:39.374Z" eId="amnd_2__step__oc_1" outcome="#submitted"/>
+       <step GUID="_ede21906-8ac5-44c4-ac01-e09e0adea445" by="#proponent" date="2023-09-14T14:33:49.155Z" eId="amnd_2__step__oc_2" outcome="#tabled"/>
+       <step GUID="_b3f6273a-4172-4659-b63b-703b0931ea64" by="#proponent" date="2023-09-14T15:50:24.418Z" eId="amnd_2__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_a64d95d5-e119-4a4a-9fc3-9faa5194d6d1" by="#parliament" date="2023-09-14T16:49:56.071Z" eId="amnd_2__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/c7bc9956-4271-4548-ab54-a2fd8ef8b43d/econactivity_rm_rep_0915.44090a09-ba6d-4ab8-a062-0cc47365deb0/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_3c6ced66-316d-4c97-8b7b-ff1b5d05f4ae" by="#parliament" date="2023-09-15T15:31:30.164Z" eId="amnd_2__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/a04f7c52-9fb0-44b0-a975-b1d1dbb27339/econactivity_rm_rep_0918.1d5d271b-4c16-4092-b6a9-0163c8d6dc2e/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_bacc84f5-af9f-4401-96ca-5e1b1ce4ce74" eId="amnd_2#person-55" href="#Sir_Desmond_Swayne" showAs="Sir Desmond Swayne" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_c583f20d-cb51-45e6-8d3c-9ff11312e3ba" eId="amnd_2__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_65c6ac1e-740c-4f5c-884c-6319e20607ce" eId="amnd_2" ukl:location="" ukl:targetPage="p_3__ln_13" ukl:targetProvision="sec_4" ukl:type="leaveOutClause">
+      <amendmentHeading GUID="_87b25985-a55b-4626-a3fd-73a4c08240c2" eId="amnd_2__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_2#person-55">Sir Desmond Swayne</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_4711a9b2-5617-4f4f-a385-9480f010b81f" eId="amnd_2__cont">
+       <tblock>
+        <num ukl:dnum="HoC73">2</num>
+        <block name="instruction">Page 3, line 13, leave out Clause 4</block>
+       </tblock>
+      </amendmentContent>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment" ukl:statusIndicator="★">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="36cf70f4-104c-4f26-bc25-2d17ba5dcc4b" seriesId="36cf70f4-104c-4f26-bc25-2d17ba5dcc4b" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_10130b85-c021-4664-8835-2f8037a0b429" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_3__step" outcome="#draft"/>
+       <step GUID="_62501199-941e-489f-a095-b7a526d780db" by="#proponent" date="2023-09-15T13:12:40.164Z" eId="amnd_3__step__oc_1" outcome="#submitted"/>
+       <step GUID="_186903b4-f377-47d3-accd-f58ee2735b2a" by="#proponent" date="2023-09-15T13:12:50.902Z" eId="amnd_3__step__oc_2" outcome="#tabled"/>
+       <step GUID="_37c79412-76e4-49d8-b157-c8734ffa0f1d" by="#proponent" date="2023-09-15T13:13:03.136Z" eId="amnd_3__step__oc_3" outcome="#readyForPublishing"/>
+      <step GUID="_46f92d7f-3bf2-4724-a19b-44a0c4bed676" by="#parliament" date="2023-09-15T15:31:30.272Z" eId="amnd_3__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/a04f7c52-9fb0-44b0-a975-b1d1dbb27339/econactivity_rm_rep_0918.1d5d271b-4c16-4092-b6a9-0163c8d6dc2e/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_6ab5327c-256c-402a-b6fd-a4890d3d7aac" eId="amnd_3#person-4495" href="#Kit_Malthouse" showAs="Kit Malthouse" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_34aa93a5-4b0b-4f81-905c-7f77e6844d2c" eId="amnd_3__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_e18b5d51-2f03-4d0d-8adc-644326e387df" eId="amnd_3" ukl:location="" ukl:targetPage="p_3__ln_18" ukl:targetProvision="sec_4" ukl:type="leaveOut">
+      <amendmentHeading GUID="_17575122-5f75-4df7-836a-49653dd19167" eId="amnd_3__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_3#person-4495">Kit Malthouse</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_b6c43954-334e-4257-874a-68b0a5dea066" eId="amnd_3__cont">
+       <tblock>
+        <num ukl:dnum="HoC9">3</num>
+        <block name="instruction">Clause 4, page 3, line 18, leave out paragraph (b)</block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_c9d3b91c-4bdb-42f6-aca8-bd5a4fd9919c" eId="amnd_3__hdg__oc_1">Member's explanatory statement</heading>
+        <p>This amendment would remove the prohibition on a person publishing a statement indicating that they would have acted in a way prohibited by clause 1 if it were legal to do so.</p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment" ukl:statusIndicator="★">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="adada5e4-1467-438d-a84c-abd1d4d63335" seriesId="adada5e4-1467-438d-a84c-abd1d4d63335" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_2df52b97-dcc4-4f34-aec3-d569d0fe2255" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_4__step" outcome="#draft"/>
+       <step GUID="_07c165bb-439e-49d6-98e9-94cb96a6b3e5" by="#proponent" date="2023-09-15T13:12:40.198Z" eId="amnd_4__step__oc_1" outcome="#submitted"/>
+       <step GUID="_19a1bbe1-17ac-4af6-8fef-c1b6fede2e9c" by="#proponent" date="2023-09-15T13:12:50.937Z" eId="amnd_4__step__oc_2" outcome="#tabled"/>
+       <step GUID="_c16bf3b6-368e-4369-a40b-44f99fcdbef0" by="#proponent" date="2023-09-15T13:13:03.171Z" eId="amnd_4__step__oc_3" outcome="#readyForPublishing"/>
+      <step GUID="_efd9815a-1218-4da4-947e-096d1f578114" by="#parliament" date="2023-09-15T15:31:30.353Z" eId="amnd_4__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/a04f7c52-9fb0-44b0-a975-b1d1dbb27339/econactivity_rm_rep_0918.1d5d271b-4c16-4092-b6a9-0163c8d6dc2e/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_327cd617-c269-417e-bd30-b761aaa20c83" eId="amnd_4#person-4495" href="#Kit_Malthouse" showAs="Kit Malthouse" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_9267f193-3a29-490f-af8c-a814065c634c" eId="amnd_4__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_36984166-6397-426a-84bf-f4475e64ab15" eId="amnd_4" ukl:location="" ukl:targetPage="p_8__ln_5" ukl:targetProvision="sec_12" ukl:type="insert">
+      <amendmentHeading GUID="_3ca75ee9-fc0d-4cfa-a579-17cff1462b0e" eId="amnd_4__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_4#person-4495">Kit Malthouse</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_22f51e81-3e3c-491d-987e-a030af5ab878" eId="amnd_4__cont">
+       <tblock>
+        <num ukl:dnum="HoC10">4</num>
+        <block name="instruction"> <mod>Clause 12, page 8, line 5, at end insert—<quotedStructure GUID="_bc2f389f-d479-4228-b95c-f0e68080c367" eId="amnd_4__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+         <subsection GUID="_ca22047b-e334-4961-8a85-c762f5e8bc5e" class="prov2" eId="amnd_4__cont__qstr__subsec_1A">
+          <num ukl:autonumber="no">(1A)</num>
+          <intro GUID="_2fc5d657-7d8d-48bb-a5ee-411d5077ce59" eId="amnd_4__cont__qstr__subsec_1A__intro">
+           <p>But section 1 does not apply in relation to a fund investment decision made by such a manager if the decision has been approved by a majority of those voting in a ballot of the members of the fund; and section 4 does not apply to any statement—</p>
+          </intro>
+          <level GUID="_b69a91b9-e34b-4f7a-96f9-01488d6c03ff" class="para1" eId="amnd_4__cont__qstr__subsec_1A__para_a">
+           <num>(a)</num>
+           <content>
+            <p>made for the purpose of preparing for or explaining the purpose of such a ballot;</p>
+           </content>
+          </level>
+          <level GUID="_71fc4a4c-943a-4fd3-97cb-dde243addfb2" class="para1" eId="amnd_4__cont__qstr__subsec_1A__para_b">
+           <num>(b)</num>
+           <content>
+            <p>concerning a decision which has been approved by such a ballot.</p>
+           </content>
+          </level>
+         </subsection>
+         </quotedStructure><inline name="AppendText"/></mod> </block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_cae394e4-c5cc-4909-a20c-598a788e8fe3" eId="amnd_4__hdg__oc_1">Member's explanatory statement</heading>
+        <p>This amendment would allow a local government pension fund to act in a way prohibited by clause 1 if the decision to do so is approved by a majority of scheme members, and would prevent statements about or following such a ballot being prohibited by clause 4.</p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment" ukl:statusIndicator="★">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="b018db75-84b5-4414-949d-57aadc7fb779" seriesId="b018db75-84b5-4414-949d-57aadc7fb779" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_f8db0dd0-8d3f-48b1-995a-7a028c1f7fef" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_5__step" outcome="#draft"/>
+       <step GUID="_7663a79d-82bb-4778-a968-1c068f7b6439" by="#proponent" date="2023-09-15T13:12:40.233Z" eId="amnd_5__step__oc_1" outcome="#submitted"/>
+       <step GUID="_6913cab9-b029-4695-bae8-adaba090854d" by="#proponent" date="2023-09-15T13:12:50.971Z" eId="amnd_5__step__oc_2" outcome="#tabled"/>
+       <step GUID="_286a81d0-3c06-47a5-821e-4fcd11fd9021" by="#proponent" date="2023-09-15T13:13:03.208Z" eId="amnd_5__step__oc_3" outcome="#readyForPublishing"/>
+      <step GUID="_264779fe-c1ee-4349-8afc-2f5bc6f74415" by="#parliament" date="2023-09-15T15:31:30.435Z" eId="amnd_5__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/a04f7c52-9fb0-44b0-a975-b1d1dbb27339/econactivity_rm_rep_0918.1d5d271b-4c16-4092-b6a9-0163c8d6dc2e/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_a5fe3f4c-f611-47b5-85cc-f628c3cf9164" eId="amnd_5#person-4495" href="#Kit_Malthouse" showAs="Kit Malthouse" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_3fcd678f-4975-48bd-a579-902921606de5" eId="amnd_5__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_bc7428f6-8bb8-4da8-a758-c197d4cc4364" eId="amnd_5" ukl:location="" ukl:targetPage="p_12__ln_21" ukl:targetProvision="sch" ukl:type="insert">
+      <amendmentHeading GUID="_77163de6-80b8-4228-bb64-079008ab1755" eId="amnd_5__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_5#person-4495">Kit Malthouse</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_b92f6656-eb04-4fe6-b0e5-d1c5e72e29ec" eId="amnd_5__cont">
+       <tblock>
+        <num ukl:dnum="HoC11">5</num>
+        <block name="instruction"> <mod>Schedule, page 12, line 21, at end insert—<quotedStructure GUID="_97ec8ce9-96c9-4247-8f91-f69da8965f53" eId="amnd_5__cont__qstr" endQuote="”" startQuote="“" ukl:context="schedule" ukl:docName="ukpga" ukl:indent="indent0">
+         <paragraph GUID="_d399c40f-09b4-4d58-a03b-e7d79ab3c8cb" class="schProv1" eId="amnd_5__cont__qstr__para_3A">
+          <num ukl:autonumber="no">3A</num>
+          <intro GUID="_de900cfb-66a7-4359-b7cb-d1ce53576443" eId="amnd_5__cont__qstr__para_3A__intro">
+           <p>Section 1 does not apply to—</p>
+          </intro>
+          <level GUID="_81f35a37-7a60-4483-b1f7-5ed591ae5a5d" class="para1" eId="amnd_5__cont__qstr__para_3A__para_a">
+           <num>(a)</num>
+           <content>
+            <p>a registered higher education provider in England, as defined by section 3(10) of the Higher Education and Research Act 2017;</p>
+           </content>
+          </level>
+          <level GUID="_d1d3cf54-01a5-4eeb-8c90-fa852fb8cb8e" class="para1" eId="amnd_5__cont__qstr__para_3A__para_b">
+           <num>(b)</num>
+           <content>
+            <p>an institution within the higher education sector in Wales, as defined by section 91 of the Further and Higher Education Act 1992;</p>
+           </content>
+          </level>
+          <level GUID="_18fa0a33-ea02-48c5-8afb-3a08dd46f327" class="para1" eId="amnd_5__cont__qstr__para_3A__para_d">
+           <num>(d)</num>
+           <content>
+            <p>an institution within the higher education sector in Scotland, as defined by section 56 of the Further and Higher Education (Scotland) Act 1992;</p>
+           </content>
+          </level>
+          <level GUID="_22d57257-8029-437b-b3f6-2b71a49f2553" class="para1" eId="amnd_5__cont__qstr__para_3A__para_e">
+           <num>(e)</num>
+           <content>
+            <p>a higher education institution in Northern Ireland, as defined by article 30 of the Education and Libraries (Northern Ireland) Order 1993.</p>
+           </content>
+          </level>
+         </paragraph>
+         </quotedStructure><inline name="AppendText"/></mod> </block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_f1726350-2a8d-49d1-a6fc-e4422c2c7f57" eId="amnd_5__hdg__oc_1">Member's explanatory statement</heading>
+        <p>This amendment would remove universities and other higher education providers from the requirement to act in accordance with clause 1.</p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment" ukl:statusIndicator="★">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="20a2d05d-4ff9-4abb-b44c-d7218e8e659d" seriesId="20a2d05d-4ff9-4abb-b44c-d7218e8e659d" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_b5d5bda1-acd0-4c2d-86e2-fb79b88846de" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_6__step" outcome="#draft"/>
+       <step GUID="_3116f202-b6f8-45bc-9a79-206796c09c6a" by="#proponent" date="2023-09-15T13:12:40.269Z" eId="amnd_6__step__oc_1" outcome="#submitted"/>
+       <step GUID="_007ee029-359a-4c88-9bed-6317477e7388" by="#proponent" date="2023-09-15T13:12:51.006Z" eId="amnd_6__step__oc_2" outcome="#tabled"/>
+       <step GUID="_3cfdfaab-7e5e-4427-a894-274a2d1aa08d" by="#proponent" date="2023-09-15T13:13:03.243Z" eId="amnd_6__step__oc_3" outcome="#readyForPublishing"/>
+      <step GUID="_5f29c625-c215-455d-8034-85c495bafa75" by="#parliament" date="2023-09-15T15:31:30.500Z" eId="amnd_6__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/a04f7c52-9fb0-44b0-a975-b1d1dbb27339/econactivity_rm_rep_0918.1d5d271b-4c16-4092-b6a9-0163c8d6dc2e/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_554b40c8-d2ee-4a34-bf2c-26c17cbd89e5" eId="amnd_6#person-4495" href="#Kit_Malthouse" showAs="Kit Malthouse" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_f3fc74a4-aaf6-4214-859a-0977f4d2cbfa" eId="amnd_6__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000383/bill@as_introduced_report_stage-hc"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_f25d7b40-be37-41a4-afc9-bf60f720dbd4" eId="amnd_6" ukl:location="" ukl:targetPage="p_13__ln_5" ukl:targetProvision="sch" ukl:type="insert">
+      <amendmentHeading GUID="_cac2f382-1a68-4d29-853f-cdd5bab61cef" eId="amnd_6__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_6#person-4495">Kit Malthouse</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_8f493c54-b1c0-498a-a3e2-88f17a4d8923" eId="amnd_6__cont">
+       <tblock>
+        <num ukl:dnum="HoC12">6</num>
+        <block name="instruction"> <mod>Schedule, page 13, line 5, at end insert—<quotedStructure GUID="_b4932d7a-88d3-4be5-92bc-98440d22d94b" eId="amnd_6__cont__qstr" endQuote="”" startQuote="“" ukl:context="schedule" ukl:docName="ukpga" ukl:indent="indent0">
+         <paragraph GUID="_56a37adf-9e1b-4838-a7cd-06c478efde8d" class="schProv1" eId="amnd_6__cont__qstr__para_6A">
+          <num ukl:autonumber="no">6A</num>
+          <content>
+           <p>Section 1 does not prevent regard to a consideration so far as it relates to conduct which it is the position of His Majesty’s Government represents a breach of international law.</p>
+          </content>
+         </paragraph>
+         </quotedStructure><inline name="AppendText"/></mod> </block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_7be51484-933c-41c0-a77f-a1eca66963da" eId="amnd_6__hdg__oc_1">Member's explanatory statement</heading>
+        <p>This amendment would permit decisions which would otherwise be in breach of clause 1 if they are taken in response to conduct which the Government considers to be a breach of international law.</p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="order">
+    <statement contains="originalVersion" name="hcOrder">
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="UK"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_01276e76-5154-4bdc-afb1-1e1210e1236b" by="#proponent" date="9999-01-01T00:00:00" eId="order__step" outcome="#draft"/>
+      </workflow>
+     </meta>
+     <mainBody GUID="_f8cd233d-a7e5-491a-8df3-b59ac0bf0b6b" class="hcOrder" eId="order">
+      <blockContainer GUID="_7622e4f8-7d4c-4622-a2b7-e4a9a54ea319" class="hcMotionBody" eId="order__body">
+       <heading GUID="_1bcb77b6-9e3f-442d-9863-9c4ae04df171" eId="order__body__hdg">Order of the House</heading>
+       <block name="hcOrderDate">[<docDate GUID="_4f69c577-9edc-4671-b391-e9f3f0190ed5" date="9999-01-01" eId="order__body__ddate">3 July 2023</docDate>]</block>
+       <p>That the following provisions shall apply to the Economic Activity of Public Bodies (Overseas Matters) Bill:</p>
+       <blockContainer GUID="_9ef05e85-b822-4395-8fa0-523651451e11" class="group1" eId="order__body__group">
+        <heading GUID="_033db16e-8798-46e9-b6bf-2648b45c6bc9" eId="order__body__group__hdg">Committal</heading>
+        <blockContainer GUID="_5c0f60c1-d573-45d7-a006-0c4dbea5912c" class="resProv1" eId="order__body__para_1">
+         <num>1.</num>
+         <p>The Bill shall be committed to a Public Bill Committee.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_4d68dfb7-e6ff-4175-8dd5-c8c0636ad1c9" class="group1" eId="order__body__group__oc_1">
+        <heading GUID="_8187f23b-4f25-4ffb-a94d-ab5d6d5fe8d8" eId="order__body__group__oc_1__hdg">Proceedings in Public Bill Committee</heading>
+        <blockContainer GUID="_656794d0-d357-40a6-acab-9053da240731" class="resProv1" eId="order__body__para_2">
+         <num>2.</num>
+         <p>Proceedings in the Public Bill Committee shall (so far as not previously concluded) be brought to a conclusion on Thursday 14 September 2023.</p>
+        </blockContainer>
+        <blockContainer GUID="_e57c3b0b-15a9-41e7-80a3-72d42ca46f53" class="resProv1" eId="order__body__para_3">
+         <num>3.</num>
+         <p>The Public Bill Committee shall have leave to sit twice on the first day on which it meets.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_227f39e0-b559-4501-810b-e1d5a3be6a31" class="group1" eId="order__body__group__oc_2">
+        <heading GUID="_44457b83-f0bd-4070-adfd-133716882386" eId="order__body__group__oc_2__hdg">Consideration and Third Reading</heading>
+        <blockContainer GUID="_a96a39e8-2020-4c43-8847-fcff24aabb1f" class="resProv1" eId="order__body__para_4">
+         <num>4.</num>
+         <p>Proceedings on Consideration shall (so far as not previously concluded) be brought to a conclusion one hour before the moment of interruption on the day on which those proceedings are commenced.</p>
+        </blockContainer>
+        <blockContainer GUID="_e0f4f6e6-a0b8-4f20-b7ba-9a4eadcd8599" class="resProv1" eId="order__body__para_5">
+         <num>5.</num>
+         <p>Proceedings on Third Reading shall (so far as not previously concluded) be brought to a conclusion at the moment of interruption on that day.</p>
+        </blockContainer>
+        <blockContainer GUID="_3892b311-9481-4fc2-85ef-a5f3cf9b9c0f" class="resProv1" eId="order__body__para_6">
+         <num>6.</num>
+         <p>Standing Order No. 83B (Programming committees) shall not apply to proceedings on Consideration and Third Reading.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_a1104cd0-f1f0-457b-a80d-d7e31f9f297c" class="group1" eId="order__body__group__oc_3">
+        <heading GUID="_98ff6cf5-d6c9-42e1-a9d8-840a37aee625" eId="order__body__group__oc_3__hdg">Other proceedings</heading>
+        <blockContainer GUID="_1e8f80e7-bf56-4eac-a5ba-edf14a596a0c" class="resProv1" eId="order__body__para_7">
+         <num>7.</num>
+         <p>Any other proceedings on the Bill may be programmed.</p>
+        </blockContainer>
+       </blockContainer>
+      </blockContainer>
+     </mainBody>
+    </statement>
+   </component>
+  </collectionBody>
+ </amendmentList>
+</akomaNtoso>
