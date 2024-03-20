@@ -1,7 +1,26 @@
 import sys
 from pathlib import Path
 
+from dotenv import dotenv_values
 from lxml import etree
+
+secrets = dotenv_values(".env")
+
+DASH_XML_KEY = "LAWCHECKER_ADDED_NAMES_DASH_XML"
+DASH_XML_URL = ""
+
+# if no .env file error
+try:
+    DASH_XML_URL = secrets[DASH_XML_KEY]
+except KeyError:
+    # TODO: Log this
+    print(
+        "Error: Either no .env file or the file does note have "
+        f" {DASH_XML_KEY} environment variable set."
+        "\nPlease create a .env file in the root of the project"
+        " see .env.example for an example of the required format."
+    )
+
 
 # ---------------------- default files and paths --------------------- #
 DEFAULT_OUTPUT_NAME = "Added_Names_Report.html"
@@ -37,10 +56,6 @@ COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath("compare_report_template.html")
 ANR_WORKING_FOLDER: Path | None = None
 
 
-DASH_XML_URL = (
-    "***REMOVED***"
-    "***REMOVED***"
-)
 
 
 # ------------------------- default xml stuff ------------------------ #

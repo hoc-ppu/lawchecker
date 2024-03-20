@@ -9,6 +9,7 @@ dependencies = [
     "click",
     "pandas",
     "python-dateutil",
+    "python-dotenv",
 ]
 requires-python = ">=3.10"
 

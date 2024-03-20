@@ -19,6 +19,9 @@ BuildJunk/
 # ignore any .exes created
 *.exe
 
+# ignore additional example files
+not_committed_examples/
+
 
 ################################
 

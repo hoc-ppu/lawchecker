@@ -502,9 +502,13 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
     with open(temp_2_Path, 'w', encoding='utf-8') as f:
         f.write(cleaned_bill_2)
 
-    subprocess_args = ["code", "--diff", str(temp_1_Path), str(temp_2_Path)]
+    # subprocess_args = ["code", "--diff", str(temp_1_Path), str(temp_2_Path)]
+    # print(subprocess_args)
 
-    subprocess.run(subprocess_args, shell=True)
+    subprocess_cmd = f'code --diff "{temp_1_Path.resolve()}" "{temp_2_Path.resolve()}"'
+
+    # for some reason shell=True is needed on Windows
+    subprocess.run(subprocess_cmd, shell=True)
 
     # bill_3 = etree.parse('LM_XML/bills/Leasehold_2023_11_24-16-09-21.xml', parser=PARSER)
     # bill_4 = etree.parse('LM_XML/bills/Leasehold_2024_02_02-12-18-20_Apply_amends.xml', parser=PARSER)
