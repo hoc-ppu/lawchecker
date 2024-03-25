@@ -1,6 +1,6 @@
 # LawChecker
 
-Automated test for UK Parliament legislative papers.
+Automated checks/compares for UK Parliament legislative papers.
 
 You can create:
 - an HTML added names report
@@ -11,10 +11,10 @@ numbers
 
 ## Python script installation
 Clone the repository if you have not already done so. [Here is a guide to cloning](https://www.youtube.com/watch?v=CKcqniGu3tA).
-**This project uses submodules** so when cloning use, `--recurse-submodules`. Alternatively, if you forgot to use --recurse-submodules when cloning, run `git submodule update --init`. Install a recent version of [Python](https://www.python.org/downloads/) if you have not got one.
+**This project uses submodules** so when cloning use, `--recurse-submodules`. Alternatively, **if you forgot to use** --recurse-submodules when cloning, you can run `git submodule update --init` at any point after you have cloned the repo. Install a recent version of [Python](https://www.python.org/downloads/) if you have not got one.
 
-### *Optionally* create and activate a python virtual environment.
-To create a virtual environment run the following in PowerShell on Windows or in the terminal on Unix (Mac or Linux).
+### Create and activate a python virtual environment (optional).
+To create a virtual environment run the following in PowerShell on Windows or in the terminal on Mac or Linux.
 
 <details>
 <summary>On Windows</summary>
@@ -53,7 +53,7 @@ If you want only to run the code:
 pip install .
 ```
 
-Or if you intend to change the code (or create a distributable version), install in editable mode:
+Or if you intend to change the code (or create a distributable version), install in editable mode with development dependencies:
 ```bash
 pip install -e .[dev]
 ```
@@ -62,11 +62,11 @@ If that doesn't work because of saxon try following the [instructions](https://w
 
 ## Usage
 Once installed there are five entry points. You can run these from the command line/terminal/powershell.
- - `an_report` creates an added names report. Type `an_report --help` in your terminal or comand prompt for help on how to use this.
- - `compare_report` creates a report detailing the differences between two Amendment paper XML files. Type `compare_report --help` in your terminal or comand prompt for help on how to use this.
- - `compare_bills` creates a report detailing the differences between two Bill files. Type `compare_bills --help` in your terminal or comand prompt for help on how to use this.
- - `bill_numbering` creates a CSV file showing changes to clause (a.k.a. section) and schedule paragraphs numbers. Type `bill_numbering --help` in your terminal or comand prompt for help on how to use this.
- - `startgui` will start a graphical user interface with lets you create both of the above reports.
+ - `an_report` creates an added names report. Type `an_report --help` in your terminal or command prompt for help on how to use this.
+ - `compare_report` creates a report detailing the differences between two Amendment paper XML files. Type `compare_report --help` for usage info.
+ - `compare_bills` creates a report detailing the differences between two Bill files. Type `compare_bills --help`  for usage info.
+ - `bill_numbering` creates a CSV file showing changes to clause (a.k.a. section) and schedule paragraphs numbers. Type `bill_numbering --help`  for usage info.
+ - `startgui` will start a graphical user interface which lets you create all of the above reports.
 
 ### Examples
 
