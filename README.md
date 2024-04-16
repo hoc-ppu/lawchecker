@@ -71,12 +71,12 @@ Once installed there are five entry points. You can run these from the command l
 ### Examples
 
 #### compare_report example
-```shell
+```bash
 compare_report example_files/amendments/energy_rm_rep_0901.xml example_files/amendments/energy_rm_rep_0904.xml
 ```
 
 #### compare_bills example
-```shell
+```bash
 compare_bills "example_files/bills/Data Protection and Digital Information Bill - commons introduced.xml" "example_files/bills/Data Protection and Digital Information Bill - commons committee.xml"
 ```
 
@@ -90,6 +90,6 @@ To run tests `pytest tests/`
 On windows you can create a standalone executable file (.exe file). This will allow you to run the GUI version on a windows computer without python or other dependencies installed. You can distribute the .exe file to other users but since it is not signed users may get a warning about security or be prevented from running the program.
 
 To create the .exe run the following in powershell
-```shell
+```bash
 .\create_exe.bat
 ```
