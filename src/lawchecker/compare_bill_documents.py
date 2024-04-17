@@ -190,8 +190,9 @@ class Report:
         new_file: Path | _Element,
         days_between_papers: bool = False
     ):
+
         try:
-            self.html_tree = html.parse(COMPARE_REPORT_TEMPLATE)
+            self.html_tree = html.parse(COMPARE_REPORT_TEMPLATE.resolve())
             self.html_root = self.html_tree.getroot()
         except Exception as e:
             logger.error(f"Error parsing HTML template file: {e}")
@@ -502,28 +503,16 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
     with open(temp_2_Path, 'w', encoding='utf-8') as f:
         f.write(cleaned_bill_2)
 
-    # subprocess_args = ["code", "--diff", str(temp_1_Path), str(temp_2_Path)]
+    subprocess_args = ["code", "--diff", str(temp_1_Path.resolve()), str(temp_2_Path.resolve())]
     # print(subprocess_args)
 
-    subprocess_cmd = f'code --diff "{temp_1_Path.resolve()}" "{temp_2_Path.resolve()}"'
+    # subprocess_cmd = f'code --diff "{temp_1_Path.resolve()}" "{temp_2_Path.resolve()}"'
 
-    # for some reason shell=True is needed on Windows
-    subprocess.run(subprocess_cmd, shell=True)
-
-    # bill_3 = etree.parse('LM_XML/bills/Leasehold_2023_11_24-16-09-21.xml', parser=PARSER)
-    # bill_4 = etree.parse('LM_XML/bills/Leasehold_2024_02_02-12-18-20_Apply_amends.xml', parser=PARSER)
-
-    # cleaned_bill_3 = clean_bill_xml(bill_3.getroot())
-    # cleaned_bill_4 = clean_bill_xml(bill_4.getroot())
-    # subprocess.call(["code", "--diff", 'cleaned_bill_1.txt', 'cleaned_bill_3.txt'])
-
-    # # output cleaned files
-    # with open('cleaned_bill_3.txt', 'w') as f:
-    #     f.write(cleaned_bill_3)
-    # with open('cleaned_bill_4.txt', 'w') as f:
-    #     f.write(cleaned_bill_4)
-
-    # # subprocess.call(["code", "--diff", 'cleaned_bill_3.txt', 'cleaned_bill_4.txt'])
+    if sys.platform == 'win32':
+        # for some reason shell=True is needed on Windows
+        subprocess.run(subprocess_args, shell=True)
+    else:
+        subprocess.run(subprocess_args, shell=False)
 
 
 def clean_bill_xml(bill_xml: _Element):
