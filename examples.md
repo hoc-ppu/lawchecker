@@ -1,6 +1,6 @@
 # Examples
 
-Sows how both compare_report and an_report
+Examples of using compare_report, compare_bills and an_report
 
 ## compare_report files
 
@@ -32,6 +32,25 @@ compare_report -d example_files/amendments/victims_prisoners_rm_rep_0906.xml exa
 ```
 Note: -d as there is a sitting day between
 
+## compare_bills files
+
+### Data Protection and Digital Information Bill
+
+```shell
+compare_bills -c "example_files/bills/Data Protection and Digital Information Bill - commons introduced.xml" "example_files/bills/Data Protection and Digital Information Bill - commons committee.xml"
+```
+Note: -c will also do a compare in VS Code
+
+### Social Housing (Regulation) Bill
+
+```shell
+compare_bills "example_files/bills/Social Housing (Regulation) Bill - lords committee.xml" "example_files/bills/Social Housing (Regulation) Bill - lords report.xml"
+```
+
+```shell
+compare_bills -c "example_files/bills/Social Housing (Regulation) Bill - commons brl.xml" "example_files
+/bills/Social Housing (Regulation) Bill - commons committee.xml"
+```
 
 
 ## Added Names Reprot
@@ -40,6 +59,6 @@ Note: -d as there is a sitting day between
 ### Wednesday 28 June 2023
 
 ```shell
-an_report _Reports/2023-06-28/Dashboard_Data/2023-06-28__18-15_input_from_SP.xml --marshal='_Reports/2023-06-28/Amendment_Paper_XML' -o=ANR2.html
+an_report example_files/addedNames/Dashboard_Data/2023-06-28__18-15_input_from_SP.xml --marshal='example_files/addedNames/Amendment_Paper_XML'
 ```
 

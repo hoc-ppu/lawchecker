@@ -1,0 +1,440 @@
+<?xml version="1.0" encoding="UTF-8"?><akomaNtoso xmlns="http://docs.oasis-open.org/legaldocml/ns/akn/3.0" xmlns:ukl="https://www.legislation.gov.uk/namespaces/UK-AKN" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://docs.oasis-open.org/legaldocml/ns/akn/3.0 ../schemas/akomantoso30.xsd"><?LDAPP-Component componentId="3f85a32b-f491-4648-af9c-090c494bf793" seriesId="3f85a32b-f491-4648-af9c-090c494bf793" versionNumber=""?>
+ 
+ <amendmentList contains="originalVersion" name="hcmarsh">
+  <meta>
+   <identification source="#source">
+    <FRBRWork>
+     <FRBRthis value="#varWork"/>
+     <FRBRuri value="#varWorkUri"/>
+     <FRBRalias name="ttflConfigHistory" value="#varCHOiid"/>
+     <FRBRalias name="alternateUri" value="https://lawmaker.legislation.gov.uk/pdr/ukpubb/HC/58_3/314/bill"/>
+     <FRBRdate date="9999-01-01" name="draft"/>
+     <FRBRdate date="2023-08-25" name="published"/>
+     <FRBRauthor href="#varAuthor"/>
+     <FRBRcountry value="GB"/>
+     <FRBRnumber value="#varListNo"/>
+     <FRBRname value="Bill #varBillNo-#varListType#varListNo"/>
+    </FRBRWork>
+    <FRBRExpression>
+     <FRBRthis value="#varExpression"/>
+     <FRBRuri value="#varExpressionUri"/>
+     <FRBRalias name="ttflVersionDescription" value="#varVDOiid"/>
+     
+     <FRBRalias name="alternateUri" value="https://lawmaker.legislation.gov.uk/pdr/ukpubb/HC/58_3/314/bill/hcmarsh@2023-08-25"/><FRBRdate date="9999-01-01" name="draft"/>
+     <FRBRdate date="2023-08-25" name="published"/>
+     <FRBRauthor href="#varAuthor"/>
+     <FRBRversionNumber value="committee/hcmarsh@2023-08-25"/>
+     <FRBRauthoritative value="false"/>
+     <FRBRmasterExpression href="" showAs=""/>
+     <FRBRlanguage language="eng"/>
+    </FRBRExpression>
+    <FRBRManifestation>
+     <FRBRthis value="#varManifestation"/>
+     <FRBRuri value="#varManifestationUri"/>
+     <FRBRdate date="9999-01-01" name="akn_xml"/>
+     <FRBRdate date="2023-08-25" name="published"/>
+     <FRBRauthor href="#varAuthor"/>
+     <FRBRformat value="application/akn+xml"/>
+    </FRBRManifestation>
+   </identification>
+   <references source="#author">
+    <TLCConcept eId="varBillTitle" href="#varOntologies" showAs="Data Protection and Digital Information (No. 2) Bill"/>
+    <TLCConcept eId="varHouse" href="#varOntologies" showAs="House of Commons"/>
+    <TLCConcept eId="varDraftListDescription" href="#varOntologies" showAs="datapro_rm_rep_0825"/>
+    <TLCProcess eId="varBillStageVersion" href="#varOntologies" showAs="As amended in Committee"/>
+    <TLCProcess eId="varStageVersion" href="#varOntologies" showAs="Report Stage"/>
+    <TLCProcess eId="varProjectId" href="#varOntologies" showAs="UK000589"/>
+    <TLCProcess eId="varWork" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill"/>
+    <TLCProcess eId="varWorkUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill"/>
+    <TLCProcess eId="varCHOiid" href="#varOntologies" showAs=""/>
+    <TLCProcess eId="varExpression" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill@committee/hcmarsh@2023-08-25"/>
+    <TLCProcess eId="varExpressionUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill@committee/hcmarsh@2023-08-25"/>
+    <TLCProcess eId="varVDOiid" href="#varOntologies" showAs=""/>
+    <TLCProcess eId="varManifestation" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill@committee/hcmarsh@2023-08-25/xml"/>
+    <TLCProcess eId="varManifestationUri" href="#varOntologies" showAs="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill@committee/hcmarsh@2023-08-25/xml"/>
+    <TLCConcept eId="varPublishDate" href="#varOntologies" showAs="2023-08-25"/>
+    <TLCConcept eId="varDocType" href="#varOntologies" showAs="hcmarsh"/>
+    <TLCProcess eId="varSystem" href="#varOntologies" showAs="LawMaker"/>
+    <TLCOrganization eId="varAuthor" href="#varOntologies" showAs="House of Commons"/>
+    <TLCLocation eId="varJurisdiction" href="#varOntologies" showAs="United Kingdom"/>
+    <TLCConcept eId="varOntologies" href="http://legislation.gov.uk/ontologies/legis" showAs="http://legislation.gov.uk/ontologies/legis"/>
+    <TLCConcept eId="varListType" href="#varOntologies" showAs="ML"/>
+    <TLCConcept eId="varListNo" href="#varOntologies" showAs=""/>
+    <TLCConcept eId="varVersionLabel" href="#varOntologies" showAs=""/>
+    <TLCConcept eId="varBillNoComp" href="#varOntologies" showAs="314"/>
+    <TLCConcept eId="varBillNo" href="#varOntologies" showAs="Bill 314"/>
+    <TLCConcept eId="varSessionNo" href="#varOntologies" showAs="58/3"/>
+    <TLCConcept eId="varBillYear" href="#varOntologies" showAs=""/>
+    <TLCConcept eId="varSession" href="#varOntologies" showAs="58/3"/>
+    <TLCConcept eId="varBillName" href="#varOntologies" showAs="ukpubb"/>
+   </references>
+  </meta>
+  <preface GUID="_2f0b3221-f32c-43f6-a787-7bf88fcc7ad9" eId="preface">
+   <block name="stage"><docStage>Report Stage</docStage>: <docDate date="9999-12-31"><ref class="placeholder" href="#varPublishDate" ukl:dateFormat="EEEE d MMMM yyyy">Friday 25 August 2023</ref></docDate></block>
+   <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill@committee"><ref class="placeholder" href="#varBillTitle"/>, As Amended</affectedDocument></block>
+   <block name="listType">(Amendment Paper)</block>
+   <blockContainer class="legend">
+    <p>This document lists all amendments tabled to the <affectedDocument href="#varBillProject"><ref class="placeholder" href="#varBillTitle"/></affectedDocument>. Any withdrawn amendments are listed at the end of the document. The amendments are arranged in the order in which it is expected they will be decided.</p>
+   </blockContainer>
+  </preface>
+  <collectionBody>
+   <component class="amendment">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="3ced86b1-0d21-443f-ac85-4367ac42e3dc" seriesId="3ced86b1-0d21-443f-ac85-4367ac42e3dc" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_e57cc488-9b04-4893-8eff-d2fa3196cbc0" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_NC1__step" outcome="#draft"/>
+       <step GUID="_64436d6c-5528-4cc8-818e-24cce65dd108" by="#proponent" date="2023-07-03T13:12:44.331Z" eId="amnd_NC1__step__oc_1" outcome="#submitted"/>
+       <step GUID="_13a44adc-01d1-4acd-8685-971c0de1ff26" by="#proponent" date="2023-07-03T13:12:55.991Z" eId="amnd_NC1__step__oc_2" outcome="#tabled"/>
+       <step GUID="_55ce8ea8-3cda-4208-8494-ab834c1545f6" by="#proponent" date="2023-07-03T13:13:29.667Z" eId="amnd_NC1__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_0cbc6905-afa1-4af1-a427-2fe42a368219" by="#parliament" date="2023-07-04T00:26:08.532Z" eId="amnd_NC1__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/11f2dee8-e6f4-449e-bcca-32f6dd1290d3/datapro_rm_rep_0704.01fb4042-5590-40a3-bf68-ef1268bd3db0/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_0e7588c7-0ef5-4e8b-990e-f6a24e08f162" by="#parliament" date="2023-07-19T17:42:49.848Z" eId="amnd_NC1__step__oc_5" href="/ldapp-rest-api/ldapp/document/download/23e9530f-30e0-4851-b355-7e4f24490aee/datapro_rm_rep_0720.5c7276e8-9d0c-47ce-a5b8-20dca28b9f9c/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+       <step GUID="_1b04a3b6-642b-41f1-9820-5edeeac6c674" by="#parliament" date="2023-07-20T17:48:26.366Z" eId="amnd_NC1__step__oc_6" href="/ldapp-rest-api/ldapp/document/download/4e636b80-7c6e-4fda-bf92-093b570024db/datapro_rm_rep_0721.8742cd0e-4e9f-4305-8208-d837072d01b7/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_699fbc49-0a43-481c-bdb3-95bb29652f79" by="#parliament" date="2023-08-24T16:28:12.998Z" eId="amnd_NC1__step__oc_8" href="/ldapp-rest-api/ldapp/document/download/913ba460-9c08-4aba-bed6-e96af84a766d/datapro_rm_rep_0825.1234b338-d39a-464f-a2e3-33cf71d7198c/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_c698902a-0d08-4daa-9dc6-e1d368df6136" eId="amnd_NC1#person-4839" href="#Jane_Hunt" showAs="Jane Hunt" ukl:class="varProposer"/>
+       <TLCPerson GUID="_d32f7c1a-582f-4dae-91e5-a90d54659a21" eId="amnd_NC1#person-4069" href="#Peter_Aldous" showAs="Peter Aldous" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_6685f40d-3145-463d-b512-febe32dec11b" eId="amnd_NC1#person-4459" href="#Mrs_Flick_Drummond" showAs="Mrs Flick Drummond" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_83fbd594-3881-4564-84c7-a3ed6e3532d9" eId="amnd_NC1#person-1502" href="#Mr_David_Jones" showAs="Mr David Jones" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_f08e5b17-f3af-4bef-b217-233e8cfc7ff8" eId="amnd_NC1#person-4778" href="#Greg_Smith" showAs="Greg Smith" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_c42bbcd5-827c-4a9b-beb3-16d58080d60d" eId="amnd_NC1#person-3957" href="#Martin_Vickers" showAs="Martin Vickers" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_f5f8e371-aed5-4f1d-89c7-f0af4bf14b33" eId="amnd_NC1#person-4863" href="#Selaine_Saxby" showAs="Selaine Saxby" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_74bca029-ae5f-413d-8c9d-64f5d8e366f3" eId="amnd_NC1#person-69" href="#Sir_Oliver_Heald" showAs="Sir Oliver Heald" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_3d5a9f04-9764-49e4-a702-5a235f862df8" eId="amnd_NC1#person-4842" href="#Sally-Ann_Hart" showAs="Sally-Ann Hart" ukl:class="varSupporters"/>
+       <TLCPerson GUID="_eac55b5d-7fe2-4cf1-8d18-98abb18b009a" eId="amnd_NC1#person-4867" href="#Holly_Mumby-Croft" showAs="Holly Mumby-Croft" ukl:class="varSupporters"/>
+      </references>
+     </meta>
+     <preface GUID="_5dffe555-4d7f-4c12-9687-876978aa8c9c" eId="amnd_NC1__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill@committee"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_58797891-3e85-4eb0-94ab-ff3c41e8a686" eId="amnd_NC1" ukl:location="" ukl:targetPage="" ukl:targetProvision="" ukl:targetSortKey="A01" ukl:type="newClause">
+      <amendmentHeading GUID="_7ac20336-36c4-4edf-97e0-a7ec7b7304e0" eId="amnd_NC1__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_NC1#person-4839">Jane Hunt</docIntroducer></block>
+       <block name="supporters"><docProponent refersTo="amnd_NC1#person-4069">Peter Aldous</docProponent><docProponent refersTo="amnd_NC1#person-4459">Mrs Flick Drummond</docProponent><docProponent refersTo="amnd_NC1#person-1502">Mr David Jones</docProponent><docProponent refersTo="amnd_NC1#person-4778">Greg Smith</docProponent><docProponent refersTo="amnd_NC1#person-3957">Martin Vickers</docProponent><docProponent refersTo="amnd_NC1#person-4863">Selaine Saxby</docProponent><docProponent refersTo="amnd_NC1#person-69">Sir Oliver Heald</docProponent><docProponent refersTo="amnd_NC1#person-4842">Sally-Ann Hart</docProponent><docProponent refersTo="amnd_NC1#person-4867">Holly Mumby-Croft</docProponent></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_c4600f1c-bcb3-4d37-ad63-609cdc812019" eId="amnd_NC1__cont">
+       <tblock>
+        <num ukl:dnum="HoC134">NC1</num>
+        <block name="instruction">
+         <mod>To move the following Clause—<quotedStructure GUID="_a6c3c76a-8ed2-4547-beec-df0ff9d551d8" eId="amnd_NC1__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+           <section GUID="_f546c2f3-d9d1-4597-8798-f655cc462ee8" class="prov1" eId="amnd_NC1__cont__qstr__sec">
+            <num/>
+            <heading GUID="_6b4d73a0-ebdc-42ce-af02-d883f89ab993" eId="amnd_NC1__cont__qstr__sec__hdg">Processing of data in relation to a case-file prepared by the police service for submission to the Crown Prosecution Service for a charging decision</heading>
+            <subsection GUID="_2930afc4-5910-4280-a2b4-53cd1f841117" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_1">
+             <num>(1)</num>
+             <content>
+              <p>The 2018 Act is amended in accordance with subsection (2).</p>
+             </content>
+            </subsection>
+            <subsection GUID="_97d6111f-7ec2-4cff-8aae-55971c3486d1" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2">
+             <num>(2)</num>
+             <content>
+              <p>
+               <mod>In the 2018 Act, after section 40 insert— <quotedStructure GUID="_eda6620d-bb09-43cf-8ef6-5e94562d9d46" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+                 <section GUID="_1ed9d6ad-8091-4d91-8386-c5e4ed0f540a" class="prov1" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A">
+                  <num ukl:autonumber="no">40A</num>
+                  <heading GUID="_d687ce99-3192-4d40-a129-7145e122c000" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__hdg">Processing of data in relation to a case-file prepared by the police service for submission to the Crown Prosecution Service for a charging decision</heading>
+                  <subsection GUID="_62fcf536-8718-4c37-b1c9-f952b8815c57" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_1">
+                   <num>(1)</num>
+                   <content>
+                    <p>This section applies to a set of processing operations consisting of the preparation of a case-file by the police service for submission to the Crown Prosecution Service for a charging decision, the making of a charging decision by the Crown Prosecution Service, and the return of the case-file by the Crown Prosecution Service to the police service after a charging decision has been made.</p>
+                   </content>
+                  </subsection>
+                  <subsection GUID="_fcf9e25b-3ee5-440e-be7c-c1ab57c180e2" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_2">
+                   <num>(2)</num>
+                   <content>
+                    <p>The police service is not obliged to comply with the first data protection principle except insofar as that principle requires processing to be fair, or the third data protection principle, in preparing a case-file for submission to the Crown Prosecution Service for a charging decision.</p>
+                   </content>
+                  </subsection>
+                  <subsection GUID="_e3e75912-be04-414a-83fa-e954a6e92f2f" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_3">
+                   <num>(3)</num>
+                   <content>
+                    <p>The Crown Prosecution Service is not obliged to comply with the first data protection principle except insofar as that principle requires processing to be fair, or the third data protection principle, in making a charging decision on a case-file submitted for that purpose by the police service.</p>
+                   </content>
+                  </subsection>
+                  <subsection GUID="_58ae5306-1b52-438d-935b-c07fb80cc22c" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_4">
+                   <num>(4)</num>
+                   <content>
+                    <p>If the Crown Prosecution Service decides that a charge will not be pursued when it makes a charging decision on a case-file submitted for that purpose by the police service it must take all steps reasonably required to destroy and delete all copies of the case-file in its possession.</p>
+                   </content>
+                  </subsection>
+                  <subsection GUID="_bd2871d2-c6ca-4447-9c0b-25900e3666d5" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_5">
+                   <num>(5)</num>
+                   <content>
+                    <p>If the Crown Prosecution Service decides that a charge will be pursued when it makes a charging decision on a case-file submitted for that purpose by the police service it must return the case-file to the police service and take all steps reasonably required to destroy and delete all copies of the case-file in its possession.</p>
+                   </content>
+                  </subsection>
+                  <subsection GUID="_67ffd698-f8e8-4ecb-bb1c-caa17cbd4f1e" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_6">
+                   <num>(6)</num>
+                   <content>
+                    <p>Where the Crown Prosecution Service decides that a charge will be pursued when it makes a charging decision on a case-file submitted for that purpose by the police service and returns the case-file to the police service under subsection (5), the police service must comply with the first data protection principle and the third data protection principle in relation to any subsequent processing of the data contained in the case-file.</p>
+                   </content>
+                  </subsection>
+                  <subsection GUID="_fafe0d3d-350c-4894-816e-854fb2bef4af" class="prov2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_7">
+                   <num>(7)</num>
+                   <intro GUID="_374295fe-8636-4efc-a1b6-00abeacfc530" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_7__intro">
+                    <p>For the purposes of this section—</p>
+                   </intro>
+                   <level GUID="_79483215-b4c2-4a9f-9e54-c1bebe6b0579" class="para1" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_7__para_a">
+                    <num>(a)</num>
+                    <intro GUID="_6eec6e16-97db-47ec-a0ac-f38327085b35" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_7__para_a__intro">
+                     <p>The police service means—</p>
+                    </intro>
+                    <level GUID="_00241a47-03d8-485b-8501-e13da7818622" class="para2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_7__para_a__subpara_i">
+                     <num>(i)</num>
+                     <content>
+                      <p>constabulary maintained by virtue of an enactment, or</p>
+                     </content>
+                    </level>
+                    <level GUID="_1ef9d490-5c50-4213-8bbe-5b79de4b9629" class="para2" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_7__para_a__subpara_ii">
+                     <num>(ii)</num>
+                     <content>
+                      <p>subject to section 126 of the Criminal Justice and Public Order Act 1994 (prison staff not to be regarded as in police service), any other service whose members have the powers or privileges of a constable.</p>
+                     </content>
+                    </level>
+                   </level>
+                   <level GUID="_4a0127c7-d805-4d29-ac55-ce1a3c15075d" class="para1" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_7__para_b">
+                    <num>(b)</num>
+                    <content>
+                     <p>The preparation of, or preparing, a case-file by the police service for submission to the Crown Prosecution Service for a charging decision includes the submission of the file.</p>
+                    </content>
+                   </level>
+                   <level GUID="_40e19dc0-5b96-41d4-8ff5-4c08ba8ce715" class="para1" eId="amnd_NC1__cont__qstr__sec__subsec_2__qstr__sec_40A__subsec_7__para_c">
+                    <num>(c)</num>
+                    <content>
+                     <p>A case-file includes all information obtained by the police service for the purpose of preparing a case-file for submission to the Crown Prosecution Service for a charging decision.</p>
+                    </content>
+                   </level>
+                  </subsection>
+                 </section>
+                </quotedStructure><inline name="AppendText"/></mod>
+              </p>
+             </content>
+            </subsection>
+           </section>
+          </quotedStructure><inline name="AppendText"/></mod>
+        </block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_96c4b2fb-bd02-4727-a08c-88d3f4f794bb" eId="amnd_NC1__hdg__oc_1">Member's explanatory statement</heading>
+        <p>
+         <mod>This new clause adjusts Section 40 of the Data Protection Act 2018 to exempt the police service and the Crown Prosecution Service from the first and third data protection principles contained within the 2018 Act so that they can share unredacted data with one another when making a charging decision.</mod>
+        </p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="amendment">
+    <amendment name="hcamnd"><?LDAPP-Component componentId="5897dce1-55f8-4d32-9b34-db5905d4ae3c" seriesId="5897dce1-55f8-4d32-9b34-db5905d4ae3c" versionNumber=""?>
+     
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="GB-SCT"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_0aff3753-bb4b-4e28-abe9-b4f1a4575846" by="#proponent" date="9999-01-01T00:00:00" eId="amnd_NC2__step" outcome="#draft"/>
+       <step GUID="_a8ed4bd5-4237-4706-93ea-b4ed2835d485" by="#proponent" date="2023-07-20T10:04:43.882Z" eId="amnd_NC2__step__oc_1" outcome="#submitted"/>
+       <step GUID="_f499cd3c-6ec5-4697-9186-665b5e9e73a1" by="#proponent" date="2023-07-20T10:05:01.536Z" eId="amnd_NC2__step__oc_2" outcome="#tabled"/>
+       <step GUID="_6c3abefa-4103-4d17-b804-61c04bd734ad" by="#proponent" date="2023-07-20T11:43:23.430Z" eId="amnd_NC2__step__oc_3" outcome="#readyForPublishing"/>
+       <step GUID="_7b729260-9b1c-44b1-b8cf-99b8151ed06c" by="#parliament" date="2023-07-20T17:48:26.458Z" eId="amnd_NC2__step__oc_4" href="/ldapp-rest-api/ldapp/document/download/4e636b80-7c6e-4fda-bf92-093b570024db/datapro_rm_rep_0721.8742cd0e-4e9f-4305-8208-d837072d01b7/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/>
+      <step GUID="_0fc15129-eb96-4f3a-8f02-2f545c1030ed" by="#parliament" date="2023-08-24T16:28:13.059Z" eId="amnd_NC2__step__oc_6" href="/ldapp-rest-api/ldapp/document/download/913ba460-9c08-4aba-bed6-e96af84a766d/datapro_rm_rep_0825.1234b338-d39a-464f-a2e3-33cf71d7198c/PDF?ds=LEGI_DRAFTING" outcome="#published" refersTo="#marshalledList"/></workflow>
+      <references source="#author">
+       <TLCPerson GUID="_cf2a0601-952a-4999-90e7-d8314ad1696f" eId="amnd_NC2#person-1584" href="#John_Penrose" showAs="John Penrose" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <preface GUID="_5b71b5df-2b8c-4696-a1f9-365457810eb1" eId="amnd_NC2__fnt">
+      <block name="title"><affectedDocument href="https://lawmaker.legislation.gov.uk/pdr/UK000589/bill@committee"><ref class="placeholder" href="#varBillTitle"/></affectedDocument> — <docStage>Report Stage</docStage></block>
+     </preface>
+     <amendmentBody GUID="_0196e8e5-c7e6-4f0a-a478-518db5d54388" eId="amnd_NC2" ukl:location="" ukl:targetPage="" ukl:targetProvision="" ukl:targetSortKey="A02" ukl:type="newClause">
+      <amendmentHeading GUID="_95d1ebe6-d184-481b-a0f6-f917a232e0ab" eId="amnd_NC2__hdg">
+       <block name="proposer"><docIntroducer refersTo="amnd_NC2#person-1584">John Penrose</docIntroducer></block>
+      </amendmentHeading>
+      <amendmentContent GUID="_7fd35d2b-e53e-4042-9702-028e5603455a" eId="amnd_NC2__cont">
+       <tblock>
+        <num ukl:dnum="HoC135">NC2</num>
+        <block name="instruction">
+         <mod>To move the following Clause—<quotedStructure GUID="_deab5a0d-cc9d-49bb-9ce3-ab875e02a843" eId="amnd_NC2__cont__qstr" endQuote="”" startQuote="“" ukl:context="body" ukl:docName="ukpga" ukl:indent="indent0">
+           <section GUID="_6af10039-4a3a-426c-80f1-7619a5bad129" class="prov1" eId="amnd_NC2__cont__qstr__sec">
+            <num/>
+            <heading GUID="_595c90fd-42a8-4a3d-8449-498ffc3aee65" eId="amnd_NC2__cont__qstr__sec__hdg">Common standards and timeline for implementation</heading>
+            <subsection GUID="_810bd11e-0760-41ba-87b8-9f7de056b285" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_1">
+             <num>(1)</num>
+             <content>
+              <p>Within one month of the passage of this Act, the Secretary of State must by regulations require those appointed as decision-makers to create, publish and update as required open and common standards for access to customer data and business data.</p>
+             </content>
+            </subsection>
+            <subsection GUID="_de769d41-f1e7-47e7-9908-b81431c43b63" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_2">
+             <num>(2)</num>
+             <content>
+              <p>Standards created by virtue of subsection (1) must be interoperable with those created as a consequence of Part 2 of the Retail Banking Market Investigation Order 2017, made by the Competition and Markets Authority.</p>
+             </content>
+            </subsection>
+            <subsection GUID="_862734b5-7edc-42f7-afce-002b4011e69c" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_3">
+             <num>(3)</num>
+             <content>
+              <p>Regulations under section 66 and 68 must ensure interoperability of customer data and business data with standards created by virtue of subsection (1).</p>
+             </content>
+            </subsection>
+            <subsection GUID="_a31efa38-98ee-4f27-b6c3-45c833671a7b" class="prov2" eId="amnd_NC2__cont__qstr__sec__subsec_4">
+             <num>(4)</num>
+             <content>
+              <p>Within one month of the passage of this Act, the Secretary of State must publish a list of the sectors to which regulations under section 66 and section 68 will apply within three years of the passage of the Act, and the date by which those regulations will take effect in each case.</p>
+             </content>
+            </subsection>
+           </section>
+          </quotedStructure><inline name="AppendText"/></mod>
+        </block>
+       </tblock>
+      </amendmentContent>
+      <amendmentJustification>
+       <blockContainer class="explanatoryStatement">
+        <heading GUID="_4f46e589-53a5-41d3-906d-9e54458631ca" eId="amnd_NC2__hdg__oc_1">Member's explanatory statement</heading>
+        <p>This new clause, which is intended to be placed in Part 3 (Customer data and business data) of the Bill, would require interoperability across all sectors of the economy in smart data standards, including the Open Banking standards already in effect, and the publication of a timeline for implementation.</p>
+       </blockContainer>
+      </amendmentJustification>
+     </amendmentBody>
+    </amendment>
+   </component>
+   <component class="order">
+    <statement contains="originalVersion" name="hcOrder">
+     <meta>
+      <identification source="#ldapp">
+       <FRBRWork>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRalias name="ttflConfigHistory" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRcountry value="UK"/>
+        <FRBRnumber value=""/>
+       </FRBRWork>
+       <FRBRExpression>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRalias name="ttflVersionDescription" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRlanguage language="eng"/>
+       </FRBRExpression>
+       <FRBRManifestation>
+        <FRBRthis value=""/>
+        <FRBRuri value=""/>
+        <FRBRalias name="chamberCiteURI" value=""/>
+        <FRBRdate date="9999-01-01" name=""/>
+        <FRBRauthor href=""/>
+        <FRBRformat value="application/akn+xml"/>
+       </FRBRManifestation>
+      </identification>
+      <workflow source="#ldapp">
+       <step GUID="_3fa03e60-b35d-4f36-adc8-7cdb27baf2b2" by="#proponent" date="9999-01-01T00:00:00" eId="order__oc_1__step" outcome="#draft"/>
+      </workflow>
+      <references source="#author">
+       <TLCPerson GUID="_a4e14e40-299f-4099-b74a-788912940ff7" eId="resolution#person-4530" href="#Secretary_Michelle_Donelan" showAs="Secretary Michelle Donelan" ukl:class="varProposer"/>
+      </references>
+     </meta>
+     <mainBody GUID="_f2dfdd1a-20cb-4b07-8115-d15d9413cfd0" class="hcOrder" eId="order">
+      <blockContainer GUID="_7f170739-f420-4684-9d0e-a3825fe8da63" class="hcMotionBody" eId="order__body">
+       <heading GUID="_70ad2788-2ad6-4242-a679-f4cd79228218" eId="order__body__hdg">Order of the House</heading>
+       <block name="hcOrderDate">[<docDate GUID="_5b817efd-2990-4a4d-b8c0-d19ddda7bd4a" date="9999-01-01" eId="order__body__ddate">17 April 2023</docDate>]</block>
+       <p>That the following provisions shall apply to the Data Protection and Digital Information (No. 2) Bill:</p>
+       <blockContainer GUID="_9543965a-e9e9-409b-96ca-bc1c6860bf29" class="group1" eId="order__body__group">
+        <heading GUID="_47f612ed-5789-4e8b-ab11-097e1c193725" eId="order__body__group__hdg">Committal</heading>
+        <blockContainer GUID="_40baf15f-1ed7-431c-80ad-5ded79dca92b" class="prov2" eId="order__body__para_1">
+         <num>1.</num>
+         <p>The Bill shall be committed to a Public Bill Committee.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_9cf038a4-74d4-490b-aa9c-7ca7ae9f2ff6" class="group1" eId="order__body__group__oc_1">
+        <heading GUID="_27181e1d-a62e-4b61-bd9c-3fc9b23820e0" eId="order__body__group__oc_1__hdg">Proceedings in Public Bill Committee</heading>
+        <blockContainer GUID="_b67d4d75-759b-465d-acca-9f5cc9056d7c" class="prov2" eId="order__body__para_2">
+         <num>2.</num>
+         <p>Proceedings in the Public Bill Committee shall (so far as not previously concluded) be brought to a conclusion on Tuesday 13 June 2023.</p>
+        </blockContainer>
+        <blockContainer GUID="_e6b7d04c-8ed5-420a-a981-e89c6b98e145" class="prov2" eId="order__body__para_3">
+         <num>3.</num>
+         <p>The Public Bill Committee shall have leave to sit twice on the first day on which it meets.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_5d92688b-ca1e-452e-92ba-92c972142394" class="group1" eId="order__body__group__oc_2">
+        <heading GUID="_a0f0e15f-02ba-4a08-9896-7f7d52d40144" eId="order__body__group__oc_2__hdg">Consideration and Third Reading</heading>
+        <blockContainer GUID="_16c862ea-9d34-4135-be9d-8eca55b81492" class="prov2" eId="order__body__para_4">
+         <num>4.</num>
+         <p>Proceedings on Consideration shall (so far as not previously concluded) be brought to a conclusion one hour before the moment of interruption on the day on which those proceedings are commenced.</p>
+        </blockContainer>
+        <blockContainer GUID="_fc8a1534-175b-4b8e-837f-b1bbdd331a56" class="prov2" eId="order__body__para_5">
+         <num>5.</num>
+         <p>Proceedings on Third Reading shall (so far as not previously concluded) be brought to a conclusion at the moment of interruption on that day.</p>
+        </blockContainer>
+        <blockContainer GUID="_60a0730b-6653-4b5e-9040-abb5a2b49dad" class="prov2" eId="order__body__para_6">
+         <num>6.</num>
+         <p>Standing Order No. 83B (Programming committees) shall not apply to proceedings on Consideration and Third Reading.</p>
+        </blockContainer>
+       </blockContainer>
+       <blockContainer GUID="_07ce7f54-08c1-4322-adfa-d32abc9a40fb" class="group1" eId="order__body__group__oc_3">
+        <heading GUID="_11c6ac5d-6111-4ad4-8329-19962c72226f" eId="order__body__group__oc_3__hdg">Other proceedings</heading>
+        <blockContainer GUID="_4035ba11-8adb-4bd3-b761-6c2686e569f6" class="prov2" eId="order__body__para_7">
+         <num>7.</num>
+         <p>Any other proceedings on the Bill may be programmed.</p>
+        </blockContainer>
+       </blockContainer>
+      </blockContainer>
+     </mainBody>
+    </statement>
+   </component>
+  </collectionBody>
+ </amendmentList>
+</akomaNtoso>
