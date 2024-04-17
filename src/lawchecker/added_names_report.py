@@ -231,16 +231,23 @@ def run_xslts(
 
         # need to be as uri in case there are spaces in the path
         input_path = input_Path.resolve().as_uri()
-        intermidiate_path = intermidiate_Path.resolve().as_uri()
+        intermidiate_path = intermidiate_Path.resolve()
         outfilepath = out_html_Path.resolve().as_uri()
 
         # --- 1st XSLT ---
         xsltproc = proc.new_xslt30_processor()
 
         executable = xsltproc.compile_stylesheet(stylesheet_file=str(xsl_1_Path))
-        executable.transform_to_file(
-            source_file=input_path, output_file=intermidiate_path
-        )
+        executable.set_initial_match_selection(file_name=input_path)
+        # Saxon seems to work poorly with file paths so insted
+        # transfrom to string then write to file form python
+        # executable.transform_to_file(source_file=input_path,
+        #                              output_file=intermidiate_path)
+
+        intermediate_content = executable.apply_templates_returning_string()
+
+        with open(intermidiate_path, "w", encoding="UTF-8") as f:
+            f.write(intermediate_content)
 
         # --- 2nd XSLT ---
         xsltproc2 = proc.new_xslt30_processor()
@@ -256,9 +263,15 @@ def run_xslts(
 
             executable2.set_parameter(settings.XSLT_MARSHAL_PARAM_NAME, param)
 
-        executable2.transform_to_file(
-            source_file=intermidiate_path, output_file=outfilepath
-        )
+        # Saxon seems to work poorly with file paths so insted
+        # transfrom to string then write to file form python
+        # executable2.transform_to_file(source_file=intermidiate_path,
+        #                               output_file=outfilepath)
+        executable2.set_initial_match_selection(file_name=intermidiate_path.as_uri())
+        file_content = executable2.apply_templates_returning_string()
+
+        with open(out_html_Path, "w", encoding="UTF-8") as f:
+            f.write(file_content)
 
         # --- finished transforms ---
 
