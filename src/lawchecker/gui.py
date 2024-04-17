@@ -336,6 +336,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         )
         report.html_tree.write(
             str(out_html_Path),
+            method="html",
             encoding="utf-8",
             doctype="<!DOCTYPE html>"
         )
@@ -390,6 +391,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         )
         report.html_tree.write(
             str(out_html_Path),
+            method="html",
             encoding="utf-8",
             doctype="<!DOCTYPE html>"
         )

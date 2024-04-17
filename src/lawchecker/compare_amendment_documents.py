@@ -654,6 +654,7 @@ def main():
 
     report.html_tree.write(
         filename,
+        method="html",
         encoding="utf-8",
         doctype="<!DOCTYPE html>",
     )
