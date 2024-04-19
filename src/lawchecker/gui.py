@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
-import platform
 import sys
+
+if getattr(sys, 'frozen', False):
+    import pyi_splash
+
+import platform
 import traceback
 import webbrowser
 from datetime import datetime
@@ -470,6 +474,9 @@ def main():
     app = QtWidgets.QApplication(args)
 
     # window = QtWidgets.QMainWindow()
+    if getattr(sys, 'frozen', False):
+        pyi_splash.close()
+
     window = MainWindow()
     window.show()
 
