@@ -2,9 +2,6 @@
 
 import sys
 
-if getattr(sys, 'frozen', False):
-    import pyi_splash
-
 import platform
 import traceback
 import webbrowser
@@ -33,13 +30,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # set the icon in the Windows taskbar
         if hasattr(sys, "_MEIPASS"):  # if we are using the bundled app
 
-            print("bundled app")
+            logger.debug("bundled app")
 
             # when creating the bundled app use --add-data=.\icons\icon.ico;.
             # the above assumes we have an icon.ico file in an icons folder
             # logger.info(sys._MEIPASS)
             if platform.system() == "Windows":
-                print("on windows")
+                logger.debug("on windows")
                 # if platform.system() == "Windows":
                 path_to_icon = Path(sys._MEIPASS) / "icon.ico"  # type: ignore
                 self.setWindowIcon(QtGui.QIcon(str(path_to_icon)))
@@ -472,10 +469,6 @@ def main():
 
     # use gui version
     app = QtWidgets.QApplication(args)
-
-    # window = QtWidgets.QMainWindow()
-    if getattr(sys, 'frozen', False):
-        pyi_splash.close()
 
     window = MainWindow()
     window.show()
