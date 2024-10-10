@@ -62,7 +62,12 @@ XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
 
 COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath("compare_report_template.html")
 
+if not COMPARE_REPORT_TEMPLATE.exists():
+    COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.parent.parent.joinpath("compare_report_template.html")
+
 ANR_WORKING_FOLDER: Path | None = None
+
+
 
 
 
