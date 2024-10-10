@@ -53,10 +53,10 @@ class Section:
             self.num = f"C {self.num}"
 
         # for sorting
-        self._sort_list: list[str | int] = []
+        self._sort_list: list[str] = []
         for x in self.num.split(" "):
             try:
-                self._sort_list.append(int(x))
+                self._sort_list.append(f"{int(x):05}")
             except ValueError:
                 self._sort_list.append(x)
 
