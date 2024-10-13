@@ -60,10 +60,22 @@ _names_change_context_section = html.fromstring(
     "</section>"
 )
 
+class Counter:
+    def __init__(self):
+        self.count = 0  # Initialize the counter at 0
+
+    def increment(self):
+        self.count += 1  # Increment the counter by 1
+        return self.count
+
+counter = Counter()
+
 
 class Card:
     def __init__(self, heading: str = "", expanded: bool = True):
         self.html = deepcopy(_card)
+        heading_element = self.html.find('.//h2')
+        self.heading_element = cast(_Element, heading_element)
         heading_span = self.html.find('.//h2/span[@class="arrow"]')
         self.heading_span = cast(_Element, heading_span)
         secondary_info = self.html.find('.//div[@class="secondary-info"]')
@@ -78,6 +90,7 @@ class Card:
 
         if (
             self.heading_span is None
+            or heading_element is None
             or self.secondary_info is None
             or self.tertiary_info is None
             or self.small is None
@@ -86,6 +99,8 @@ class Card:
             raise ValueError("_card has invalid structure")
         else:
             self.heading_span.tail = heading  # type: ignore
+            self.heading_element.set("data-heading-label", heading)
+            self.heading_element.set("id", f"card-{counter.increment()}")
 
         if expanded:
             # content should start expanded

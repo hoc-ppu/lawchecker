@@ -3,6 +3,7 @@ import re
 
 from lxml.etree import Element, QName, _Element
 
+from lawchecker.lawchecker_logger import logger
 from lawchecker import xpath_helpers as xp
 
 
@@ -20,6 +21,24 @@ html_diff = difflib.HtmlDiff(tabsize=6)
 
 
 nbsp = re.compile(r"(?<!&nbsp;)&nbsp;(?!</span>)(?!&nbsp;)")
+
+
+def remove_refs(parent_element: _Element) -> _Element:
+    """
+    Remove ref elements from parent_element and all its descendant elements.
+    Note: parent_element is modified in place.
+    """
+
+    for element in parent_element.iter(Element):
+        tag = QName(element).localname
+        if tag == "ref":
+            try:
+                element.getparent().remove(element)  # type: ignore
+            except Exception as e:
+                logger.warning(f"Error removing ref element: {e}")
+
+    return parent_element
+
 
 
 def clean_whitespace(parent_element: _Element) -> _Element:
@@ -100,6 +119,7 @@ def diff_xml_content(
     old_xml: _Element,
     fromdesc: str = "",
     todesc: str = "",
+    ignore_refs: bool = False,
 ) -> str | None:
     """
     Return an HTML string containing a tables showing the differences
@@ -107,8 +127,22 @@ def diff_xml_content(
     """
 
     # remove the unnecessary whitespace before comparing the text content
-    old_text_content = xp.text_content(clean_whitespace(old_xml))
-    new_text_content = xp.text_content(clean_whitespace(new_xml))
+    cleaned_old_xml = clean_whitespace(old_xml)
+    cleaned_new_xml = clean_whitespace(new_xml)
+
+    if ignore_refs:
+        # when ignore refs is True, remove refs from the xml
+        # then compare the text content
+        # return none if no changes (when refs are removed)
+        old_text_content_no_refs = xp.text_content(remove_refs(cleaned_old_xml))
+        new_text_content_no_refs = xp.text_content(remove_refs(cleaned_new_xml))
+
+        if new_text_content_no_refs == old_text_content_no_refs:
+            # no changes
+            return
+
+    old_text_content = xp.text_content(cleaned_old_xml)
+    new_text_content = xp.text_content(cleaned_new_xml)
 
     if new_text_content == old_text_content:
         # no changes

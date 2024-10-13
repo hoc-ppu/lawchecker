@@ -58,7 +58,7 @@ class Section:
             try:
                 self._sort_list.append(f"{int(x):05}")
             except ValueError:
-                self._sort_list.append(x)
+                self._sort_list.append(f"{str(x):0>5}")
 
     def __lt__(self, other):
         return self._sort_list < other._sort_list
@@ -207,6 +207,7 @@ class Report:
         self.added_sects: list[Section] = []
 
         self.changed_sects: list[ChangedSect] = []
+        self.changed_sects_no_refs: list[ChangedSect] = []
 
         # populate above lists of changes
         self.gather_changes()
@@ -280,7 +281,7 @@ class Report:
         section = html.fromstring(
             '<div class="wrap">'
             '<section id="intro">'
-            "<h2>Introduction</h2>"
+            '<h2 id="intro-heading">Introduction</h2>'
             f"<p>{into}</p>"
             "</section>"
             "</div>"
@@ -328,41 +329,29 @@ class Report:
     def render_changed_sects(self) -> _Element:
         # -------------------- Changed Sections -------------------- #
         # build up text content
+
         changed_sects = (
             "<p><strong>Zero</strong> clauses or schedule paragraphs have changed content.</p>"
         )
-        if self.changed_sects:
-            changed_sects = (
-                f'<p><strong class="red">{len(self.changed_sects)}</strong>'
-                " clauses or schedule paragraphs have changed content: </p>\n"
-            )
 
-            html_diffs: str = ""
-            grid_element = html.Element('div')
-            grid_element.classes.add('row')
-            for i, item in enumerate(self.changed_sects):
-                num_span = etree.SubElement(grid_element, 'span')
-                num_span.classes.update(('col-12', "col-sm-6", "col-md-4", "col-lg-3"))
-                anchor = etree.SubElement(num_span, 'a', attrib={"href": f"#diff-table-{i}"})
-                anchor.classes.add('hidden-until-hover')
-                if item.old_num == item.new_num:
-                    anchor.text = item.old_num
-                else:
-                    anchor.text = f"{item.old_num} [{item.new_num}]"
+        inner_changed_sects = (
+            _render_changed_sects_inner(self.changed_sects)
+            + _render_changed_sects_inner(self.changed_sects_no_refs, include_refs=False)
+        )
 
-                # changed_nums += f"{item.num}<br/>\n"
-                html_diffs += f"<br/><div id=diff-table-{i}>{item.html_diff}</div>\n"
-
-            changed_sects += html.tostring(grid_element, encoding=str) + html_diffs
+        changed_sects = inner_changed_sects or changed_sects
 
         card = templates.Card("Changed clauses  or schedule paragraphs")
         info = ("<p>Listed below are any Clauses or Schedule paragraphs with changed content."
                 " The items are listed with their number from the old bill and if changed, the"
                 " number from the new bill in square brackets. Clicking on each item will take"
-                " you to a table showing the changes in context.</p>")
+                " you to a table showing the changes in context.</p>"
+                "<p>Use the following button to hide or show changes where only"
+                " cross referenced numbering has changed.<br/><small>Note: cross reference changes"
+                " will still be shown if there are other changes.</small></p>"
+                '<button class="btn btn-primary" id="toggle-refs">Hide x ref only changes</button>')
         card.secondary_info.extend(html.fragments_fromstring(info + changed_sects))
-        b = set()
-        b.update
+
         return card.html
 
     def render_numbering_changes(self) -> _Element:
@@ -434,7 +423,22 @@ class Report:
             self.changed_sects.append(
                 ChangedSect(new_sect.guid, old_sect.num, new_sect.num, dif_html_str)
             )
-            # print(f"{new_sect.guid=}\n{new_sect.num=}\n{dif_html_str=}")
+
+        # do it all again but this time ignore the refs
+        dif_html_str_no_refs = diff_xml_content(
+            new_sect.xml,
+            old_sect.xml,
+            # fromdesc=old_sect.parent_doc.file_name,
+            # todesc=new_sect.parent_doc.file_name,
+            fromdesc=f"Old bill: {old_sect.num}",
+            todesc=f"New bill: {new_sect.num}",
+            ignore_refs=True,
+        )
+        if dif_html_str_no_refs is not None:
+            self.changed_sects_no_refs.append(
+                ChangedSect(new_sect.guid, old_sect.num, new_sect.num, dif_html_str_no_refs)
+            )
+
 
 
 def main():
@@ -516,6 +520,53 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
     else:
         subprocess.run(subprocess_args, shell=False)
 
+
+def _render_changed_sects_inner(changed_sects, include_refs=True) -> str:
+
+    including_or_excluding = "Excluding"
+    hidden_attrib = "hidden"
+    if include_refs:
+        including_or_excluding = "Including"
+        hidden_attrib = ""
+
+
+    changed_sects_html = (
+        f'<div class="show-or-hide-refs" {hidden_attrib}>'
+        f"<p>{including_or_excluding} changes where only cross"
+        '  reference numbering has changed,<br/><strong class="red">'
+        f'{len(changed_sects)}</strong>'
+        " clauses or schedule paragraphs have changed content: </p>\n"
+    )
+
+    html_diffs: str = ""
+    grid_element = html.Element('div')
+    grid_element.classes.add('row')
+    for i, item in enumerate(changed_sects):
+        num_span = etree.SubElement(grid_element, 'span')
+        num_span.classes.update(('col-12', "col-sm-6", "col-md-4", "col-lg-3"))
+
+        anchor = etree.SubElement(
+            num_span, 'a',
+            attrib={"href": f"#diff-{including_or_excluding}-{i}"}
+        )
+        anchor.classes.add('hidden-until-hover')
+        if item.old_num == item.new_num:
+            section_num_text = item.old_num
+        else:
+            section_num_text = f"{item.old_num} [{item.new_num}]"
+
+        anchor.text = section_num_text
+        # changed_nums += f"{item.num}<br/>\n"
+        html_diffs += (
+            f'<br/><div><h3 id="diff-{including_or_excluding}-{i}">'
+            f'{section_num_text}</h3>'
+            f'{item.html_diff}</div>\n'
+        )
+
+    # last closing div is closing div from changed_sects_html above
+    changed_sects_html += html.tostring(grid_element, encoding=str) + html_diffs + "</div>"
+
+    return changed_sects_html
 
 def clean_bill_xml(bill_xml: _Element):
     # get the body
