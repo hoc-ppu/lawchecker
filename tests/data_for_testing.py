@@ -95,7 +95,7 @@ added_and_removed_names_section = etree.fromstring(
     '''<section class="card">
 <div class="card-inner collapsible">
   <div class="collapsible-header">
-  <h2 data-heading-label="Added and removed names" id="card-1"><span class="arrow"> </span>Added and removed names<small class="text-muted"> [hide]</small></h2>
+  <h2 data-heading-label="Added and removed names" id="card-5"><span class="arrow"> </span>Added and removed names<small class="text-muted"> [hide]</small></h2>
   </div>
   <div class="collapsible-content">
   <div class="content">
