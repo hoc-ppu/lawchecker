@@ -11,9 +11,9 @@ from typing import NamedTuple
 from lxml import etree, html
 from lxml.etree import QName, _Element
 
+from lawchecker.lawchecker_logger import logger
 from lawchecker import templates
 from lawchecker import xpath_helpers as xp
-from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 from lawchecker.utils import diff_xml_content
@@ -411,7 +411,10 @@ class Report:
                         f" mt-4'>{item.num}:</p>\n{item.html_diff}\n</div>"
                     )
                 )
+        else:
+            logger.info("No name changes in context")
 
+        names_change_context_section.add_content(changed_amdts)
 
         if len(self.name_changes_in_context) == 0:
             # might as well not output anything if not necessary

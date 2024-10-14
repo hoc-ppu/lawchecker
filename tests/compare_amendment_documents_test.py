@@ -34,7 +34,7 @@ def _elements_equal(e1, e2, ignore_whitespace=True):
     if ignore_whitespace:
         if e1.text and e2.text and e1.text.strip() != e2.text.strip():
             return False
-        if e1.tail and e2.tail and e1.tail != e2.tail:
+        if e1.tail and e2.tail and e1.tail.strip() != e2.tail.strip():
             return False
     else:
         if e1.text != e2.text:
@@ -60,13 +60,27 @@ def assert_elements_equal(e1: _Element, e2: _Element, ignore_whitespace=True):
         etree.indent(e1, space=" ")
         etree.indent(e2, space=" ")
 
-        e1_string = etree.tostring(e1, encoding="utf-8")
-        e2_string = etree.tostring(e2, encoding="utf-8")
+        e1_string = etree.tostring(e1, encoding=str)
+        e2_string = etree.tostring(e2, encoding=str)
 
         # return e1_string == e2_string
         assert e1_string == e2_string
 
 # def to
+
+def test_diff_names_in_context():
+
+    energy_0904_nc53 = deepcopy(data_for_testing.energy_0904_nc53)
+    energy_0905_nc53 = deepcopy(data_for_testing.energy_0905_nc53)
+
+    report = compare.Report(energy_0904_nc53, energy_0905_nc53)
+
+    rendered_added_and_removed_names = report.render_added_and_removed_names()
+
+    assert_elements_equal(
+        rendered_added_and_removed_names,
+        data_for_testing.added_and_removed_names_section
+    )
 
 
 def test_diff_names_in_context_warning(caplog):

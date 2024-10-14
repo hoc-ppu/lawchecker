@@ -179,9 +179,9 @@ class Report:
 
     """
     Container for Amendment Report.
-    The report summarises changes changes between two LM XML official list documents.
-    There are assumed to be no published documents between the two documents,
-    if there are then the star check will be inaccurate
+    The report summarises changes changes between two LM XML official list
+    documents. There are assumed to be no published documents between the
+    two documents, if there are then the star check will be inaccurate
     """
 
     def __init__(
