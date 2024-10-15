@@ -86,8 +86,12 @@ class Bill:
         stage_xp = xpath_temp.format("varStageVersion")
         house_xp = xpath_temp.format("varHouse")
 
-        stage: str = self.root.xpath(stage_xp, namespaces=NSMAP)[0]  # type: ignore
-        house: str = self.root.xpath(house_xp, namespaces=NSMAP)[0]  # type: ignore
+        try:
+            stage: str = self.root.xpath(stage_xp, namespaces=NSMAP)[0]  # type: ignore
+            house: str = self.root.xpath(house_xp, namespaces=NSMAP)[0]  # type: ignore
+        except IndexError:
+            # if the above fails, we probably do not have a LM bill
+            raise
 
         house = house.replace("House of ", "")
 
@@ -173,7 +177,14 @@ class CompareBillNumbering:
 
             logger.info(f"file_name: {xml_file[1]}")
 
-            bill = Bill(*xml_file)
+            try:
+                bill = Bill(*xml_file)
+            except IndexError as e:
+                logger.error(
+                    f"Error parsing {xml_file[1]}. File probably not a LM bill xml file."
+                )
+                logger.error(repr(e))
+                continue
 
             if bill.title not in self.bills_container:
                 self.bills_container[bill.title] = [bill]
