@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
-import sys
-
 import platform
+import sys
 import traceback
 import webbrowser
 from datetime import datetime
@@ -274,11 +273,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # element in both the Old and New XML is the same
 
         old_xml_uri = old_xml.find(
-            "//xmlns:FRBRWork/xmlns:FRBRalias[@name='alternateUri']",
+            ".//xmlns:FRBRWork/xmlns:FRBRalias[@name='alternateUri']",
             namespaces=NSMAP,
         )
         new_xml_uri = new_xml.find(
-            "//xmlns:FRBRWork/xmlns:FRBRalias[@name='alternateUri']",
+            ".//xmlns:FRBRWork/xmlns:FRBRalias[@name='alternateUri']",
             namespaces=NSMAP,
         )
 
@@ -292,7 +291,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Check that the date in the  <FRBRdate date="published" />
         # element in the New XML is more recent than the date in the Old XML
-        xpath = "//xmlns:FRBRWork/xmlns:FRBRdate[@name='published']"
+        xpath = ".//xmlns:FRBRWork/xmlns:FRBRdate[@name='published']"
         old_xml_date = old_xml.find(xpath, namespaces=NSMAP)
         new_xml_date = new_xml.find(xpath, namespaces=NSMAP)
 
