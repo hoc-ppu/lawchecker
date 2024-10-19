@@ -42,7 +42,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         if platform.system() == "Darwin":
             # annoyingly sizing works differently on macOS and windows
-            self.resize(self.size().width(), 740)  # fit widgets on mac
+            self.resize(self.size().width(), 805)  # fit widgets on mac
             # pass
 
         self.dash_xml_file = ""  # will be the xml file path

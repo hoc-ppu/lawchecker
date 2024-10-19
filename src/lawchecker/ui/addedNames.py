@@ -24,7 +24,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(644, 750)
+        MainWindow.resize(644, 1100)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout_5 = QVBoxLayout(self.centralwidget)
@@ -382,6 +382,14 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_5.addWidget(self.tabWidget)
 
+        self.label_11 = QLabel(self.centralwidget)
+        self.label_11.setObjectName(u"label_11")
+        self.label_11.setTextFormat(Qt.TextFormat.RichText)
+        self.label_11.setWordWrap(True)
+        self.label_11.setOpenExternalLinks(True)
+
+        self.verticalLayout_5.addWidget(self.label_11)
+
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
@@ -436,5 +444,6 @@ class Ui_MainWindow(object):
 "Use the button below to select a folder which contains Bill XML files. ", None))
         self.label_12.setText(QCoreApplication.translate("MainWindow", u"Use the button below to create CSV file(s) showing numbering changes between a versions of (a) bill(s).", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.Numbering), QCoreApplication.translate("MainWindow", u"Numbering", None))
+        self.label_11.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p>Please report any bugs or any ideas for improvement to Mark Fawcett.<br/>Code avaliable on <a href=\"https://github.com/hoc-ppu/lawchecker\"><span style=\" text-decoration: underline; color:#094fd1;\">GitHub</span></a></p></body></html>", None))
     # retranslateUi
 
