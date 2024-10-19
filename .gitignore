@@ -4,6 +4,10 @@
 .DS_Store
 ._.DS_Store
 
+# javascript stuff
+package-lock.json
+
+_Reports/2023-06-28__18-15
 # ignore junk folder
 junk/
 
