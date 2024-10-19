@@ -3,5 +3,10 @@
         "FRBR",
         "guids",
         "Rdate"
-    ]
+    ],
+    "[typescriptreact]": {
+        "editor.tabSize": 2,
+        "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "prettier.enable": true,
 }
