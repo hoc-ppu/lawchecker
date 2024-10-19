@@ -48,8 +48,7 @@ compare_bills "example_files/bills/Social Housing (Regulation) Bill - lords comm
 ```
 
 ```shell
-compare_bills -c "example_files/bills/Social Housing (Regulation) Bill - commons brl.xml" "example_files
-/bills/Social Housing (Regulation) Bill - commons committee.xml"
+compare_bills -c "example_files/bills/Social Housing (Regulation) Bill - commons brl.xml" "example_files/bills/Social Housing (Regulation) Bill - commons committee.xml"
 ```
 
 
