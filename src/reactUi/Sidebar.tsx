@@ -1,13 +1,71 @@
 /// <reference types="vite-plugin-svgr/client" />
+import React, { useReducer } from "react";
 import UkParliamentSvg from "./assets/ukParliament.svg?react";
-import ExpandArrow from "./assets/ExpandArrow.svg?react";
 import DocumentIcon from "./assets/documentIcon.svg?react";
 import ConferenceIcon from "./assets/conferenceIcon.svg?react";
 import BriefcaseIcon from "./assets/briefcaseIcon.svg?react";
 import CalenderIcon from "./assets/calenderIcon.svg?react";
 import SpeechBubbleIcon from "./assets/speechBubbleIcon.svg?react";
+import SidebarItem from "./SidebarItem";
+
+interface SidebarState {
+  [key: string]: boolean; // Index signature
+  menuDropdownOP: boolean;
+  menuDropdownEDM: boolean;
+  menuDropdownVnP: boolean;
+  menuDropdownFDO: boolean;
+  menuDropdownQT: boolean;
+}
+
+// Define the initial state
+const initialState: SidebarState = {
+  menuDropdownOP: false,
+  menuDropdownEDM: false,
+  menuDropdownVnP: false,
+  menuDropdownFDO: false,
+  menuDropdownQT: false,
+};
+
+const opInnerOptions: Array<string> = [
+  "Get XML",
+  "Transform HTML",
+  "EMs for Hansard",
+];
+
+const vnpInnerOptions: Array<string> = ["Get XML", "Transform HTML"];
+
+const edmInnerOptions: Array<string> = vnpInnerOptions;
+
+const fdoInnerOptions: Array<string> = vnpInnerOptions;
+
+const qtInnerOptions: Array<string> = ["Get XML"];
+
+interface Action {
+  type: string;
+  payload: string;
+}
+
+// Define the reducer function
+function reducer(state: SidebarState, action: Action) {
+  console.log("reducer", state, action);
+  switch (action.type) {
+    case "TOGGLE_DROPDOWN":
+      return {
+        ...initialState, // Reset all dropdowns to closed
+        [action.payload]: !state[action.payload], // Toggle the selected dropdown
+      };
+    default:
+      return state;
+  }
+}
 
 export default function Sidebar() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  const toggleDropdown = (dropdown: string) => {
+    dispatch({ type: "TOGGLE_DROPDOWN", payload: dropdown });
+  };
+
   return (
     <div className="side-bar-top-level">
       {/* Begin Contents */}
@@ -19,173 +77,50 @@ export default function Sidebar() {
             </a>
           </div>
 
-          <div id="OP-sidebar-collapsable" className="nav-item-outer-content">
-            <div className="op-nav">
-              <DocumentIcon />
-              <div>Order Paper</div>
-            </div>
-            <div className="sidebar-expand-arrow">
-              <ExpandArrow />
-            </div>
-          </div>
+          <SidebarItem
+            title="Order Paper"
+            id="sb_op"
+            isOpen={state.menuDropdownOP}
+            Icon={DocumentIcon}
+            onToggle={() => toggleDropdown("menuDropdownOP")}
+            innerOptions={opInnerOptions}
+          />
 
-          <div className="nav-collapsable">
-            <div className="nav-collapsable-inner">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#get_XML_OP"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                Get XML
-              </a>
-            </div>
-            <div className="nav-collapsable-inner">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#transform_HTML_OP"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                Transform HTML
-              </a>
-            </div>
-            <div className="nav-collapsable-inner">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#EMs_For_Hansard_OP"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                EMs for Hansard
-              </a>
-            </div>
-          </div>
+          <SidebarItem
+            title="Votes &amp; Proceedings"
+            id="sb_vnp"
+            isOpen={state.menuDropdownVnP}
+            Icon={ConferenceIcon}
+            onToggle={() => toggleDropdown("menuDropdownVnP")}
+            innerOptions={vnpInnerOptions}
+          />
 
-          <div className="nav-item-outer-content">
-            <div className="vnp-nav">
-              <ConferenceIcon />
+          <SidebarItem
+            title="Early Day Motions"
+            id="sb_edm"
+            isOpen={state.menuDropdownEDM}
+            Icon={BriefcaseIcon}
+            onToggle={() => toggleDropdown("menuDropdownEDM")}
+            innerOptions={edmInnerOptions}
+          />
 
-              <div>Votes &amp; Proceedings</div>
-            </div>
-            <div className="sidebar-expand-arrow">
-              <ExpandArrow />
-            </div>
-          </div>
+          <SidebarItem
+            title="Future Day Orals"
+            id="sb_fdo"
+            isOpen={state.menuDropdownFDO}
+            Icon={CalenderIcon}
+            onToggle={() => toggleDropdown("menuDropdownFDO")}
+            innerOptions={fdoInnerOptions}
+          />
 
-          <div className="nav-collapsable">
-            <div className="nav-collapsable-inner">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#get_XML_VP"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                Get XML
-              </a>
-            </div>
-            <div className="nav-collapsable-inner">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#transform_HTML_VP"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                Transform HTML
-              </a>
-            </div>
-          </div>
-
-          <div className="nav-item-outer-content">
-            <div className="edms-nav">
-              <BriefcaseIcon />
-
-              <div>Early Day Motions</div>
-            </div>
-            <div className="sidebar-expand-arrow">
-              <ExpandArrow />
-            </div>
-          </div>
-
-          <div className="nav-collapsable">
-            <div className="nav-collapsable-inner">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#get_XML_EDM"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                Get XML
-              </a>
-            </div>
-            <div className="nav-collapsable-inner">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#transform_HTML_EDM"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                Transform HTML
-              </a>
-            </div>
-          </div>
-
-          <div className="nav-item-outer-content">
-            <div className="fdos-nav">
-              <CalenderIcon />
-              <div>Future Day Orals</div>
-            </div>
-            <div className="sidebar-expand-arrow">
-              <ExpandArrow />
-            </div>
-          </div>
-
-          <div className="nav-collapsable">
-            <div className="nav-collapsable-inner active">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#get_XML_FDO"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                Get XML
-              </a>
-            </div>
-            <div className="nav-collapsable-inner">
-              <div className="seleced-indicator"></div>
-              <a
-                href="#transform_HTML_FDO"
-                role="button"
-                className="concertina nav-item-text"
-              >
-                Transform HTML
-              </a>
-            </div>
-          </div>
-
-          <div className="nav-item-outer-content">
-            <div className="qs-tab-nav">
-              <SpeechBubbleIcon />
-
-              <div>Questions Tabled</div>
-            </div>
-            <div className="sidebar-expand-arrow">
-              <ExpandArrow />
-            </div>
-          </div>
-
-          <div className="nav-collapsable">
-            <div className="nav-collapsable-inner active">
-              <div className="seleced-indicator"></div>
-              <a
-                className="concertina nav-item-text"
-                href="#get_XML_QT"
-                role="button"
-              >
-                Get XML
-              </a>
-            </div>
-          </div>
+          <SidebarItem
+            title="Questions Tabled"
+            id="sb_qt"
+            isOpen={state.menuDropdownQT}
+            Icon={SpeechBubbleIcon}
+            onToggle={() => toggleDropdown("menuDropdownQT")}
+            innerOptions={qtInnerOptions}
+          />
         </div>
       </div>
 
