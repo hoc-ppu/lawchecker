@@ -178,6 +178,7 @@
     flex-grow: 1;
   }
   .main-content-inner{
+    /* changed where the padding is applied, see react-slide-over */
     padding: 0px 24px 24px 24px;
     background-color: #F9FAFB;
     flex-grow: 1;
@@ -230,3 +231,46 @@
     --bs-btn-disabled-bg: var(--brand-purple);
     --bs-btn-disabled-border-color: var(--brand-purple);
   }
+
+
+  /* new styles for react project */
+
+  /* SlidingComponent.css */
+.react-slider-container {
+  position: relative;
+  /* width: 300px;
+  height: 200px;
+  margin: 50px auto; */
+}
+
+.react-slider-content {
+  position: relative;
+  z-index: 1; /* Base content */
+  /* background-color: lightgray; */
+  padding: 20px;
+}
+
+.react-slide-over {
+  position: absolute;
+  left: 0;
+  top: 100%; ; /* Start off-screen below */
+  /* width: 100%; */
+  height: 100%;
+  overflow: auto;
+  background-color: #F9FAFB;
+  padding-left: 24px;
+  padding-right: 24px;
+  /* padding: 0px 24px 24px 24px; */
+  /*background-color: rgba(0, 123, 255, 0.8);  Transparent blue overlay */
+  z-index: 2; /* Higher z-index to sit on top of content */
+  transition: top 0.5s ease-in-out; /* Smooth sliding transition */
+}
+
+.react-slide-over.open {
+  top: 0; /* When open, slide to cover the content */
+}
+
+.react-slide-over.close {
+  top: 100%; /* Slide back down off the screen */
+}
+

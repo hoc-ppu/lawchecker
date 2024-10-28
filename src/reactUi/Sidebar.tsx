@@ -7,6 +7,7 @@ import BriefcaseIcon from "./assets/briefcaseIcon.svg?react";
 import CalenderIcon from "./assets/calenderIcon.svg?react";
 import SpeechBubbleIcon from "./assets/speechBubbleIcon.svg?react";
 import SidebarItem from "./SidebarItem";
+import SidebarSubItem from "./SidebarSubItem";
 
 interface SidebarState {
   [key: string]: boolean; // Index signature
@@ -25,20 +26,28 @@ const initialState: SidebarState = {
   menuDropdownFDO: false,
   menuDropdownQT: false,
 };
+export interface MenuItem {
+  title: string;
+  menuItemControles: string;
+}
 
-const opInnerOptions: Array<string> = [
-  "Get XML",
-  "Transform HTML",
-  "EMs for Hansard",
+const opInnerOptions: Array<MenuItem> = [
+  { title: "Get XML", menuItemControles: "opGetXmlPage" },
+  { title: "Transform HTML", menuItemControles: "opTransformHtmlPage" },
 ];
 
-const vnpInnerOptions: Array<string> = ["Get XML", "Transform HTML"];
+const vnpInnerOptions: Array<MenuItem> = [
+  { title: "Get XML", menuItemControles: "opGetXmlPage" },
+  { title: "Transform HTML", menuItemControles: "opTransformHtmlPage" },
+];
 
-const edmInnerOptions: Array<string> = vnpInnerOptions;
+const edmInnerOptions: Array<MenuItem> = vnpInnerOptions;
 
-const fdoInnerOptions: Array<string> = vnpInnerOptions;
+const fdoInnerOptions: Array<MenuItem> = vnpInnerOptions;
 
-const qtInnerOptions: Array<string> = ["Get XML"];
+const qtInnerOptions: Array<MenuItem> = [
+  { title: "Get XML", menuItemControles: "opGetXmlPage" },
+];
 
 interface Action {
   type: string;
@@ -47,7 +56,7 @@ interface Action {
 
 // Define the reducer function
 function reducer(state: SidebarState, action: Action) {
-  console.log("reducer", state, action);
+  // console.log("reducer", state, action);
   switch (action.type) {
     case "TOGGLE_DROPDOWN":
       return {
@@ -59,7 +68,14 @@ function reducer(state: SidebarState, action: Action) {
   }
 }
 
-export default function Sidebar() {
+export default function Sidebar({
+  pageActiveState,
+  setPageActiveState,
+  toggleCollapsible,
+}) {
+  // console.log("From Sidebar pageActiveState", pageActiveState);
+  // console.log("From Sidebar setPageActiveState", setPageActiveState);
+
   const [state, dispatch] = useReducer(reducer, initialState);
 
   const toggleDropdown = (dropdown: string) => {
@@ -84,18 +100,33 @@ export default function Sidebar() {
             Icon={DocumentIcon}
             onToggle={() => toggleDropdown("menuDropdownOP")}
             innerOptions={opInnerOptions}
-          />
+          >
+            <SidebarSubItem
+              title="Get XML"
+              id="opGetXmlPage"
+              pageActiveState={pageActiveState}
+              toggleCollapsible={toggleCollapsible}
+              setPageActiveState={setPageActiveState}
+            />
+            <SidebarSubItem
+              title="Transform HTML"
+              id="opTransformHtmlPage"
+              pageActiveState={pageActiveState}
+              toggleCollapsible={toggleCollapsible}
+              setPageActiveState={setPageActiveState}
+            />
+          </SidebarItem>
 
-          <SidebarItem
+          {/* <SidebarItem
             title="Votes &amp; Proceedings"
             id="sb_vnp"
             isOpen={state.menuDropdownVnP}
             Icon={ConferenceIcon}
             onToggle={() => toggleDropdown("menuDropdownVnP")}
             innerOptions={vnpInnerOptions}
-          />
+          /> */}
 
-          <SidebarItem
+          {/* <SidebarItem
             title="Early Day Motions"
             id="sb_edm"
             isOpen={state.menuDropdownEDM}
@@ -120,7 +151,7 @@ export default function Sidebar() {
             Icon={SpeechBubbleIcon}
             onToggle={() => toggleDropdown("menuDropdownQT")}
             innerOptions={qtInnerOptions}
-          />
+          /> */}
         </div>
       </div>
 
