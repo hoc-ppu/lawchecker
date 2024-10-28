@@ -4,6 +4,21 @@
 .DS_Store
 ._.DS_Store
 
+
+# css stuff
+*.css.map
+
+dist-ssr
+*.local
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
 # javascript stuff
 package-lock.json
 
@@ -11,7 +26,7 @@ _Reports/2023-06-28__18-15
 # ignore junk folder
 junk/
 
-# we don't need PDFs i font think
+# we don't need PDFs i don't think
 *.pdf
 
 
