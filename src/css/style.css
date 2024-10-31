@@ -31,7 +31,7 @@
     display: block;
     margin-left: auto;
     margin-right: auto;
-    width: 40%;
+    width: 30%;
   }
   .main-content-area {
     min-height: 100vh;
@@ -198,9 +198,9 @@
     flex-wrap: nowrap;
     align-items: stretch;
   }
-  .text-center {
+  /* .text-center {
     text-align: center !important;
-  }
+  } */
   h1{
     font-weight: 400;
   }
@@ -274,3 +274,12 @@
   top: 100%; /* Slide back down off the screen */
 }
 
+.blurred {
+  transition: filter 0.5s ease-in-out; /* Adjust the duration and easing as needed */
+  filter: blur(10px); /* Adjust the blur radius as needed */
+}
+
+.unblurred {
+  transition: filter 0.5s ease-in-out;
+  filter: blur(0px); /* Remove the blur */
+}

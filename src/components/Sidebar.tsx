@@ -7,11 +7,6 @@ import React, {
   useState,
 } from "react";
 import UkParliamentSvg from "./../assets/ukParliament.svg?react";
-import DocumentIcon from "./../assets/documentIcon.svg?react";
-import ConferenceIcon from "./../assets/conferenceIcon.svg?react";
-import BriefcaseIcon from "./../assets/briefcaseIcon.svg?react";
-import CalenderIcon from "./../assets/calenderIcon.svg?react";
-import SpeechBubbleIcon from "./../assets/speechBubbleIcon.svg?react";
 
 import SidebarSubItem from "./SidebarSubItem";
 import { PageActiveState } from "./App";
@@ -131,16 +126,15 @@ const Sidebar: React.FC<SidebarProps> = ({
             setPageActiveState={setPageActiveState}
           />
           <SidebarSubItem
-            title="Check Amendment Papers"
-            id="compareAmendmentsPage"
+            title="Bill Numbering"
+            id="billNumberingPage"
             pageActiveState={pageActiveState}
             // toggleCollapsible={toggleCollapsible}
             setPageActiveState={setPageActiveState}
           />
-
           <SidebarSubItem
-            title="Bill Numbering"
-            id="billNumberingPage"
+            title="Check Amendment Papers"
+            id="compareAmendmentsPage"
             pageActiveState={pageActiveState}
             // toggleCollapsible={toggleCollapsible}
             setPageActiveState={setPageActiveState}
