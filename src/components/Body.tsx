@@ -70,8 +70,8 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
               id="bill_oldXMLfile"
               text="Select Older XML File"
               handleClick={() => {
-                console.log("Select folder clicked");
-                // window.pywebview.api.op_working_dir.select_folder();
+                console.log("Select old file clicked");
+                window.pywebview.api.open_file_dialog("com_bill_old_xml");
               }}
             />
             <Button
@@ -79,7 +79,7 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
               text="Select Newer XML File"
               handleClick={() => {
                 console.log("Select folder clicked");
-                // window.pywebview.api.op_working_dir.select_folder();
+                window.pywebview.api.open_file_dialog("com_bill_new_xml");
               }}
             />
             <p className="mt-3">
@@ -101,10 +101,16 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
             <Button
               id="bill_compareInBrowser"
               text="Open rich comparison in Browser"
+              handleClick={() => {
+                window.pywebview.api.bill_create_html_compare();
+              }}
             />
             <Button
               id="bill_compareInVSCode"
               text="Open plain text comparison in VS Code"
+              handleClick={() => {
+                window.pywebview.api.bill_compare_in_vs_code();
+              }}
             />
             <p className="mt-3">
               <small>

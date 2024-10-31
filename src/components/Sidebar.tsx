@@ -1,73 +1,12 @@
 /// <reference types="vite-plugin-svgr/client" />
-import React, {
-  useReducer,
-  useEffect,
-  Dispatch,
-  SetStateAction,
-  useState,
-} from "react";
+import React, { useEffect, Dispatch, SetStateAction } from "react";
 import UkParliamentSvg from "./../assets/ukParliament.svg?react";
 
 import SidebarSubItem from "./SidebarSubItem";
 import { PageActiveState } from "./App";
-
-interface SidebarState {
-  [key: string]: boolean; // Index signature
-  menuDropdownOP: boolean;
-  menuDropdownEDM: boolean;
-  menuDropdownVnP: boolean;
-  menuDropdownFDO: boolean;
-  menuDropdownQT: boolean;
-}
-
-// Define the initial state
-const initialState: SidebarState = {
-  menuDropdownOP: false,
-  menuDropdownEDM: false,
-  menuDropdownVnP: false,
-  menuDropdownFDO: false,
-  menuDropdownQT: false,
-};
 export interface MenuItem {
   title: string;
   menuItemControles: string;
-}
-
-// const opInnerOptions: Array<MenuItem> = [
-//   { title: "Get XML", menuItemControles: "opGetXmlPage" },
-//   { title: "Transform HTML", menuItemControles: "opTransformHtmlPage" },
-// ];
-
-// const vnpInnerOptions: Array<MenuItem> = [
-//   { title: "Get XML", menuItemControles: "opGetXmlPage" },
-//   { title: "Transform HTML", menuItemControles: "opTransformHtmlPage" },
-// ];
-
-// const edmInnerOptions: Array<MenuItem> = vnpInnerOptions;
-
-// const fdoInnerOptions: Array<MenuItem> = vnpInnerOptions;
-
-// const qtInnerOptions: Array<MenuItem> = [
-//   { title: "Get XML", menuItemControles: "opGetXmlPage" },
-// ];
-
-interface Action {
-  type: string;
-  payload: string;
-}
-
-// Define the reducer function
-function reducer(state: SidebarState, action: Action) {
-  // console.log("reducer", state, action);
-  switch (action.type) {
-    case "TOGGLE_DROPDOWN":
-      return {
-        ...initialState, // Reset all dropdowns to closed
-        [action.payload]: !state[action.payload], // Toggle the selected dropdown
-      };
-    default:
-      return state;
-  }
 }
 
 interface SidebarProps {
@@ -78,12 +17,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({
   pageActiveState,
   setPageActiveState,
-  // toggleCollapsible,
 }) => {
-  // console.log("From Sidebar pageActiveState", pageActiveState);
-  // console.log("From Sidebar setPageActiveState", setPageActiveState);
-
-  const [state, dispatch] = useReducer(reducer, initialState);
   const [versionInfo, setVersionInfo] =
     React.useState<string>("No version info");
 
@@ -103,10 +37,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     }
     return;
   }, []);
-
-  const toggleDropdown = (dropdown: string) => {
-    dispatch({ type: "TOGGLE_DROPDOWN", payload: dropdown });
-  };
 
   return (
     <div className="side-bar-top-level">

@@ -24,7 +24,7 @@ try:
 except KeyError:
     # TODO: Log this
     print(
-        "Error: Either no .env file or the file does note have "
+        "Error: Either no .env file or the file does not have "
         f" {DASH_XML_KEY} environment variable set."
         "\nPlease create a .env file in the root of the project"
         " see .env.example for an example of the required format."
