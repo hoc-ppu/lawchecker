@@ -5,7 +5,7 @@ from datetime import datetime
 # A - tidy XML
 
 # ? Testing with local XML file
-xml_file = '..\\XML\\2021-12-02_added-names.xml'  # Replace with your input XML file path
+xml_file = '..\\XML\\2021-12-03_added-names.xml'  # Replace with your input XML file path
 xml_tree = etree.parse(xml_file)
 
 # Create a new root element for the output
@@ -40,12 +40,7 @@ def m_properties(element, parent, namespaces):
             bill_element = etree.SubElement(item, "bill")
             bill_element.text = child.text
         elif child.tag == f"{{{namespaces['d']}}}Amendments":
-            numbers_element = etree.SubElement(item, "numbers")
-            original_string = etree.SubElement(numbers_element, "original-string")
-            original_string.text = child.text.strip() if child.text else ""
-            matched_numbers = etree.SubElement(numbers_element, "matched-numbers")
-            amd_no = etree.SubElement(matched_numbers, "amd-no")
-            amd_no.text = child.text.strip() if child.text else ""
+            amendments(child, item)
         elif child.tag == f"{{{namespaces['d']}}}Names":
             names(child, item, namespaces)
         elif child.tag == f"{{{namespaces['d']}}}Namestoremove":
@@ -65,11 +60,12 @@ def id(element, parent):
     dashboard_id = etree.SubElement(parent, "dashboard-id")
     dashboard_id.text = element.text
 
-# 'd:Amendments' element incl. regex patterns
+# 'd:Amendments' element including regex patterns and logic from the XSLT
 def amendments(element, parent):
+    # Create the 'numbers' element
     numbers = etree.SubElement(parent, "numbers")
 
-    # Normalize
+    # Normalize and store the original text
     original_text = element.text.strip() if element.text else ""
     original_string = etree.SubElement(numbers, "original-string")
     original_string.text = original_text
@@ -77,61 +73,47 @@ def amendments(element, parent):
     # Create 'matched-numbers' element
     matched_numbers = etree.SubElement(numbers, "matched-numbers")
 
-    # Tokenize
-    tokens = re.split(r'\n|,|;| and | &amp; |\+', original_text)
+    # Tokenize based on delimiters: newline, comma, semicolon, "and", and "&amp;"
+    tokens = re.split(r'[\n,;]+|\b(?:and|&amp;)\b', original_text)
 
-    # Regex patterns
-    range_pattern = re.compile(r'(\d+)\s?[-–—]\s?(\d+)') # Hyphen-like characters
-    amendment_pattern = re.compile(r'(A|Amendment|amendment|Amendments|Amdt|amdt|A):?\s?(\d{1,3})') # Amendment-like prefixes
-    nc_pattern = re.compile(r'(NC|New Clause|new clause)\s?(\d{1,3})') # New Clause-like prefixes
-    ns_pattern = re.compile(r'(NS|New Schedule|new schedule)\s?(\d{1,3})') # New Schedule-like prefixes
-    single_number_pattern = re.compile(r'\d{1,3}') # Single numbers
+    # Define regex patterns to match various number formats
+    nc_pattern = re.compile(r'NC\d+')  # Matches NC-prefixed numbers
+    number_pattern = re.compile(r'^\d+$')  # Matches plain numbers
 
-    # Process tokens
+    # Process each token to create <amd-no> elements or handle unmatched content
+    unmatched_tokens = []  # Collect unmatched tokens for 'unmatched-numbers-etc'
+
     for token in tokens:
         token = token.strip()
         if not token:
             continue
 
-        # Check for ranges with hyphen-like characters
-        if range_pattern.match(token):
-            start, end = map(int, range_pattern.match(token).groups())
-            for num in range(start, end + 1):
-                amd_no = etree.SubElement(matched_numbers, "amd-no")
-                amd_no.text = str(num)
-                                  
-        # Check for amendments prefixed by "Amendment", "Amdt", etc.
-        elif amendment_pattern.match(token):
-            number = amendment_pattern.match(token).group(2)
+        # Match NC-prefixed numbers
+        if nc_pattern.fullmatch(token):
             amd_no = etree.SubElement(matched_numbers, "amd-no")
-            amd_no.text = number
-
-        # Check for "NC" or "New Clause"
-        elif nc_pattern.match(token):
-            number = nc_pattern.match(token).group(2)
+            amd_no.text = token
+        # Match plain numbers
+        elif number_pattern.fullmatch(token):
             amd_no = etree.SubElement(matched_numbers, "amd-no")
-            amd_no.text = f"NC{number}"
-
-        # Check for "NS" or "New Schedule"
-        elif ns_pattern.match(token):
-            number = ns_pattern.match(token).group(2)
-            amd_no = etree.SubElement(matched_numbers, "amd-no")
-            amd_no.text = f"NS{number}"
-
-        # Check for single numbers
-        elif single_number_pattern.match(token):
-            number = single_number_pattern.match(token).group(0)
-            amd_no = etree.SubElement(matched_numbers, "amd-no")
-            amd_no.text = number
+            amd_no.text = token
         else:
-            # If the token does not match any pattern, add to 'unmatched-numbers-etc'
-            unmatched_numbers = etree.SubElement(numbers, "unmatched-numbers-etc")
-            unmatched_numbers.text = token
+            # Collect unmatched tokens
+            unmatched_tokens.append(token)
+
+    # Add unmatched tokens to 'unmatched-numbers-etc'
+    if unmatched_tokens:
+        unmatched_numbers = etree.SubElement(numbers, "unmatched-numbers-etc")
+        unmatched_numbers.text = ", ".join(unmatched_tokens)
+
+    return numbers
+
+# Print the generated XML for review
+print(etree.tostring(root, pretty_print=True).decode("utf-8"))
 
 def names(element, parent, namespaces):
     # Create the container element for 'names-to-add'
     container_element = etree.SubElement(parent, "names-to-add")
-    
+
     # Extract and normalize the original text
     original_text = element.text.strip() if element.text else ""
     original_string = etree.SubElement(container_element, "original-string")
@@ -139,26 +121,30 @@ def names(element, parent, namespaces):
 
     # Create 'matched-names' element
     matched_names = etree.SubElement(container_element, "matched-names")
-    
-    # Tokenize
-    tokens = re.split(r'\s*\n\s*|\s*•\s*|\s{2,}|\t', original_text)
 
-    # Regex
-    name_pattern = re.compile(r"^\s*[-•—–‐‑\xad‒–−]?\s*(.+)$")
+    # Check if the text contains any of the delimiters
+    if re.search(r'\n|,| and | &amp;', original_text):
+        # Tokenize the text using the specified delimiters
+        tokens = re.split(r'\n|,| and | &amp;', original_text)
+        for token in tokens:
+            token = token.strip()
+            if not token:
+                continue
 
-    for token in tokens:
-        token = token.strip()
-        if not token:
-            continue
+            # Regex pattern to match and remove prefixes
+            name_pattern = re.compile(r"^\s*[\u2022\u002d\u2014\u2015\u2010\u2011\u00ad\u2012\u2013\u2212]?\s*(.+[^ MP])")
 
-        # Match the name pattern
-        match = name_pattern.match(token)
-        if match:
-            name_content = match.group(1)
-            name = etree.SubElement(matched_names, "name")
-            name.text = name_content
-        else:
-            print(f"No match for token: {token}")  # Debugging output
+            match = name_pattern.match(token)
+            if match:
+                name_content = match.group(1)
+                name = etree.SubElement(matched_names, "name")
+                name.text = name_content
+            else:
+                print(f"No match for token: {token}")  # Debugging output
+    else:
+        # If no delimiters are found, create a single 'name' element with normalized text
+        name = etree.SubElement(matched_names, "name")
+        name.text = original_text
 
 # 'd:Namestoremove' elements
 def names_to_remove(element, parent, namespaces):
