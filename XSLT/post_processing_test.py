@@ -1,9 +1,9 @@
 import re
+import subprocess
 from lxml import etree
 from datetime import datetime
 
-# A - tidy XML
-
+# A - tidy XML processing
 # ? Testing with local XML file
 xml_file = '..\\XML\\2021-12-03_added-names.xml'  # Replace with your input XML file path
 xml_tree = etree.parse(xml_file)
@@ -187,8 +187,9 @@ def comments(element, parent, namespaces):
     if element.get(f"{{{namespaces['m']}}}null"):
         return
 
-    # Find the 'dashboard-id' from the following sibling 'd:ID'
-    dashboard_id = element.getnext().text if element.getnext() is not None else None
+    # Find the 'dashboard-id' from the sibling 'd:Id' element
+    dashboard_id_element = element.find(f"../d:Id", namespaces)
+    dashboard_id = dashboard_id_element.text if dashboard_id_element is not None else None
 
     # Create the 'comments' element with 'dashboard-id' attribute
     comments_element = etree.SubElement(parent, "comments")
@@ -234,3 +235,5 @@ with open(output_file, 'w', encoding='utf-8') as file:
 print(f"Saved to: {output_file}")
 
 # B - post-processing for HTML report
+post_processing = 'post_processing_test_HTML.py'  
+subprocess.run(['python', post_processing], check=True)
