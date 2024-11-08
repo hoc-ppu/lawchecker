@@ -40,8 +40,8 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
           </h2>
         </div>
         <Collapsible
-          pageActiveState={pageActiveState}
-          id="compareBillsPage"
+          isOpenState={pageActiveState}
+          stateId="compareBillsCollapsible"
           title="Compare Bills"
         >
           <Card step="Introduction" info="">
@@ -122,8 +122,8 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
         </Collapsible>
 
         <Collapsible
-          pageActiveState={pageActiveState}
-          id="billNumberingPage"
+          isOpenState={pageActiveState}
+          stateId="billNumberingCollapsible"
           title="Bill Numbering"
         >
           <Card step="Introduction" info="">
@@ -165,8 +165,8 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
         </Collapsible>
 
         <Collapsible
-          pageActiveState={pageActiveState}
-          id="compareAmendmentsPage"
+          isOpenState={pageActiveState}
+          stateId="compareAmendmentsCollapsible"
           title="Check Amendment Papers"
         >
           <Card step="Introduction" info="">
@@ -230,8 +230,8 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
         </Collapsible>
 
         <Collapsible
-          pageActiveState={pageActiveState}
-          id="billNumberingPage"
+          isOpenState={pageActiveState}
+          stateId="billNumberingCollapsible"
           title="Bill Numbering"
         >
           <Card step="Introduction" info="">
@@ -273,8 +273,8 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
         </Collapsible>
 
         <Collapsible
-          pageActiveState={pageActiveState}
-          id="compareAmendmentsPage"
+          isOpenState={pageActiveState}
+          stateId="compareAmendmentsCollapsible"
           title="Check Amendment Papers"
         >
           <Card step="Introduction" info="">
@@ -338,8 +338,8 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
         </Collapsible>
 
         <Collapsible
-          pageActiveState={pageActiveState}
-          id="addedNamesPage"
+          isOpenState={pageActiveState}
+          stateId="addedNamesCollapsible"
           title="Added names report"
         >
           <Card step="Step&nbsp;1 Optional" info="Create working folders">

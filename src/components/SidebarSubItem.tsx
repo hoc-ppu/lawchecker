@@ -3,14 +3,14 @@ import { PageActiveState } from "./App";
 
 interface SidebarSubItemProps {
   title: string;
-  id: string;
+  collapsibleId: string;
   pageActiveState: PageActiveState;
   setPageActiveState: Dispatch<SetStateAction<PageActiveState>>;
 }
 
 const SidebarSubItem: React.FC<SidebarSubItemProps> = ({
   title,
-  id,
+  collapsibleId,
   pageActiveState,
   setPageActiveState,
 }) => {
@@ -19,7 +19,7 @@ const SidebarSubItem: React.FC<SidebarSubItemProps> = ({
 
     const nextState: PageActiveState = { ...pageActiveState };
     for (const key in nextState) {
-      nextState[key] = key === id ? !nextState[key] : false;
+      nextState[key] = key === collapsibleId ? !nextState[key] : false;
     }
 
     setPageActiveState(nextState);
@@ -29,17 +29,13 @@ const SidebarSubItem: React.FC<SidebarSubItemProps> = ({
     // Do we need the outer dive below?
     <div>
       <div
-        key={`SubItem_${id}`}
+        key={`SubItem_${collapsibleId}`}
         className={`nav-collapsable-inner ${
-          pageActiveState[id] ? "active" : ""
+          pageActiveState[collapsibleId] ? "active" : ""
         }`}
       >
         <div className="seleced-indicator"></div>
         <a
-          // href={href}
-          // href="#get_XML_OP"
-          // href="#transform_HTML_OP"
-          // href="#EMs_For_Hansard_OP"
           role="button"
           className="concertina nav-item-text"
           onClick={handleClick}

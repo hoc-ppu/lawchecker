@@ -50,21 +50,21 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
           <SidebarSubItem
             title="Compare Bills"
-            id="compareBillsPage"
+            collapsibleId="compareBillsCollapsible"
             pageActiveState={pageActiveState}
             // toggleCollapsible={toggleCollapsible}
             setPageActiveState={setPageActiveState}
           />
           <SidebarSubItem
             title="Bill Numbering"
-            id="billNumberingPage"
+            collapsibleId="billNumberingCollapsible"
             pageActiveState={pageActiveState}
             // toggleCollapsible={toggleCollapsible}
             setPageActiveState={setPageActiveState}
           />
           <SidebarSubItem
             title="Check Amendment Papers"
-            id="compareAmendmentsPage"
+            collapsibleId="compareAmendmentsCollapsible"
             pageActiveState={pageActiveState}
             // toggleCollapsible={toggleCollapsible}
             setPageActiveState={setPageActiveState}
@@ -72,7 +72,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           <SidebarSubItem
             title="Added Names Report"
-            id="addedNamesPage"
+            collapsibleId="addedNamesCollapsible"
             pageActiveState={pageActiveState}
             // toggleCollapsible={toggleCollapsible}
             setPageActiveState={setPageActiveState}

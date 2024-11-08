@@ -9,10 +9,10 @@ export interface PageActiveState {
 
 const App: React.FC = () => {
   const defaultPageOpenState: PageActiveState = {
-    compareBillsPage: false,
-    compareAmendmentsPage: false,
-    billNumberingPage: false,
-    addedNamesPage: false,
+    compareBillsCollapsible: false,
+    compareAmendmentsCollapsible: false,
+    billNumberingCollapsible: false,
+    addedNamesCollapsible: false,
   };
 
   const [pageActiveState, setPageActiveState]: [
