@@ -283,3 +283,16 @@
   transition: filter 0.5s ease-in-out;
   filter: blur(0px); /* Remove the blur */
 }
+
+.bottom-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center; /* Ensure items are centered vertically */
+  padding: 1rem;
+  padding-top: 0.8rem;
+  position: fixed;
+  bottom: 0;
+  width: calc(100% - 250px); /* Ensure the container spans the full width */
+  border-top: 1px solid var(--core-gray-300, #D1D5DB);
+  background-color: #EEECEB; /* Optional: Set a background color */
+}

@@ -59,6 +59,7 @@ class Api:
 
         return Path(result[0])
 
+
     def open_file_dialog(self, file_specifier: str, file_type="") -> None:
         # select a file
 
@@ -199,9 +200,9 @@ def main():
         url=entry,
         js_api=api,
         title="Lawchecker",
-        width=1000,
-        height=750,
-        min_size=(400, 300),
+        width=1050,
+        height=850,
+        min_size=(450, 350),
         text_select=True,
         zoomable=True,
         # server=False,

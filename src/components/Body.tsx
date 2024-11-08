@@ -402,6 +402,15 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
           </Card>
         </Collapsible>
       </div>
+      <div className="bottom-bar">
+        <div className="mr-auto small">
+          Please report bugs or improvement ideas to Mark Fawcett
+        </div>
+        <div className="ml-auto small">
+          Code avaliable on{" "}
+          <a href="https://github.com/hoc-ppu/lawchecker">Github</a>
+        </div>
+      </div>
     </div>
   );
 };
