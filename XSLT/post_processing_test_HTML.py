@@ -2,40 +2,75 @@ import os
 import requests
 from lxml import etree as ET
 
-# ? Testing with local XML file
+# ? Testing with local XML files for now
 xml_file_path = 'output.xml'
 output_html_file_path = 'output.html'
+marshalling_file_paths = ['..\\example_files\\addedNames\\Amendment_Paper_XML\\victims_prisoners_rm_pbc_0628.xml']
 
+def load_marshalling_xml(paths):
+    """Load additional XML files for checking amendments."""
+    checking_files = []
+    for path in paths:
+        try:
+            tree = ET.parse(path)
+            checking_files.append(tree)
+            print(f"Loaded checking XML file: {path}")  # Debug: Output file path for verification
+        except ET.XMLSyntaxError as e:
+            print(f"Error parsing {path}: {e}")
+    return checking_files
 
-def generate_html(xml_file, output_html_file):
+def fetch_eligible_members():
+    """Fetches list of current members from MNIS for name checking."""
+    url = "https://data.parliament.uk/membersdataplatform/services/mnis/members/query/House=Commons|IsEligible=true/"
+    response = requests.get(url)
+    if response.status_code == 200:
+        members_tree = ET.fromstring(response.content)
+        # Extract <DisplayAs> text for each <Member> in the API response
+        return {member.find("DisplayAs").text for member in members_tree.findall(".//Member") if member.find("DisplayAs") is not None}
+    else:
+        print("Failed to fetch data from MNIS API.")
+        return set()
+
+def generate_html(xml_file, output_html_file, checking_files, eligible_members):
     # Parse the XML file
     tree = ET.parse(xml_file)
     root = tree.getroot()
 
-    # Fetch and parse eligible member names from the API
-    def fetch_eligible_members():
-        url = "https://data.parliament.uk/membersdataplatform/services/mnis/members/query/House=Commons|IsEligible=true/"
-        response = requests.get(url)
-        if response.status_code == 200:
-            members_tree = ET.fromstring(response.content)
-            # Extract <DisplayAs> text for each <Member> in the API response
-            return {member.find("DisplayAs").text for member in members_tree.findall(".//Member") if member.find("DisplayAs") is not None}
-        else:
-            print("Failed to fetch data from MNIS API.")
-            return set()
+    # Function to check amendments in additional XML files
+    def check_amendment_in_files(amendment_num, bill_key):
+        """Check if amendment exists in any loaded checking XML files based on certain criteria."""
+        for file_tree in checking_files:
+            # Extract namespaces from the XML file
+            namespaces = {k if k else 'default': v for k, v in file_tree.getroot().nsmap.items()}
+        
+            # Use namespace-aware XPath query
+            try:
+                xpath_query = (
+                    f"//*[normalize-space(ancestor::*[local-name()='TLCConcept' and @eId='varBillTitle']/@showAs) = '{bill_key}' "
+                    f"and descendant::*[local-name()='num' and @ukl:dnum = '{amendment_num}']] | "
+                    f"//Amendments.Commons[normalize-space(replace(descendant::*[local-name()='STText'], ', As Amended', '')) = '{bill_key}']"
+                )
+                matches = file_tree.xpath(xpath_query, namespaces=namespaces)
+                
+                if matches:
+                    print(f"[DEBUG] Found matches for amendment '{amendment_num}' under bill '{bill_key}':")
+                    for match in matches:
+                        print(f" - Match: {ET.tostring(match, pretty_print=True).decode('utf-8')}")
+                    return True
+                else:
+                    print(f"[DEBUG] No matches found for amendment '{amendment_num}' under bill '{bill_key}'.")
+                    return False
+            except ET.XPathEvalError as e:
+                print(f"[ERROR] XPath evaluation error: {e}")
+                return False
 
-    # Retrieve eligible members for matching
-    eligible_members = fetch_eligible_members()  # Ensure we call the function
 
     # Create the HTML structure
     html = ET.Element("html")
     head = ET.SubElement(html, "head")
-    
-    # Meta and Title
     ET.SubElement(head, "meta", {"http-equiv": "Content-Type", "content": "text/html; charset=UTF-8"})
     ET.SubElement(head, "title").text = "Added Names Report"
     
-    # Add CSS styles
     style = ET.SubElement(head, "style")
     style.text = (
         "html {font-family:'Segoe UI', Frutiger, 'Frutiger Linotype', 'Dejavu Sans', "
@@ -54,8 +89,6 @@ def generate_html(xml_file, output_html_file):
     # Header section
     header_div = ET.SubElement(body, "div", {"class": "header"})
     main_heading_div = ET.SubElement(header_div, "div", {"class": "main-heading"})
-    
-    # Create the <h1> with line break and .//downloaded value
     main_heading = ET.SubElement(main_heading_div, "h1")
     main_heading.text = "Added Names report"
     ET.SubElement(main_heading, "br")
@@ -78,7 +111,7 @@ def generate_html(xml_file, output_html_file):
         li = ET.SubElement(bill_list, "li")
         ET.SubElement(li, "a", {"href": f"#{bill.lower().replace(' ', '-')}", "style": "color:white"}).text = bill
 
-    # Add the LawMaker XML instructions
+      # Add the LawMaker XML instructions
     p1 = ET.SubElement(main_summary_div, "p")
     p1.text = "If you provide LawMaker XML: "
     span_green = ET.SubElement(p1, "span", {"class": "green"})
@@ -106,19 +139,16 @@ def generate_html(xml_file, output_html_file):
     ul = ET.SubElement(collapsible_div, "ul")
 
     # Iterate over XML files and add to the list
-    for file in root.findall(".//item"):  # Adjust this XPath as necessary to point to your XML file paths
+    for path in marshalling_file_paths:
         li = ET.SubElement(ul, "li")
-        li.text = file.find("file-name").text if file.find("file-name") is not None else "Unknown file"
+        li.text = os.path.basename(path)
 
     # Generate content for each bill
     for bill in sorted(bills):
         bill_div = ET.SubElement(body, "div", {"class": "bill", "id": bill.lower().replace(' ', '-')})
         ET.SubElement(bill_div, "h1", {"class": "bill-title"}).text = bill
 
-        # Find all items for this bill
         bill_items = [item for item in root.findall(".//item") if item.find("bill").text == bill]
-
-        # Group names and comments by amendment number
         amendment_groups = {}
         for item in bill_items:
             for amd_no in item.findall(".//matched-numbers/amd-no"):
@@ -126,19 +156,33 @@ def generate_html(xml_file, output_html_file):
                 if amd_number not in amendment_groups:
                     amendment_groups[amd_number] = {"items": [], "comments": []}
                 amendment_groups[amd_number]["items"].append(item)
-                # Collect associated comments for this amendment
                 comments = item.find(".//comments")
                 if comments is not None:
                     amendment_groups[amd_number]["comments"].extend(comments.findall("p"))
 
-        # Generate HTML for each amendment group
         for amd_number, group in amendment_groups.items():
             amendment_div = ET.SubElement(bill_div, "div", {"class": "amendment"})
             ET.SubElement(amendment_div, "div", {"class": "bill-reminder"}).text = bill
             num_info = ET.SubElement(amendment_div, "div", {"class": "num-info"})
-            ET.SubElement(num_info, "h2", {"class": "amendment-number"}).text = amd_number
+            
+            # Check the amendment in external files and add prefix if not found
+            if check_amendment_in_files(amd_number, bill):
+                amendment_text = amd_number
+            else:
+                amendment_text = f"Amendment {amd_number}"
+            
+            amendment_heading = ET.SubElement(num_info, "h2", {"class": "amendment-number"})
+            amendment_heading.text = amendment_text
+            
+            # Add a warning for missing amendments
+            if not check_amendment_in_files(amd_number, bill):
+                warning_span = ET.SubElement(amendment_heading, "span", {
+                    "style": "font-family:Segoe UI Symbol;color:red;font-weight:normal;padding-left:10px",
+                    "title": "This amendment is not shown in marshalled order. It may be that the amendment has been withdrawn, it is newly tabled, or no XML was supplied to determine marshalled order."
+                })
+                warning_span.text = "⚠"
 
-            # Names to add
+            # Names to Add Section
             names_to_add_div = ET.SubElement(amendment_div, "div", {"class": "names-to-add"})
             ET.SubElement(names_to_add_div, "h4").text = "Names to add"
             for item in group["items"]:
@@ -161,7 +205,7 @@ def generate_html(xml_file, output_html_file):
                             "style": style
                         }).text = name_text
 
-            # Comments section
+            # Comments Section
             if group["comments"]:
                 comments_div = ET.SubElement(amendment_div, "div", {"class": "comments"})
                 ET.SubElement(comments_div, "h5", {"style": "margin-bottom:5px"}).text = "Comments on dashboard"
@@ -172,11 +216,10 @@ def generate_html(xml_file, output_html_file):
                     })
                     p.text = comment.text
 
-
-    
-    # Generate HTML file
     html_tree = ET.ElementTree(html)
     html_tree.write(output_html_file, pretty_print=True, method="html", encoding="UTF-8")
     print(f"HTML generation completed. Output saved to {output_html_file}")
 
-generate_html(xml_file_path, output_html_file_path)
+marshalling_files = load_marshalling_xml(marshalling_file_paths)
+eligible_members = fetch_eligible_members()
+generate_html(xml_file_path, output_html_file_path, marshalling_files, eligible_members)
