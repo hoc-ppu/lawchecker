@@ -86,6 +86,7 @@ def reorder_amendments(checking_files, bill_title, amendment_groups):
     """
     ordered_amendment_groups = []
     remaining_amendments = amendment_groups.copy()
+    was_reordered = False  # Track if any reordering occurred
 
     for checking_file in checking_files:
         root = checking_file.getroot()
@@ -123,15 +124,18 @@ def reorder_amendments(checking_files, bill_title, amendment_groups):
             if amendment_number in remaining_amendments:
                 print(f"[DEBUG] Found matching amendment: {amendment_number}")
                 ordered_amendment_groups.append((amendment_number, remaining_amendments.pop(amendment_number)))
+                was_reordered = True  # Mark as reordered
             else:
                 print(f"[DEBUG] Amendment '{amendment_number}' not found in amendment groups.")
 
-    # Add unmatched amendments at the end
-        for unmatched_amendment in remaining_amendments.keys():
-            print(f"[DEBUG] Unmatched Amendment: {unmatched_amendment}")
-            ordered_amendment_groups.append((unmatched_amendment, remaining_amendments[unmatched_amendment]))
+     # Always process remaining amendments
+    if remaining_amendments:
+        print(f"[DEBUG] Adding unmatched amendments for bill '{bill_title}': {list(remaining_amendments.keys())}")
+    for unmatched_amendment in remaining_amendments.keys():
+        ordered_amendment_groups.append((unmatched_amendment, remaining_amendments[unmatched_amendment]))
 
-    return ordered_amendment_groups
+    return ordered_amendment_groups, was_reordered
+
 
 
 def generate_html(xml_file, checking_file_paths, eligible_members):
@@ -227,7 +231,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
         )
         ET.SubElement(bill_div, "h1", {"class": "bill-title"}).text = bill
 
-         # Initialize amendment_groups as a dictionary
+        # Initialize amendment_groups as a dictionary
         amendment_groups = {}
         for item in root.findall(".//item"):
             if item.find("bill").text == bill:
@@ -243,102 +247,95 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                             comments.findall("p")
                         )
 
-        # Debug amendment_groups
-        print(f"[DEBUG] Amendment Groups for bill '{bill}': {amendment_groups}")
+        # Check for checking files and reorder amendments if available
+        if checking_files:
+            ordered_amendments, was_reordered = reorder_amendments(
+                checking_files, bill, amendment_groups
+            )
+        else:
+            # Fall back to unordered amendments
+            print(f"[WARNING] No valid checking files found for bill '{bill}'. Rendering amendments in original order.")
+            ordered_amendments = list(amendment_groups.items())
+            was_reordered = False
 
-        # Reorder amendments
-        ordered_amendments = reorder_amendments(
-            checking_files, bill, amendment_groups
-        )
+        # Render amendments (ordered or unordered based on availability of checking files)
+        if not amendment_groups:
+            print(f"[DEBUG] No amendments found for bill '{bill}'.")
+        else:
+            for amd_number, group in ordered_amendments:
+                amendment_div = ET.SubElement(bill_div, "div", {"class": "amendment"})
+                ET.SubElement(amendment_div, "div", {"class": "bill-reminder"}).text = bill
+                num_info = ET.SubElement(amendment_div, "div", {"class": "num-info"})
+                h2 = ET.SubElement(num_info, "h2", {"class": "amendment-number"})
 
-        # Render ordered amendments
-        for amd_number, group in ordered_amendments:
-            amendment_div = ET.SubElement(bill_div, "div", {"class": "amendment"})
-            ET.SubElement(amendment_div, "div", {"class": "bill-reminder"}).text = bill
-            num_info = ET.SubElement(amendment_div, "div", {"class": "num-info"})
-            h2 = ET.SubElement(num_info, "h2", {"class": "amendment-number"})
-            if not any(
-                checking_file.xpath(f".//num[@ukl:dnum='{amd_number}']")
-                for checking_file in checking_files
-            ):
-                if not re.match(r"(NC|NS)", amd_number):
-                    h2.text = f"Amendment {amd_number}"
-                else:
-                    h2.text = amd_number
-
-                # Fallback warning
-                warning_span = ET.SubElement(
-                    h2,
-                    "span",
-                    {
-                        "style": "font-family:Segoe UI Symbol;color:red;font-weight:normal;padding-left:10px",
-                        "title": "This amendment is not shown in marshalled order. It may be that the amendment has been withdrawn, it is newly tabled, or no XML was supplied to determine marshalled order.",
-                    },
-                )
-                warning_span.text = "⚠"
-            else:
-                h2.text = amd_number
-
-            # Names to Add section
-            names_to_add_div = ET.SubElement(amendment_div, "div", {"class": "names-to-add"})
-            ET.SubElement(names_to_add_div, "h4").text = "Names to add"
-            for item in group["items"]:
-                matched_names = item.find(".//names-to-add/matched-names")
-                if matched_names:
-                    for name in matched_names.findall("name"):
-                        name_text = name.text
-                        name_div = ET.SubElement(names_to_add_div, "div", {"class": "name"})
-                        name_span = ET.SubElement(name_div, "span")
-
-                        # Style based on whether the name matches MNIS
-                        style = (
-                            "text-decoration: none; color: black;"
-                            if name_text in eligible_members
-                            else "text-decoration: underline red 1px; color: black;"
-                        )
-                        ET.SubElement(
-                            name_span,
-                            "a",
-                            {
-                                "title": f"Dashboard ID:{item.find('dashboard-id').text}",
-                                "href": f"https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID={item.find('dashboard-id').text}",
-                                "style": style,
-                            },
-                        ).text = name_text
-
-            # Comments Section
-            if group["comments"]:
-                comments_div = ET.SubElement(amendment_div, "div", {"class": "comments"})
-                ET.SubElement(comments_div, "h4", {"style": "margin-bottom:5px;margin-top:30px;"}).text = "Comments"
-
-                for comment in group["comments"]:
-                    parent_comments = comment.getparent()
-                    dashboard_id = parent_comments.get("dashboard-id") if parent_comments else None
-                    comment_url = f"https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID={dashboard_id}" if dashboard_id else None
-
-                    if dashboard_id:
-                        dashboard_link_p = ET.SubElement(
-                            comments_div, "p", {"style": "font-size:smaller;color:#4d4d4d;"}
-                        )
-                        dashboard_link_a = ET.SubElement(
-                            dashboard_link_p,
-                            "a",
-                            {"href": comment_url, "style": "text-decoration:none;color:#4d4d4d;"},
-                        )
-                        ET.SubElement(dashboard_link_a, "b").text = f"Dashboard ID: {dashboard_id}"
-
-                    comment_p = ET.SubElement(
-                        comments_div,
-                        "p",
-                        {"title": f"Dashboard ID:{dashboard_id}" if dashboard_id else "No Dashboard ID"},
+                # Add fallback warning if amendments are not reordered
+                if not checking_files or not was_reordered:
+                    warning_span = ET.SubElement(
+                        h2,
+                        "span",
+                        {
+                            "style": "font-family:Segoe UI Symbol;color:red;font-weight:normal;padding-left:10px",
+                            "title": "This amendment is not shown in marshalled order. It may be that the amendment has been withdrawn, it is newly tabled, or no XML was supplied to determine marshalled order.",
+                        },
                     )
-                    comment_p.text = f"{comment.text}"
+                    warning_span.text = "⚠"
+                else:
+                    h2.text = f"Amendment {amd_number}"
 
-            # Checkbox
-            checkbox_div = ET.SubElement(amendment_div, "div", {"class": "check-box"})
-            checkbox_input = ET.SubElement(checkbox_div, "input", {"type": "checkbox"})
-            checkbox_label = ET.SubElement(checkbox_div, "label")
-            checkbox_label.text = "Checked"
+                # Render names to add
+                names_to_add_div = ET.SubElement(amendment_div, "div", {"class": "names-to-add"})
+                ET.SubElement(names_to_add_div, "h4").text = "Names to add"
+                for item in group["items"]:
+                    matched_names = item.find(".//names-to-add/matched-names")
+                    if matched_names:
+                        for name in matched_names.findall("name"):
+                            name_text = name.text
+                            name_div = ET.SubElement(names_to_add_div, "div", {"class": "name"})
+                            name_span = ET.SubElement(name_div, "span")
+
+                            # Style based on whether the name matches MNIS
+                            style = (
+                                "text-decoration: none; color: black;"
+                                if name_text in eligible_members
+                                else "text-decoration: underline red 1px; color: black;"
+                            )
+                            ET.SubElement(
+                                name_span,
+                                "a",
+                                {
+                                    "title": f"Dashboard ID:{item.find('dashboard-id').text}",
+                                    "href": f"https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID={item.find('dashboard-id').text}",
+                                    "style": style,
+                                },
+                            ).text = name_text
+
+                # Comments Section
+                if group["comments"]:
+                    comments_div = ET.SubElement(amendment_div, "div", {"class": "comments"})
+                    ET.SubElement(comments_div, "h4", {"style": "margin-bottom:5px;margin-top:30px;"}).text = "Comments"
+
+                    for comment in group["comments"]:
+                        parent_comments = comment.getparent()
+                        dashboard_id = parent_comments.get("dashboard-id") if parent_comments else None
+                        comment_url = f"https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID={dashboard_id}" if dashboard_id else None
+
+                        if dashboard_id:
+                            dashboard_link_p = ET.SubElement(
+                                comments_div, "p", {"style": "font-size:smaller;color:#4d4d4d;"}
+                            )
+                            dashboard_link_a = ET.SubElement(
+                                dashboard_link_p,
+                                "a",
+                                {"href": comment_url, "style": "text-decoration:none;color:#4d4d4d;"},
+                            )
+                            ET.SubElement(dashboard_link_a, "b").text = f"Dashboard ID: {dashboard_id}"
+
+                        comment_p = ET.SubElement(
+                            comments_div,
+                            "p",
+                            {"title": f"Dashboard ID:{dashboard_id}" if dashboard_id else "No Dashboard ID"},
+                        )
+                        comment_p.text = f"{comment.text}"
 
     bill_section = ET.tostring(
         html, pretty_print=True, method="html", encoding="unicode"
