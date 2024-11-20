@@ -136,8 +136,6 @@ def reorder_amendments(checking_files, bill_title, amendment_groups):
 
     return ordered_amendment_groups, was_reordered
 
-
-
 def generate_html(xml_file, checking_file_paths, eligible_members):
     """
     Generates HTML content, splitting it into summary and bill sections.
@@ -270,6 +268,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
 
                 # Add fallback warning if amendments are not reordered
                 if not checking_files or not was_reordered:
+                    h2.text = f"Amendment {amd_number}"
                     warning_span = ET.SubElement(
                         h2,
                         "span",
@@ -280,7 +279,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                     )
                     warning_span.text = "⚠"
                 else:
-                    h2.text = f"Amendment {amd_number}"
+                    h2.text = f"{amd_number}"
 
                 # Render names to add
                 names_to_add_div = ET.SubElement(amendment_div, "div", {"class": "names-to-add"})
