@@ -228,7 +228,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
             html, "div", {"class": "bill", "id": bill.lower().replace(" ", "-")}
         )
         ET.SubElement(bill_div, "h1", {"class": "bill-title"}).text = bill
-
+       
         # Initialize amendment_groups as a dictionary
         amendment_groups = {}
         for item in root.findall(".//item"):
@@ -244,6 +244,12 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                         amendment_groups[amd_number]["comments"].extend(
                             comments.findall("p")
                         )
+
+        # Provide a count of amendment groups in each bill;
+        number_summary_count_div = ET.SubElement(bill_div, "div", {"class": "number-summary-count"})
+        p = ET.SubElement(number_summary_count_div, "p")
+        p.text = "Amendments in this paper with names added/removed: "
+        ET.SubElement(p, "b").text = str(len(amendment_groups))
 
         # Check for checking files and reorder amendments if available
         if checking_files:
@@ -268,7 +274,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
 
                 # Add fallback warning if amendments are not reordered
                 if not checking_files or not was_reordered:
-                    h2.text = f"Amendment {amd_number}"
+                    h2.text = f"{amd_number}"
                     warning_span = ET.SubElement(
                         h2,
                         "span",
@@ -281,7 +287,15 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                 else:
                     h2.text = f"{amd_number}"
 
-                # Render names to add
+                # Add prefix for non-NC/NS amendments
+                if not re.match(r"(NC|NS)", amd_number):
+                    # Add "Amendment" prefix for non-NC/NS amendment numbers
+                    h2.text = f"Amendment {amd_number}"
+                else:
+                    # Use the number as-is for NC/NS amendments
+                    h2.text = amd_number
+
+                # Render names to add and remove
                 names_to_add_div = ET.SubElement(amendment_div, "div", {"class": "names-to-add"})
                 ET.SubElement(names_to_add_div, "h4").text = "Names to add"
                 for item in group["items"]:
@@ -308,6 +322,28 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                                 },
                             ).text = name_text
 
+                
+                if any(item.find(".//names-to-remove/matched-names") is not None for item in group["items"]):
+                    names_to_remove_div = ET.SubElement(amendment_div, "div", {"class": "names-to-remove"})
+                    ET.SubElement(names_to_remove_div, "h4").text = "Names to remove"
+                    for item in group["items"]:
+                        matched_names = item.find(".//names-to-remove/matched-names")
+                        if matched_names:
+                            for name in matched_names.findall("name"):
+                                name_text = name.text
+                                name_div = ET.SubElement(names_to_remove_div, "div", {"class": "name"})
+                                name_span = ET.SubElement(name_div, "span")
+
+                                ET.SubElement(
+                                    name_span,
+                                    "a",
+                                    {
+                                        "title": f"Dashboard ID:{item.find('dashboard-id').text}",
+                                        "href": f"https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID={item.find('dashboard-id').text}",
+                                        "style": style,
+                                    },
+                                ).text = name_text
+
                 # Comments Section
                 if group["comments"]:
                     comments_div = ET.SubElement(amendment_div, "div", {"class": "comments"})
@@ -322,6 +358,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                             dashboard_link_p = ET.SubElement(
                                 comments_div, "p", {"style": "font-size:smaller;color:#4d4d4d;"}
                             )
+                            
                             dashboard_link_a = ET.SubElement(
                                 dashboard_link_p,
                                 "a",
@@ -334,7 +371,22 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                             "p",
                             {"title": f"Dashboard ID:{dashboard_id}" if dashboard_id else "No Dashboard ID"},
                         )
-                        comment_p.text = f"{comment.text}"
+                        if comment.text:
+                            comment_text_p = ET.SubElement(
+                                comments_div,
+                                "p",
+                                {
+                                    "title": f"Dashboard ID:{dashboard_id}" if dashboard_id else "",
+                                    "style": "font-size:smaller;color:#4d4d4d;line-height:90%;",
+                                },
+                            )
+                            ET.SubElement(comment_text_p, "i").text = comment.text.strip()
+
+                    # Add checkbox for each comment
+                    checkbox_div = ET.SubElement(comments_div, "div", {"class": "check-box"})
+                    checkbox_input = ET.SubElement(checkbox_div, "input", {"type": "checkbox"})
+                    checkbox_label = ET.SubElement(checkbox_div, "label")
+                    checkbox_label.text = "Checked"
 
     bill_section = ET.tostring(
         html, pretty_print=True, method="html", encoding="unicode"
