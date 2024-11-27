@@ -27,24 +27,6 @@ const App: React.FC = () => {
       console.log("set_v_info called");
     }
   }, []);
-  // function toggleCollapsible(key: string) {
-  //   // reset all pageActiveState values to false
-
-  //   const nextState = { ...pageOpenState };
-  //   for (const k in nextState) {
-  //     nextState[k] = k === key ? !nextState[k] : false;
-  //   }
-
-  //   setPageOpenState(nextState);
-  // }
-  // const toggleCollapsible = (key) => {
-  //   if (!pageOpenState[key]) {
-  //     setIsOpen(true); // Render the component
-  //   } else {
-  //     setIsAnimating(false); // Hide the component smoothly
-  //     setTimeout(() => setIsOpen(false), 500); // Remove after animation
-  //   }
-  // };
 
   return (
     <div className="page">

@@ -33,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       // Expose setVersionInfo in order to call it from Python
       window.pywebview.state.setVersionInfo = setVersionInfo;
     } catch (error) {
-      console.error("Unable to attach setVersionInfo", error);
+      console.error("Error in Sidebar useEffect", error);
     }
     return;
   }, []);
