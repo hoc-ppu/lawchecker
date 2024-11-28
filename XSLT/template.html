@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Added Names Report</title>
+    <style>html {font-family:'Segoe UI', Frutiger, 'Frutiger Linotype', 'Dejavu Sans', 'Helvetica Neue', Arial, sans-serif; background-color:#ebe9e8; word-wrap:normal; white-space:normal;} body {width:70%; background-color:#ffffff; margin:auto; overflow-wrap: break-word; padding-bottom:20px;} .header {background-color:#373151; color:#ffffff;} .number-summary-count {margin-bottom:20px;} .amendment {margin-bottom:20px; margin-left:20px; border:2px solid #ebe9e8; padding-left:10px; width:80%; min-width:200px; padding-bottom:10px;} .bill-title {color:black; background-color:#ffffff; padding-left:20px;} hr {color:#006e46;} .main-heading {padding-left:20px; padding-top:20px;} .main-summary {padding:0 0 10px 20px;} .num-info {border-bottom:1px dotted #ebe9e8;} .bill-reminder {text-align:right; color:#4d4d4d; font-size:10px; padding-right:5px;}</style>
+</head>
+<body>
+    <div class="header">
+        <div class="main-heading">
+            <h1>Added Names report</h1>
+            <br>
+            <!-- Downloaded information will be appended dynamically -->
+        </div>
+        <div class="main-summary">
+            <!-- Summary content goes here -->
+        </div>
+    </div>
+    <!-- Dynamic content injection point -->
+    {{content}}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+
+          const toggleNameIndicatorsBtn = document.querySelector("#name-in-xml-indicator-toggle-btn");
+          const toggleMarshallingXmlFilesBtn = document.querySelector("#show-hide-marshalling-xml-files-btn");
+          const nameIndicators = document.querySelectorAll(".name-in-xml-indicator");
+          const collapsibleXmlFilesSection = document.querySelector("#collapsible-xml-files");
+
+          toggleNameIndicatorsBtn.addEventListener("click", function(){
+
+            if (toggleNameIndicatorsBtn.innerHTML === "Turn off") {
+              toggleNameIndicatorsBtn.innerHTML = "Turn on";
+            } else {
+              toggleNameIndicatorsBtn.innerHTML = "Turn off";
+            }
+
+            nameIndicators.forEach(function(nameIndicators) {
+              if (nameIndicators.style.display === "none") {
+                nameIndicators.style.display = "inline";
+              } else {
+                nameIndicators.style.display = "none";
+              }
+            });
+          });
+
+          toggleMarshallingXmlFilesBtn.addEventListener("click", function(){
+            if (toggleMarshallingXmlFilesBtn.innerHTML === "Show files") {
+              toggleMarshallingXmlFilesBtn.innerHTML = "Hide files";
+            } else {
+              toggleMarshallingXmlFilesBtn.innerHTML = "Show files";
+            }
+            if (collapsibleXmlFilesSection.style.display === "none") {
+              collapsibleXmlFilesSection.style.display = "block";
+            } else {
+              collapsibleXmlFilesSection.style.display = "none";
+            }
+          });
+        });
+      </script>
+</body>
+</html>
