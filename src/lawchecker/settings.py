@@ -37,8 +37,8 @@ DEFAULT_OUTPUT_NAME = "Added_Names_Report.html"
 
 XSLT_MARSHAL_PARAM_NAME = "marsh-path"
 
-XSL_1_NAME = "added-names-spo-rest.xsl"
-XSL_2_NAME = "post-processing-html.xsl"
+XSL_1_NAME = "added-names-spo-rest.py"
+XSL_2_NAME = "post-processing-html.py"
 
 XML_FOLDER = "Amendment_Paper_XML"
 DASHBOARD_DATA_FOLDER = "Dashboard_Data"

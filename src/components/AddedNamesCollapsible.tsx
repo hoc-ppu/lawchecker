@@ -11,6 +11,7 @@ import { BodyProps } from "./Body";
 
 const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   const [date, setDate] = useState<string>("");
+  const [selectedDir, setSelectedDir] = useState<string>("");
 
   // Create working folder
   const handleCreateWorkingFolder = async () => {
@@ -25,7 +26,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("Opening dashboard data in browser");
     const result = await window.pywebview.api.open_dash_xml_in_browser();
     console.log("API call result:", result);
-    alert(result); // Show pop-up feedback
+    alert(result);
   };
 
    // Select dashboard XML file
@@ -33,7 +34,32 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("Selecting dashboard XML file");
     const result = await window.pywebview.api.open_dash_xml_file();
     console.log("API call result:", result);
-    alert(result); // Show pop-up feedback
+    alert(result); 
+  };
+
+   // Select marshalling XML directory
+   const handleSelectMarshalDir = async () => {
+    console.log("Selecting amendment XML directory");
+    const result = await window.pywebview.api.anr_open_amd_xml_dir();
+    console.log("API call result:", result);
+    alert(result);
+    if (result.startsWith("Selected directory: ")) {
+      setSelectedDir(result.replace("Selected directory: ", ""));
+    }
+  };
+
+  // Clear selected directory
+  const handleClearSelectedDir = () => {
+    console.log("Clearing selected directory");
+    setSelectedDir("");
+  };
+
+  // Execute the report generation
+  const handleCreateReport = async () => {
+    console.log("Creating report");
+    const result = await window.pywebview.api.anr_run_xslts();
+    console.log("API call result:", result);
+    alert(result); 
   };
   
   return (
@@ -97,7 +123,23 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           FrameMaker) into a folder (ideally within the folder created above).
           Select that folder with the button below.
         </p>
-        <Button id="AN_Select_Marshal_Dir" text="Select folder" />
+        <Button
+          id="AN_Select_Marshal_Dir"
+          text="Select folder"
+          handleClick={handleSelectMarshalDir}
+        />
+        {selectedDir && (
+          <>
+            <p className="mt-3">
+              <strong>Marshalling data:</strong> {selectedDir}
+            </p>
+            <Button
+              id="AN_ClearSelectedDir"
+              text="Clear selected directory"
+              handleClick={handleClearSelectedDir}
+            />
+          </>
+        )}
         <p>
           Note: The marshalling feature works with one or several papers. In
           either case the XML file(s) need to be saved in a folder and you need
@@ -107,7 +149,11 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
       </Card>
 
       <Card step="Step&nbsp;4" info="Open the added names report in a browser">
-        <Button id="bill_compareInBrowser" text="Create Added Names Report" />
+      <Button
+          id="AN_CreateReport"
+          text="Create Added Names Report"
+          handleClick={handleCreateReport}
+        />
       </Card>
     </Collapsible>
   );

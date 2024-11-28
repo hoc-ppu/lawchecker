@@ -47,10 +47,14 @@ class Api:
 
         self.com_compare_number_dir: Path | None = None
 
+        self.dated_folder_Path: Path | None = None
+        self.dash_xml_file: Path | None = None
+        self.lm_xml_folder: Path | None = None
+
         self.com_amend_old_xml: Path | None = None
         self.com_amend_new_xml: Path | None = None
 
-
+        
     def _open_file_dialog(self, file_type="") -> Path | None:
 
         # select a file
@@ -170,6 +174,48 @@ class Api:
 
         self.dash_xml_file = Path(result[0])
         return f"Selected file: {self.dash_xml_file}"
+    
+    def anr_open_amd_xml_dir(self) -> str:
+        """
+        Open a directory selection dialog to select the amendment XML directory.
+        """
+        default_location = settings.PARENT_FOLDER
+        if self.dated_folder_Path is not None:
+            default_location = self.dated_folder_Path
+
+        active_window = webview.active_window()
+        active_window = cast(Window, active_window)
+
+        result = active_window.create_file_dialog(
+            webview.FOLDER_DIALOG, directory=str(default_location)
+        )
+
+        if result is None:
+            return "No directory selected."
+
+        self.lm_xml_folder = Path(result[0])
+        return f"Selected directory: {self.lm_xml_folder}"
+    
+    def anr_run_xslts(self) -> str:
+        lm_xml_folder_Path: Path | None = None
+
+        if self.lm_xml_folder:
+            lm_xml_folder_Path = Path(self.lm_xml_folder)
+
+        if self.dash_xml_file and Path(self.dash_xml_file).resolve().exists():
+            xsl_1_Path = settings.XSL_1_PATH
+            xsl_2_Path = settings.XSL_2_PATH
+            input_Path = Path(self.dash_xml_file).resolve()
+            try:
+                added_names_report.run_xslts(
+                    input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
+                )
+                return "Report created successfully."
+            except Exception as e:
+                print(traceback.print_exc(file=sys.stdout))
+                return f"Error: {str(e)}"
+        else:
+            return "No XML file selected."
 
     def bill_create_html_compare(self):
         """
