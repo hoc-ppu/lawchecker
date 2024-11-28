@@ -29,11 +29,11 @@ const BillNumberingCollapsible: React.FC<BodyProps> = (props) => {
       >
         {/* You can put more than one button in here */}
         <Button
-          id="bill_oldXMLfile"
+          id="bill_numberingSelectFolder"
           text="Select Folder"
           handleClick={() => {
             console.log("Select folder clicked");
-            // window.pywebview.api.op_working_dir.select_folder();
+            window.pywebview.api.compare_number_dir.select_folder();
           }}
         />
         <p className="mt-3">
@@ -46,7 +46,11 @@ const BillNumberingCollapsible: React.FC<BodyProps> = (props) => {
       </Card>
 
       <Card step="Step&nbsp;2" info="">
-        <Button id="bill_compareInBrowser" text="Create CSV(s)" />
+        <Button id="bill_numberingCreateCSV" text="Create CSV(s)"
+         handleClick={() => {
+          console.log("Creating CSV");
+          // window.pywebview.api.op_working_dir.select_folder();
+        }} />
       </Card>
     </Collapsible>
   );
