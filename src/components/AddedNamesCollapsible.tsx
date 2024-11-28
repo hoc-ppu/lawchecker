@@ -11,11 +11,29 @@ import { BodyProps } from "./Body";
 
 const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   const [date, setDate] = useState<string>("");
+
+  // Create working folder
   const handleCreateWorkingFolder = async () => {
     console.log("Creating working folder");
     const result = await window.pywebview.api.anr_create_working_folder(date);
     console.log("API call result:", result);
     alert(result); // Using a pop-up in lieu of modal for now
+  };
+
+  // Open dashboard data in browser
+  const handleOpenDashboardData = async () => {
+    console.log("Opening dashboard data in browser");
+    const result = await window.pywebview.api.open_dash_xml_in_browser();
+    console.log("API call result:", result);
+    alert(result); // Show pop-up feedback
+  };
+
+   // Select dashboard XML file
+  const handleSelectSPXML = async () => {
+    console.log("Selecting dashboard XML file");
+    const result = await window.pywebview.api.open_dash_xml_file();
+    console.log("API call result:", result);
+    alert(result); // Show pop-up feedback
   };
   
   return (
@@ -49,7 +67,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
         />
         <p>
           Note: This button will also create subfolders, Dashboard_Data and
-          Amendment_Paper_XML. Ideally save data form Shaprepoint in
+          Amendment_Paper_XML. Ideally save data from Sharepoint in
           Dashboard_Data and save Amendment XML in Amendment_Paper_XML (see
           below).
         </p>
@@ -57,15 +75,20 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
       <Card step="Step&nbsp;2" info="Download dashboard data">
         <Button
           id="AN_OpenDashboardData"
-          text="Open dashboard data in a Browser"
+          text="Open dashboard data in a Browser" 
+          handleClick={handleOpenDashboardData}
         />
         <p>
           The above button should open the added names dashboard data in a web
           browser. Once opened, you must download and save the XML to your
           computer (ideally within the folder created above). Then open that
-          XML/text file using the button below.
+          XML file using the button below.
         </p>
-        <Button id="AN_Select_SP_XML" text="Select downloaded data" />
+        <Button
+          id="AN_Select_SP_XML"
+          text="Select downloaded data"
+          handleClick={handleSelectSPXML}
+        />
       </Card>
       <Card step="Step&nbsp;3 (Optional)" info="Add marshalling info">
         <p>

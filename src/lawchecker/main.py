@@ -136,6 +136,40 @@ class Api:
             return f"Working folder created: {self.dated_folder_Path}"
         except Exception as e:
             return f"Error: Could not create folder {repr(e)}"
+        
+    def open_dash_xml_in_browser(self) -> str:
+        """
+        Loads the Added Names dashboard XML in the default web browser.
+
+        The user must download this first as there is security
+        so we can't request it directly.
+        """
+        try:
+            webbrowser.open(settings.DASH_XML_URL)
+            return "Dashboard XML opened in browser."
+        except Exception as e:
+            return f"Error: Could not open browser {repr(e)}"
+
+    def open_dash_xml_file(self) -> str:
+        """
+        Opens a file dialog to select the dashboard XML file.
+        """
+        default_location = settings.PARENT_FOLDER  # if user did not create working folder
+        if self.dated_folder_Path is not None:
+            default_location = self.dated_folder_Path / settings.DASHBOARD_DATA_FOLDER
+
+        active_window = webview.active_window()
+        active_window = cast(Window, active_window)
+
+        result = active_window.create_file_dialog(
+            webview.OPEN_DIALOG, directory=str(default_location), file_types=("XML files (*.xml)",)
+        )
+
+        if result is None:
+            return "No file selected."
+
+        self.dash_xml_file = Path(result[0])
+        return f"Selected file: {self.dash_xml_file}"
 
     def bill_create_html_compare(self):
         """
