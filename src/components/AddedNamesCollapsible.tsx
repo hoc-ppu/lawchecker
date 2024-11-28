@@ -22,12 +22,12 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           <code>PPU - Scripts &gt; added_names_report &gt; _Reports </code>
           To do that click, 'Create Folder'.
         </p>
-        <label htmlFor="opDate2" className="small">
+        <label htmlFor="AN_Date" className="small">
           Select Date
         </label>
-        <input id="opDate2" className="form-control" type="date" />{" "}
-        <span id="opDateSelected_1"></span>
-        <Button id="OP_selectHTMLfileBtn" text="Create working folder" />
+        <input id="AN_Date" className="form-control" type="date" />{" "}
+        <span id="AN_DateSelected_1"></span>
+        <Button id="AN_CreateWorkingFolder" text="Create working folder" />
         <p>
           Note: This button will also create subfolders, Dashboard_Data and
           Amendment_Paper_XML. Ideally save data form Shaprepoint in
@@ -37,7 +37,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
       </Card>
       <Card step="Step&nbsp;2" info="Download dashboard data">
         <Button
-          id="OP_selectHTMLfileBtn"
+          id="AN_OpenDashboardData"
           text="Open dashboard data in a Browser"
         />
         <p>
@@ -46,7 +46,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           computer (ideally within the folder created above). Then open that
           XML/text file using the button below.
         </p>
-        <Button id="OP_selectHTMLfileBtn" text="Select downloaded data" />
+        <Button id="AN_Select_SP_XML" text="Select downloaded data" />
       </Card>
       <Card step="Step&nbsp;3 (Optional)" info="Add marshalling info">
         <p>
@@ -55,7 +55,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           FrameMaker) into a folder (ideally within the folder created above).
           Select that folder with the button below.
         </p>
-        <Button id="OP_selectHTMLfileBtn" text="Select folder" />
+        <Button id="AN_Select_Marshal_Dir" text="Select folder" />
         <p>
           Note: The marshalling feature works with one or several papers. In
           either case the XML file(s) need to be saved in a folder and you need
