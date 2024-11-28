@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import Collapsible from "./Collapsible";
 import Card from "./Card";
 import Button from "./Button";
@@ -9,6 +10,14 @@ import { BodyProps } from "./Body";
 // }
 
 const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
+  const [date, setDate] = useState<string>("");
+  const handleCreateWorkingFolder = async () => {
+    console.log("Creating working folder");
+    const result = await window.pywebview.api.anr_create_working_folder(date);
+    console.log("API call result:", result);
+    alert(result); // Using a pop-up in lieu of modal for now
+  };
+  
   return (
     <Collapsible
       isOpenState={props.pageActiveState}
@@ -25,9 +34,19 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
         <label htmlFor="AN_Date" className="small">
           Select Date
         </label>
-        <input id="AN_Date" className="form-control" type="date" />{" "}
+        <input
+          id="AN_Date"
+          className="form-control"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />{" "}
         <span id="AN_DateSelected_1"></span>
-        <Button id="AN_CreateWorkingFolder" text="Create working folder" />
+        <Button
+          id="AN_CreateWorkingFolder"
+          text="Create working folder"
+          handleClick={handleCreateWorkingFolder}
+        />
         <p>
           Note: This button will also create subfolders, Dashboard_Data and
           Amendment_Paper_XML. Ideally save data form Shaprepoint in

@@ -115,6 +115,28 @@ class Api:
             case _:
                 print(f"Error: Unknown folder specifier: {folder_specifier}")
 
+    def anr_create_working_folder(self, date_str: str) -> str:
+        try:
+            date_obj = datetime.strptime(date_str, "%Y-%m-%d")
+            formatted_date = date_obj.strftime("%Y-%m-%d")
+
+            self.dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formatted_date)
+            self.dated_folder_Path.mkdir(parents=True, exist_ok=True)
+
+            global ANR_WORKING_FOLDER
+            ANR_WORKING_FOLDER = self.dated_folder_Path
+
+            # create subfolders for dashboard XML (and intermediate)
+            # as well as lawmaker/framemaker XML
+            anr_lawmaker_xml = self.dated_folder_Path.joinpath(settings.XML_FOLDER)
+            anr_lawmaker_xml.mkdir(parents=True, exist_ok=True)
+            dashboard_data = self.dated_folder_Path.joinpath(settings.DASHBOARD_DATA_FOLDER)
+            dashboard_data.mkdir(parents=True, exist_ok=True)
+
+            return f"Working folder created: {self.dated_folder_Path}"
+        except Exception as e:
+            return f"Error: Could not create folder {repr(e)}"
+
     def bill_create_html_compare(self):
         """
         Create the compare report for bills
