@@ -27,7 +27,8 @@ const BillNumberingCollapsible: React.FC<BodyProps> = (props) => {
         step="Step&nbsp;1"
         info="Select a folder which contains Bill XML files."
       >
-        {/* You can put more than one button in here */}
+        {/* You can put more than one button in here */
+        /* window.pywebview.api used to execute in main.py */}
         <Button
           id="bill_numberingSelectFolder"
           text="Select Folder"

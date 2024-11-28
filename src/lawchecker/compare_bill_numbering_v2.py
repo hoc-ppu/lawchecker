@@ -10,6 +10,7 @@ import click
 
 from lawchecker.lawchecker_logger import logger  # must be imported before any other
 
+
 NSMAP = {
     "xmlns": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
     "xsi": "http://www.w3.org/2001/XMLSchema-instance",

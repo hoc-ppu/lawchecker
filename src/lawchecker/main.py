@@ -200,7 +200,7 @@ class Api:
 
     def compare_bill_numbering(self):
         """
-        Compare the numbering of bills
+        Executes the compare the numbering of bills
         """
         print("compare_bill_numbering called")
 
