@@ -17,7 +17,10 @@ NSMAP = {
 }
 
 def clean(string: str, no_space=False, file_name_safe=False) -> str:
-    # Some general cleaning
+    """
+    Clean up a string for use in filenames or as a column header.
+    """
+    # Some general cleaning 
     string = string.casefold()
     string = re.sub(r"\s+", " ", string)
     string = string.replace(",", "")
@@ -131,27 +134,47 @@ class Bill:
         return attrs
 
 class CompareBillNumbering:
-    def __init__(self, xml_files: Iterable[tuple[_Element, str]]):
+    def __init__(self, xml_files: Iterable[tuple[etree._Element, str]]):
         """Sorts all bills into a dictionary with the bill title as the key.
         The value is a list of Bill objects. So different versions of the same
         bill are grouped together."""
 
         self.bills_container = {}
+        print("CompareBillNumbering initialized")
 
         # parse each bill and store in dictionary
         for xml_file in xml_files:
             try:
                 bill = Bill(*xml_file)
                 self.bills_container.setdefault(bill.title, []).append(bill)
+                print(f"Bill added: {bill.title}")
             except IndexError as e:
                 logger.error(f"Error parsing {xml_file[1]}: {repr(e)}")
 
     @classmethod
-    # Get XML
     def from_folder(cls, in_folder: Path | None):
+        print(f"from_folder called with in_folder: {in_folder}")
         in_folder = Path(in_folder or ".")
-        xml_files = [(etree.parse(str(file)).getroot(), file.name) for file in in_folder.glob("*.xml")]
+        xml_files = []
+
+        for xml_file_path in in_folder.glob("*.xml"):
+            try:
+                tree = etree.parse(str(xml_file_path))
+                root = tree.getroot()
+                xml_files.append((root, str(xml_file_path)))
+                print(f"XML file parsed: {xml_file_path}")
+            except etree.XMLSyntaxError as e:
+                logger.error(f"Error parsing {xml_file_path}: {repr(e)}")
+        print(f"Total XML files parsed: {len(xml_files)}")
         return cls(xml_files)
+    
+    def compare_bill(self):
+        """
+        Compare the numbering of bills and return the result.
+        """
+        print("compare_bill called")
+        bill_comparison_dict = self._create_comparison_data()
+        return bill_comparison_dict
     
     def _create_comparison_data(self) -> dict[str, dict[str, list]]:
         """
@@ -163,7 +186,7 @@ class CompareBillNumbering:
                   and "rows" (list of row data)
         """
         bill_comparison_dict = {}
-
+        print("Creating comparison data")
         for title, bills in self.bills_container.items():
             # If there are fewer than 2 bills, skip comparison
             if len(bills) < 2:
@@ -198,7 +221,7 @@ class CompareBillNumbering:
                 "headers": headers,
                 "rows": [[eid] + data for eid, data in sorted_rows]
             }
-
+        print("Comparison data created")
         return bill_comparison_dict
 
     def _get_sort_number(self, eid: str) -> int:

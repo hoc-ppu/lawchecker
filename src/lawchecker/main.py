@@ -16,7 +16,7 @@ from lawchecker import added_names_report, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
-from lawchecker.compare_bill_numbering import CompareBillNumbering
+from lawchecker.compare_bill_numbering_v2 import CompareBillNumbering
 from lawchecker.settings import ANR_WORKING_FOLDER, NSMAP
 from lawchecker.submodules.python_toolbox import pp_xml_lxml
 from lawchecker.ui.addedNames import Ui_MainWindow
@@ -44,6 +44,8 @@ class Api:
     def __init__(self):
         self.com_bill_old_xml: Path | None = None
         self.com_bill_new_xml: Path | None = None
+
+        self.com_compare_number_dir: Path | None = None
 
         self.com_amend_old_xml: Path | None = None
         self.com_amend_new_xml: Path | None = None
@@ -90,6 +92,28 @@ class Api:
             case _:
                 print(f"Error: Unknown file specifier: {file_specifier}")
 
+    def select_folder(self, folder_specifier: str) -> None:
+        print(f"select_folder called with folder_specifier: {folder_specifier}")
+        active_window = webview.active_window()
+        active_window = cast(Window, active_window)
+
+        result = active_window.create_file_dialog(
+            webview.FOLDER_DIALOG, directory=str(Path.home())
+        )
+
+        if result is None:
+            print("No folder selected.")
+            return
+
+        selected_folder = Path(result[0])
+        print(f"Selected folder: {selected_folder}")
+
+        match folder_specifier:
+            case "compare_number_dir":
+                self.com_compare_number_dir = selected_folder
+                print(f"compare_number_dir set to: {self.com_compare_number_dir}")
+            case _:
+                print(f"Error: Unknown folder specifier: {folder_specifier}")
 
     def bill_create_html_compare(self):
         """
@@ -174,7 +198,30 @@ class Api:
 
         diff_in_vscode(report.old_doc.root, report.new_doc.root)
 
+    def compare_bill_numbering(self):
+        """
+        Compare the numbering of bills
+        """
+        print("compare_bill_numbering called")
 
+        if not self.com_compare_number_dir:
+            print("Error: No directory selected.")
+            return "Error: No directory selected."
+
+        compare_dir = Path(self.com_compare_number_dir).resolve()
+        print(f"compare_dir resolved to: {compare_dir}")
+
+        if not compare_dir.is_dir():
+            print("Error: Selected path is not a directory.")
+            return "Error: Selected path is not a directory."
+
+        compare = CompareBillNumbering.from_folder(compare_dir)
+        print("CompareBillNumbering instance created")
+
+        compare.save_csv(compare_dir)
+        print("CSV files created")
+    
+    
     def amend_create_html_compare(
         self, days_between_papers=False
     ):
@@ -243,6 +290,8 @@ class Api:
         # print("set_v_info called")
         set_version_info(webview.active_window())
 
+    # ! def added_names_report(self):
+    # !    added_names_report.main()
 
 
 def get_entrypoint():
