@@ -6,6 +6,14 @@ import Button from "./Button";
 import { BodyProps } from "./Body";
 
 const BillNumberingCollapsible: React.FC<BodyProps> = (props) => {
+  
+  const handleCreateCSV = async () => {
+    console.log("Creating CSV");
+    const result = await window.pywebview.api.compare_bill_numbering();
+    console.log("API call result:", result);
+    alert("CSV creation process started");
+  };
+  
   return (
     <Collapsible
       isOpenState={props.pageActiveState}
@@ -47,11 +55,11 @@ const BillNumberingCollapsible: React.FC<BodyProps> = (props) => {
       </Card>
 
       <Card step="Step&nbsp;2" info="">
-        <Button id="bill_numberingCreateCSV" text="Create CSV(s)"
-         handleClick={() => {
-          console.log("Creating CSV");
-          window.pywebview.api.compare_bill_numbering();
-        }} />
+      <Button
+          id="bill_numberingCreateCSV"
+          text="Create CSV(s)"
+          handleClick={handleCreateCSV}
+        />
       </Card>
     </Collapsible>
   );

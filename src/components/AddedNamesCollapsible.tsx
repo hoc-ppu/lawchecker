@@ -11,7 +11,8 @@ import { BodyProps } from "./Body";
 
 const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   const [date, setDate] = useState<string>("");
-  const [selectedDir, setSelectedDir] = useState<string>("");
+  const [workingFolderPath, setWorkingFolderPath] = useState<string>("");
+  const [marshalDir, setMarshalDir] = useState<string>("");
 
   // Create working folder
   const handleCreateWorkingFolder = async () => {
@@ -19,7 +20,18 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     const result = await window.pywebview.api.anr_create_working_folder(date);
     console.log("API call result:", result);
     alert(result); // Using a pop-up in lieu of modal for now
+    if (result.startsWith("Working folder created: ")) {
+      setWorkingFolderPath(result.replace("Working folder created: ", ""));
+    }
   };
+
+  // Open folder in file explorer
+    const handleOpenFolder = async (folderPath: string) => {
+      console.log("Opening folder in file explorer");
+      const result = await window.pywebview.api.open_folder(folderPath);
+      console.log("API call result:", result);
+      alert(result); // Show pop-up feedback
+    };
 
   // Open dashboard data in browser
   const handleOpenDashboardData = async () => {
@@ -44,14 +56,14 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("API call result:", result);
     alert(result);
     if (result.startsWith("Selected directory: ")) {
-      setSelectedDir(result.replace("Selected directory: ", ""));
+      setMarshalDir(result.replace("Selected directory: ", ""));
     }
   };
 
   // Clear selected directory
   const handleClearSelectedDir = () => {
     console.log("Clearing selected directory");
-    setSelectedDir("");
+    setMarshalDir("");
   };
 
   // Execute the report generation
@@ -84,13 +96,24 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           type="date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
-        />{" "}
+        />
         <span id="AN_DateSelected_1"></span>
         <Button
           id="AN_CreateWorkingFolder"
           text="Create working folder"
           handleClick={handleCreateWorkingFolder}
         />
+        {workingFolderPath && (
+           <p className="mt-3">
+           <strong>Working folder:</strong>{" "}
+           <a
+             href="#"
+             onClick={() => handleOpenFolder(workingFolderPath)}
+           >
+             {workingFolderPath}
+           </a>
+         </p>
+        )}
         <p>
           Note: This button will also create subfolders, Dashboard_Data and
           Amendment_Paper_XML. Ideally save data from Sharepoint in
@@ -128,14 +151,14 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           text="Select folder"
           handleClick={handleSelectMarshalDir}
         />
-        {selectedDir && (
+        {marshalDir && (
           <>
             <p className="mt-3">
-              <strong>Marshalling data:</strong> {selectedDir}
+              <strong>Marshalling data:</strong> {marshalDir}
             </p>
             <Button
               id="AN_ClearSelectedDir"
-              text="Clear selected directory"
+              text="Cancel use of marshalling data"
               handleClick={handleClearSelectedDir}
             />
           </>

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Callable, cast
 
 import requests
+import os
 import webview
 from webview import Window
 
@@ -140,6 +141,13 @@ class Api:
             return f"Working folder created: {self.dated_folder_Path}"
         except Exception as e:
             return f"Error: Could not create folder {repr(e)}"
+        
+    def open_folder(self, folder_path: str) -> str:
+        try:
+            os.startfile(folder_path)
+            return f"Opened folder: {folder_path}"
+        except Exception as e:
+            return f"Error: Could not open folder {repr(e)}"
         
     def open_dash_xml_in_browser(self) -> str:
         """
