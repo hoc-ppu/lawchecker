@@ -30,7 +30,6 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
       console.log("Opening folder in file explorer");
       const result = await window.pywebview.api.open_folder(folderPath);
       console.log("API call result:", result);
-      alert(result); // Show pop-up feedback
     };
 
   // Open dashboard data in browser
