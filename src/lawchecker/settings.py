@@ -37,8 +37,10 @@ DEFAULT_OUTPUT_NAME = "Added_Names_Report.html"
 
 XSLT_MARSHAL_PARAM_NAME = "marsh-path"
 
-XSL_1_NAME = "added-names-spo-rest.py"
-XSL_2_NAME = "post-processing-html.py"
+XSL_1_NAME = "added-names-spo-rest.xsl"
+XSL_2_NAME = "post-processing-html.xsl"
+AN_HTML_TEMPLATE = "template.html"
+
 
 XML_FOLDER = "Amendment_Paper_XML"
 DASHBOARD_DATA_FOLDER = "Dashboard_Data"
@@ -59,6 +61,7 @@ REPORTS_FOLDER = PARENT_FOLDER / "_Reports"
 
 XSL_1_PATH = XSL_FOLDER / XSL_1_NAME
 XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
+HTML_TEMPLATE = XSL_FOLDER / AN_HTML_TEMPLATE
 
 COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath("compare_report_template.html")
 

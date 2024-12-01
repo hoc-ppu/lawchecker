@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
+import shutil
+import subprocess
 import re
 import sys
 import webbrowser
@@ -9,11 +11,11 @@ from pathlib import Path
 from typing import Optional
 
 # 3rd party saxon imports
-import saxonche
+# import saxonche
 
 from lawchecker.lawchecker_logger import logger
 from lawchecker import settings
-
+from lawchecker.settings import HTML_TEMPLATE
 
 def main():
     # do cmd line version
@@ -88,6 +90,7 @@ def main():
         input_Path,
         xsl_1_Path,
         xsl_2_Path,
+        HTML_TEMPLATE,
         parameter=marshal,
         output_file_name=args.output
     )
@@ -195,7 +198,6 @@ def run_xslts(
     parameter: Optional[Path] = None,
     output_file_name: str = settings.DEFAULT_OUTPUT_NAME,
 ):
-
     logger.info(f"{input_Path=}   {xsl_1_Path=}   {xsl_2_Path=}   {parameter=}")
 
     xsls_exist = check_xsl_paths(xsl_1_Path, xsl_2_Path)
@@ -210,77 +212,51 @@ def run_xslts(
     if settings.ANR_WORKING_FOLDER is None:
         dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formated_date).resolve()
     else:
-        dated_folder_Path = settings.ANR_WORKING_FOLDER.resolve()  # working folder selected in UI
+        dated_folder_Path = settings.ANR_WORKING_FOLDER.resolve()
     dated_folder_Path.mkdir(parents=True, exist_ok=True)
 
     xml_folder_Path = dated_folder_Path.joinpath(settings.DASHBOARD_DATA_FOLDER)
     xml_folder_Path.mkdir(parents=True, exist_ok=True)
 
-    intermidiate_Path = xml_folder_Path.joinpath(intermediate_file_name)
+    intermediate_Path = xml_folder_Path.joinpath(intermediate_file_name)
     out_html_Path = dated_folder_Path.joinpath(output_file_name)
 
-    logger.info(f"{intermidiate_Path=}   {out_html_Path=}")
+    logger.info(f"{intermediate_Path=}   {out_html_Path=}")
 
-    # resave the input file
+    # Resave the input file
     resave_Path = xml_folder_Path.joinpath(input_file_resave_name)
-    with open(resave_Path, "w") as f:
-        f.write(input_Path.read_text())
+    if input_Path != resave_Path:
+        shutil.copy(input_Path, resave_Path)
+    print(f"Resaved: {resave_Path}")
+
+    # --- 1st Transformation (added-names-spo-rest) ---
+    command_1 = ["python", str(xsl_1_Path), str(input_Path), str(intermediate_Path)]
+    print(f"Initial command_1: {' '.join(command_1)}")
+    logger.info(f"Running first transformation script: {xsl_1_Path}")
+    logger.debug(f"Command 1: {' '.join(command_1)}")
+    subprocess.run(command_1, check=True)
+
+    # --- 2nd Transformation (post-processing-html) ---
+    command_2 = ["python", str(xsl_2_Path), str(HTML_TEMPLATE), str(intermediate_Path), str(out_html_Path)]
+    logger.debug(f"Initial command_2: {' '.join(command_2)}")
+   
+    logger.info(f"Running second transformation script: {xsl_2_Path}")
+    logger.debug(f"Command 2: {' '.join(command_2)}")
+
+    # Verify the length of command_2
+    if len(command_2) < 5:
+        logger.error(f"command_2 has insufficient arguments: {command_2}")
+        raise IndexError("command_2 has insufficient arguments")
+
+    subprocess.run(command_2, check=True)
 
 
-    with saxonche.PySaxonProcessor(license=False) as proc:
+    # --- finished transforms ---
+    logger.info(f"Created: {out_html_Path}")
+    webbrowser.open(out_html_Path.as_uri())
+    logger.info("Done.")
 
-        # need to be as uri in case there are spaces in the path
-        input_path = input_Path.resolve().as_uri()
-        intermidiate_path = intermidiate_Path.resolve()
-        outfilepath = out_html_Path.resolve().as_uri()
-
-        # --- 1st XSLT ---
-        xsltproc = proc.new_xslt30_processor()
-
-        executable = xsltproc.compile_stylesheet(stylesheet_file=str(xsl_1_Path))
-        executable.set_initial_match_selection(file_name=input_path)
-        # Saxon seems to work poorly with file paths so insted
-        # transfrom to string then write to file form python
-        # executable.transform_to_file(source_file=input_path,
-        #                              output_file=intermidiate_path)
-
-        intermediate_content = executable.apply_templates_returning_string()
-
-        with open(intermidiate_path, "w", encoding="UTF-8") as f:
-            f.write(intermediate_content)
-
-        # --- 2nd XSLT ---
-        xsltproc2 = proc.new_xslt30_processor()
-
-        executable2 = xsltproc2.compile_stylesheet(stylesheet_file=str(xsl_2_Path))
-
-        if parameter:
-            # get path to folder containing LM/FM XML file(s) and pass this to
-            # the XSLT processor as a parameter. This is for marshelling.
-            remove_docstring(parameter)
-            parameter_str = parameter.resolve().as_uri()  # uri works best with Saxon
-            param = proc.make_string_value(parameter_str)
-
-            executable2.set_parameter(settings.XSLT_MARSHAL_PARAM_NAME, param)
-
-        # Saxon seems to work poorly with file paths so insted
-        # transfrom to string then write to file form python
-        # executable2.transform_to_file(source_file=intermidiate_path,
-        #                               output_file=outfilepath)
-        executable2.set_initial_match_selection(file_name=intermidiate_path.as_uri())
-        file_content = executable2.apply_templates_returning_string()
-
-        with open(out_html_Path, "w", encoding="UTF-8") as f:
-            f.write(file_content)
-
-        # --- finished transforms ---
-
-        logger.info(f"Created: {out_html_Path}")
-
-        webbrowser.open(outfilepath)
-
-        logger.info("Done.")
-
+    return command_1, command_2
 
 if __name__ == "__main__":
     main()

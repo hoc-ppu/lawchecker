@@ -18,7 +18,7 @@ from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
 from lawchecker.compare_bill_numbering_v2 import CompareBillNumbering
-from lawchecker.settings import ANR_WORKING_FOLDER, NSMAP
+from lawchecker.settings import ANR_WORKING_FOLDER, NSMAP, HTML_TEMPLATE
 from lawchecker.submodules.python_toolbox import pp_xml_lxml
 from lawchecker.ui.addedNames import Ui_MainWindow
 
@@ -214,6 +214,7 @@ class Api:
             xsl_1_Path = settings.XSL_1_PATH
             xsl_2_Path = settings.XSL_2_PATH
             input_Path = Path(self.dash_xml_file).resolve()
+            
             try:
                 added_names_report.run_xslts(
                     input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
