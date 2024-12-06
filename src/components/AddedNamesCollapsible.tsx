@@ -51,11 +51,16 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   // Select marshalling XML directory
   const handleSelectMarshalDir = async () => {
     console.log("Selecting amendment XML directory");
-    const result = await window.pywebview.api.anr_open_amd_xml_dir();
+    let result: string = await window.pywebview.api.anr_open_amd_xml_dir();
     console.log("API call result:", result);
     alert(result);
     if (result.startsWith("Selected directory: ")) {
-      setMarshalDir(result.replace("Selected directory: ", ""));
+      result = result.replace("Selected directory: ", "");
+
+      // Replace both backslashes and forward slashes with
+      // `Word Break Opportunity` tag followed by the slash
+      result = result.replace(/[\\/]/g, "<wbr/>$&");
+      setMarshalDir(result);
     }
   };
 
@@ -150,7 +155,8 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
         {marshalDir && (
           <>
             <p className="mt-3">
-              <strong>Marshalling data:</strong> {marshalDir}
+              <strong>Marshalling data:</strong>{" "}
+              <span dangerouslySetInnerHTML={{ __html: marshalDir }} />
             </p>
             <Button
               id="AN_ClearSelectedDir"
