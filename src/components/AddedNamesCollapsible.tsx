@@ -26,11 +26,11 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   };
 
   // Open folder in file explorer
-    const handleOpenFolder = async (folderPath: string) => {
-      console.log("Opening folder in file explorer");
-      const result = await window.pywebview.api.open_folder(folderPath);
-      console.log("API call result:", result);
-    };
+  const handleOpenFolder = async (folderPath: string) => {
+    console.log("Opening folder in file explorer");
+    const result = await window.pywebview.api.open_folder(folderPath);
+    console.log("API call result:", result);
+  };
 
   // Open dashboard data in browser
   const handleOpenDashboardData = async () => {
@@ -40,16 +40,16 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     alert(result);
   };
 
-   // Select dashboard XML file
+  // Select dashboard XML file
   const handleSelectSPXML = async () => {
     console.log("Selecting dashboard XML file");
     const result = await window.pywebview.api.open_dash_xml_file();
     console.log("API call result:", result);
-    alert(result); 
+    alert(result);
   };
 
-   // Select marshalling XML directory
-   const handleSelectMarshalDir = async () => {
+  // Select marshalling XML directory
+  const handleSelectMarshalDir = async () => {
     console.log("Selecting amendment XML directory");
     const result = await window.pywebview.api.anr_open_amd_xml_dir();
     console.log("API call result:", result);
@@ -70,9 +70,9 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("Creating report");
     const result = await window.pywebview.api.anr_run_xslts();
     console.log("API call result:", result);
-    alert(result); 
+    alert(result);
   };
-  
+
   return (
     <Collapsible
       isOpenState={props.pageActiveState}
@@ -103,15 +103,12 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           handleClick={handleCreateWorkingFolder}
         />
         {workingFolderPath && (
-           <p className="mt-3">
-           <strong>Working folder:</strong>{" "}
-           <a
-             href="#"
-             onClick={() => handleOpenFolder(workingFolderPath)}
-           >
-             {workingFolderPath}
-           </a>
-         </p>
+          <p className="mt-3">
+            <strong>Working folder:</strong>{" "}
+            <a href="#" onClick={() => handleOpenFolder(workingFolderPath)}>
+              {workingFolderPath}
+            </a>
+          </p>
         )}
         <p>
           Note: This button will also create subfolders, Dashboard_Data and
@@ -123,14 +120,14 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
       <Card step="Step&nbsp;2" info="Download dashboard data">
         <Button
           id="AN_OpenDashboardData"
-          text="Open dashboard data in a Browser" 
+          text="Open dashboard data in a Browser"
           handleClick={handleOpenDashboardData}
         />
         <p>
           The above button should open the added names dashboard data in a web
           browser. Once opened, you must download and save the XML to your
-          computer (ideally within the folder created above). Then open that
-          XML file using the button below.
+          computer (ideally within the folder created above). Then open that XML
+          file using the button below.
         </p>
         <Button
           id="AN_Select_SP_XML"
@@ -171,7 +168,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
       </Card>
 
       <Card step="Step&nbsp;4" info="Open the added names report in a browser">
-      <Button
+        <Button
           id="AN_CreateReport"
           text="Create Added Names Report"
           handleClick={handleCreateReport}
