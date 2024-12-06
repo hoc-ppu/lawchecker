@@ -81,9 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <div className="version">
-        <p>
-          <small id="versionInfo">{versionInfo}</small>
-        </p>
+        <small id="versionInfo">{versionInfo}</small>
       </div>
     </div>
   );

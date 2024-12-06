@@ -21,7 +21,8 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
       </div>
 
       <div className="main-content-inner react-slider-container">
-        <div id="app-home react-slider-content">
+        <div className="mt-4"> {/* Intentionally left empty*/} </div>
+        <div id="app-home react-slider-content" className="mt-5">
           {/* previously the above had className="collapse show" */}
           <img
             className={`pup-logo py-3 ${
@@ -40,20 +41,20 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
             <strong>options on the left</strong>
           </h2>
         </div>
+        <div className="">
+          <div className="text-center small">
+            Please report bugs or improvement ideas to Mark Fawcett or Richard
+            Martin.
+            <br />
+            Code avaliable on{" "}
+            <a href="https://github.com/hoc-ppu/lawchecker">Github</a>.
+          </div>
+        </div>
 
         <CompareBillsCollapsible pageActiveState={pageActiveState} />
         <BillNumberingCollapsible pageActiveState={pageActiveState} />
         <CompareAmendmentsCollapsible pageActiveState={pageActiveState} />
         <AddedNamesCollapsible pageActiveState={pageActiveState} />
-      </div>
-      <div className="bottom-bar">
-        <div className="mr-auto small">
-          Please report bugs or improvement ideas to Mark Fawcett
-        </div>
-        <div className="ml-auto small">
-          Code avaliable on{" "}
-          <a href="https://github.com/hoc-ppu/lawchecker">Github</a>
-        </div>
       </div>
     </div>
   );
