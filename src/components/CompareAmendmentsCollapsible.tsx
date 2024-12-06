@@ -80,7 +80,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
           text="Create Report"
           handleClick={() => {
             console.log("Create report clicked");
-            window.pywebview.api.amend_create_html_compare();
+            window.pywebview.api.amend_create_html_compare(isChecked);
           }}
         />
       </Card>
