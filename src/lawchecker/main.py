@@ -15,13 +15,12 @@ import webview
 from webview import Window
 
 from lawchecker.lawchecker_logger import logger
-from lawchecker import added_names_report, settings
+from lawchecker import added_names_report, pp_xml_lxml, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
 from lawchecker.compare_bill_numbering_v2 import CompareBillNumbering
 from lawchecker.settings import ANR_WORKING_FOLDER, HTML_TEMPLATE, NSMAP
-from lawchecker.submodules.python_toolbox import pp_xml_lxml
 from lawchecker.ui_feedback import ProgressModal, UILogHandler
 
 APP_FROZEN = getattr(sys, 'frozen', False)
