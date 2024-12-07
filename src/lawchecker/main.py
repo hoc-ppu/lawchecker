@@ -85,7 +85,7 @@ class Api:
         return Path(result[0])
 
 
-    def open_file_dialog(self, file_specifier: str, file_type="") -> None:
+    def open_file_dialog(self, file_specifier: str, file_type="") -> str:
         # select a file
 
         _file = self._open_file_dialog(file_type)
@@ -101,6 +101,8 @@ class Api:
                 self.com_amend_new_xml = _file
             case _:
                 print(f"Error: Unknown file specifier: {file_specifier}")
+
+        return str(_file)
 
     def select_folder(self, folder_specifier: str) -> None:
         print(f"select_folder called with folder_specifier: {folder_specifier}")

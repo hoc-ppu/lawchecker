@@ -1,14 +1,37 @@
+import React, { useState } from "react";
 import Collapsible from "./Collapsible";
 import Card from "./Card";
 import Button from "./Button";
 // import { PageActiveState } from "./App";
 import { BodyProps } from "./Body";
+import addWordBreaksToPath from "./AddWordBreaksToPath";
 
 // interface BodyProps {
 //   pageActiveState: PageActiveState;
 // }
 
 const CompareBillsCollapsible: React.FC<BodyProps> = (props) => {
+  const [oldXml, setOldXml] = useState<string>("");
+  const [newXml, setNewXml] = useState<string>("");
+
+  const handleOldXml = async () => {
+    let result = await window.pywebview.api.open_file_dialog(
+      "com_bill_old_xml"
+    );
+    console.log("API call result:", result);
+    result = addWordBreaksToPath(result);
+    setOldXml(result);
+  };
+
+  const handleNewXml = async () => {
+    let result = await window.pywebview.api.open_file_dialog(
+      "com_bill_new_xml"
+    );
+    console.log("API call result:", result);
+    result = addWordBreaksToPath(result);
+    setNewXml(result);
+  };
+
   return (
     <Collapsible
       isOpenState={props.pageActiveState}
@@ -40,21 +63,25 @@ const CompareBillsCollapsible: React.FC<BodyProps> = (props) => {
         <Button
           id="bill_oldXMLfile"
           text="Select Older XML File"
-          handleClick={() => {
-            console.log("Select old file clicked");
-            window.pywebview.api.open_file_dialog("com_bill_old_xml");
-          }}
+          handleClick={handleOldXml}
         />
-        <small></small>
         <Button
           id="bill_newXMLfile"
           text="Select Newer XML File"
-          handleClick={() => {
-            console.log("Select folder clicked");
-            window.pywebview.api.open_file_dialog("com_bill_new_xml");
-          }}
+          handleClick={handleNewXml}
         />
-        <small></small>
+        {oldXml && (
+          <small className="mt-3">
+            <strong>Older XML:</strong>{" "}
+            <span dangerouslySetInnerHTML={{ __html: oldXml }} />
+          </small>
+        )}
+        {newXml && (
+          <small>
+            <strong>Newer XML:</strong>{" "}
+            <span dangerouslySetInnerHTML={{ __html: newXml }} />
+          </small>
+        )}
         <p className="mt-3">
           <small>
             <strong>Note:</strong> The files must be Lawmaker XML files. XML

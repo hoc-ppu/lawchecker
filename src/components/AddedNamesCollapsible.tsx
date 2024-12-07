@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Collapsible from "./Collapsible";
 import Card from "./Card";
 import Button from "./Button";
+import addWordBreaksToPath from "./AddWordBreaksToPath";
 // import { PageActiveState } from "./App";
 import { BodyProps } from "./Body";
 
@@ -59,7 +60,8 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
 
       // Replace both backslashes and forward slashes with
       // `Word Break Opportunity` tag followed by the slash
-      result = result.replace(/[\\/]/g, "<wbr/>$&");
+      result = addWordBreaksToPath(result);
+
       setMarshalDir(result);
     }
   };

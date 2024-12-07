@@ -47,7 +47,10 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
             Martin.
             <br />
             Code avaliable on{" "}
-            <a href="https://github.com/hoc-ppu/lawchecker">Github</a>.
+            <a href="https://github.com/hoc-ppu/lawchecker" target="_blank">
+              Github
+            </a>
+            .
           </div>
         </div>
 
