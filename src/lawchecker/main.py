@@ -1,3 +1,6 @@
+import io
+import logging
+import os
 import platform
 import sys
 import tomllib
@@ -8,23 +11,25 @@ from pathlib import Path
 from typing import Callable, cast
 
 import requests
-import os
 import webview
 from webview import Window
 
-from lawchecker.lawchecker_logger import logger  # must be before submodules...
+from lawchecker.lawchecker_logger import logger
 from lawchecker import added_names_report, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
 from lawchecker.compare_bill_numbering_v2 import CompareBillNumbering
-from lawchecker.settings import ANR_WORKING_FOLDER, NSMAP, HTML_TEMPLATE
+from lawchecker.settings import ANR_WORKING_FOLDER, HTML_TEMPLATE, NSMAP
 from lawchecker.submodules.python_toolbox import pp_xml_lxml
-from lawchecker.ui.addedNames import Ui_MainWindow
+from lawchecker.ui_feedback import ProgressModal, UILogHandler
 
 APP_FROZEN = getattr(sys, 'frozen', False)
 
-print("Hello")
+# Reference to the active window will be stored here
+window: Window | None = None
+
+# add modal to the logger
 
 def set_version_info(window):
 
@@ -32,6 +37,7 @@ def set_version_info(window):
     if APP_FROZEN:
         pyproject_path = Path(sys._MEIPASS, "pyproject.toml")
 
+    # TODO: add error handling
     with open(pyproject_path, 'rb') as f:
         toml_data = tomllib.load(f)
 
@@ -55,7 +61,7 @@ class Api:
         self.com_amend_old_xml: Path | None = None
         self.com_amend_new_xml: Path | None = None
 
-        
+
     def _open_file_dialog(self, file_type="") -> Path | None:
 
         # select a file
@@ -141,14 +147,15 @@ class Api:
             return f"Working folder created: {self.dated_folder_Path}"
         except Exception as e:
             return f"Error: Could not create folder {repr(e)}"
-        
+
     def open_folder(self, folder_path: str) -> str:
         try:
+            # TODO: os.startfile only works on Windows
             os.startfile(folder_path)
             return f"Opened folder: {folder_path}"
         except Exception as e:
             return f"Error: Could not open folder {repr(e)}"
-        
+
     def open_dash_xml_in_browser(self) -> str:
         """
         Loads the Added Names dashboard XML in the default web browser.
@@ -182,7 +189,7 @@ class Api:
 
         self.dash_xml_file = Path(result[0])
         return f"Selected file: {self.dash_xml_file}"
-    
+
     def anr_open_amd_xml_dir(self) -> str:
         """
         Open a directory selection dialog to select the amendment XML directory.
@@ -203,7 +210,7 @@ class Api:
 
         self.lm_xml_folder = Path(result[0])
         return f"Selected directory: {self.lm_xml_folder}"
-    
+
     def anr_run_xslts(self) -> str:
         lm_xml_folder_Path: Path | None = None
 
@@ -214,7 +221,7 @@ class Api:
             xsl_1_Path = settings.XSL_1_PATH
             xsl_2_Path = settings.XSL_2_PATH
             input_Path = Path(self.dash_xml_file).resolve()
-            
+
             try:
                 added_names_report.run_xslts(
                     input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
@@ -230,15 +237,14 @@ class Api:
         """
         Create the compare report for bills
         """
-        print("here")
 
         # TODO: add better validation and error handling
         if not self.com_bill_old_xml:
-            print("Error", "No old XML file selected.")
+            logger.error("No old XML file selected.")
             return
 
         if not self.com_bill_new_xml:
-            print("Error", "No new XML file selected.")
+            logger.error("No new XML file selected.")
             return
 
         old_xml_path = Path(self.com_bill_old_xml).resolve()
@@ -249,15 +255,13 @@ class Api:
         old_xml = pp_xml_lxml.load_xml(str(old_xml_path))
         new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
 
-        print()
-
         # TODO: Improve the below
         if not old_xml:
-            print("Error", f"Old XML file is not valid XML: {old_xml_path}")
+            logger.error(f"Old XML file is not valid XML: {old_xml_path}")
             return
 
         if not new_xml:
-            print("Error", f"New XML file is not valid XML: {new_xml_path}")
+            logger.error(f"New XML file is not valid XML: {new_xml_path}")
             return
 
 
@@ -279,11 +283,11 @@ class Api:
     def bill_compare_in_vs_code(self):
 
         if not self.com_bill_old_xml:
-            print("Error", "No old XML file selected.")
+            logger.error("No old XML file selected.")
             return
 
         if not self.com_bill_new_xml:
-            print("Error", "No new XML file selected.")
+            logger.error("No new XML file selected.")
             return
 
         old_xml_path = Path(self.com_bill_old_xml).resolve()
@@ -295,11 +299,11 @@ class Api:
         new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
 
         if not old_xml:
-            print("Error", f"Old XML file is not valid XML: {old_xml_path}")
+            logger.error(f"Old XML file is not valid XML: {old_xml_path}")
             return
 
         if not new_xml:
-            print("Error", f"New XML file is not valid XML: {new_xml_path}")
+            logger.error(f"New XML file is not valid XML: {new_xml_path}")
             return
 
         report = BillReport(
@@ -331,8 +335,8 @@ class Api:
 
         compare.save_csv(compare_dir)
         print("CSV files created")
-    
-    
+
+
     def amend_create_html_compare(
         self, days_between_papers=False
     ):
@@ -340,22 +344,13 @@ class Api:
         Create the compare report for amendments
         """
 
-        bla = f"amend_create_html_compare called\n {days_between_papers=}"
-        print(
-            bla
-        )
-
-        logger.warning(bla)
-
         # TODO: add better validation and error handling
         if not self.com_amend_old_xml:
-            msg = "Error", "No old XML file selected."
-            logger.error(msg)
+            logger.error("No old XML file selected.")
             return
 
         if not self.com_amend_new_xml:
-            msg = "Error", "No new XML file selected."
-            logger.error(msg)
+            logger.error("No new XML file selected.")
             return
 
         old_xml_path = Path(self.com_amend_old_xml).resolve()
@@ -370,13 +365,11 @@ class Api:
 
         # TODO: Improve the below
         if not old_xml:
-            msg = "Error", f"Old XML file is not valid XML: {old_xml_path}"
-            logger.error(msg)
+            logger.error(f"Old XML file is not valid XML: {old_xml_path}")
             return
 
         if not new_xml:
-            msg = "Error", f"New XML file is not valid XML: {new_xml_path}"
-            logger.error(msg)
+            logger.error(f"New XML file is not valid XML: {new_xml_path}")
             return
 
         out_html_Path = old_xml_path.parent.joinpath("Compare_Amendments.html")
@@ -467,6 +460,12 @@ def main():
 
     debug = sys.platform != "win32"  # dont want to be in debug mode on windows
     # debug = True
+
+    # add ui logger
+    gh_stream = io.StringIO("")
+    gh = UILogHandler(gh_stream, window)
+    gh.setLevel(level=logging.WARNING)
+    logger.addHandler(gh)
 
     webview.start(
         debug=debug,

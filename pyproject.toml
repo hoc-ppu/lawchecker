@@ -30,4 +30,4 @@ bill_numbering = "lawchecker.compare_bill_numbering:cli"
 
 [tool.isort]
 profile = "black"
-force_to_top = ["lawchecker.lawchecker_logger"]
+force_to_top = ["lawchecker.lawchecker_logger"]  # no longer needed

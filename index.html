@@ -1,12 +1,36 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vite + React + TS</title>
+</head>
+
+<body>
+  <div id="root"></div>
+  <div id="progress_modal" class="modal" data-bs-backdrop="static" tabindex="-1">
+
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Feedback</h5>
+        </div>
+        <div class="modal-body" id="progress_modal_text">
+        </div>
+        <div class="modal-footer">
+          <div class="spinner-border" id="progress_modal_spinner" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+          <button id="progress_modal_ok_button" type="button" class="btn btn-primary"
+            data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script src="js/bootstrap.bundle.min.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+
 </html>
