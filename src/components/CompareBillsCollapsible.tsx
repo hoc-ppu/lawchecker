@@ -50,9 +50,11 @@ const CompareBillsCollapsible: React.FC<BodyProps> = (props) => {
           detailing the clauses that have been added and removed, changes to
           existing clauses, and changes to numbering of clauses. You can also
           compare the plain/unformatted text of the bills using a feature of{" "}
-          <a href="https://code.visualstudio.com/">VS Code</a>. This includes
-          changes to parts of the bill that are not within clauses or schedules.
-          (e.g. titles.){" "}
+          <a href="https://code.visualstudio.com/" target="_blank">
+            VS Code
+          </a>
+          . This includes changes to parts of the bill that are not within
+          clauses or schedules. (e.g. titles.){" "}
         </p>
       </Card>
       <Card
