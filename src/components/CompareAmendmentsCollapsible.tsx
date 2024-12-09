@@ -4,12 +4,31 @@ import Card from "./Card";
 import Button from "./Button";
 // import { PageActiveState } from "./App";
 import { BodyProps } from "./Body";
+import addWordBreaksToPath from "./AddWordBreaksToPath";
 
 const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   const [isChecked, setIsChecked] = useState(false);
+  const [oldXml, setOldXml] = useState<string>("");
+  const [newXml, setNewXml] = useState<string>("");
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setIsChecked(event.target.checked);
+  };
+
+  const handleOldXml = async () => {
+    let result = await window.pywebview.api.open_file_dialog(
+      "com_amend_old_xml"
+    );
+    result = addWordBreaksToPath(result);
+    setOldXml(result);
+  };
+
+  const handleNewXml = async () => {
+    let result = await window.pywebview.api.open_file_dialog(
+      "com_amend_new_xml"
+    );
+    result = addWordBreaksToPath(result);
+    setNewXml(result);
   };
 
   return (
@@ -35,25 +54,31 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
       </Card>
       <Card
         step="Step&nbsp;1"
-        info="Select the two bill XML files that you would like to compare."
+        info="Select the two amendment paper XML files that you would like to compare."
       >
         {/* You can put more than one button in here */}
         <Button
           id="bill_oldXMLfile"
           text="Select Older XML File"
-          handleClick={() => {
-            console.log("Select folder clicked");
-            window.pywebview.api.open_file_dialog("com_amend_old_xml");
-          }}
+          handleClick={handleOldXml}
         />
         <Button
           id="bill_newXMLfile"
           text="Select Newer XML File"
-          handleClick={() => {
-            console.log("Select folder clicked");
-            window.pywebview.api.open_file_dialog("com_amend_new_xml");
-          }}
+          handleClick={handleNewXml}
         />
+        {oldXml && (
+          <small className="mt-3">
+            <strong>Older XML:</strong>{" "}
+            <span dangerouslySetInnerHTML={{ __html: oldXml }} />
+          </small>
+        )}
+        {newXml && (
+          <small>
+            <strong>Newer XML:</strong>{" "}
+            <span dangerouslySetInnerHTML={{ __html: newXml }} />
+          </small>
+        )}
         <div className="form-check">
           <input
             className="form-check-input"
