@@ -74,6 +74,18 @@ function progress_modal_clear() {
  */
 function progress_modal_update(text) {
 
+
+    // Replace both backslashes and forward slashes with the
+    // `Word Break Opportunity` tag followed by the slash..
+    // this is to allow file paths to break at the slash
+
+    text = text.replace(/[\\/]/g, "<wbr/>$&");
+
+    if (text.startsWith("<wbr/>")){
+        // remove <wbr/> if it is at the beginning of the string
+        text = text.slice(6);
+    }
+
     // If this is an error message...
     if (text.startsWith('ERROR:')) {
 

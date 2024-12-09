@@ -44,6 +44,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div>
         <div className="figma-sidebar-navigation">
           <div className="logo-header mb-4">
+            {/* TODO: I Don't think we want the <a/> here */}
             <a className="concertina" href="#app-home" role="button">
               <UkParliamentSvg />
             </a>
