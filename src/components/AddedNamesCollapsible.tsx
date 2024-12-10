@@ -85,12 +85,18 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     setMarshalDir("");
   };
 
-  // Execute the report generation
+  // Execute the report generation and clear marshalling directory
   const handleCreateReport = async () => {
     console.log("Creating report");
     const result = await window.pywebview.api.anr_run_xslts();
     console.log("API call result:", result);
     alert(result);
+    clearMarshalDirAfterReport();
+  };
+
+  // Clear marshalling directory path after report generation
+  const clearMarshalDirAfterReport = () => {
+    setMarshalDir("");
   };
 
   return (
