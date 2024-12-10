@@ -2,7 +2,6 @@
 
 import argparse
 import shutil
-import subprocess
 import re
 import sys
 import webbrowser
@@ -10,10 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-# 3rd party saxon imports
-# import saxonche
-
 from lawchecker.lawchecker_logger import logger
+from lawchecker import added_names_spo_rest, post_processing_html
 from lawchecker import settings
 from lawchecker.settings import HTML_TEMPLATE
 
@@ -229,34 +226,18 @@ def run_xslts(
         shutil.copy(input_Path, resave_Path)
     print(f"Resaved: {resave_Path}")
 
-    # --- 1st Transformation (added-names-spo-rest) ---
-    command_1 = ["python", str(xsl_1_Path), str(input_Path), str(intermediate_Path)]
-    print(f"Initial command_1: {' '.join(command_1)}")
-    logger.info(f"Running first transformation script: {xsl_1_Path}")
-    logger.debug(f"Command 1: {' '.join(command_1)}")
-    subprocess.run(command_1, check=True)
+    # --- 1st Transformation ---
+    logger.info(f"Running first transformation: {xsl_1_Path}")
+    added_names_spo_rest.main(str(input_Path), str(intermediate_Path))
 
-    # --- 2nd Transformation (post-processing-html) ---
-    command_2 = ["python", str(xsl_2_Path), str(HTML_TEMPLATE), str(intermediate_Path), str(out_html_Path)]
-    logger.debug(f"Initial command_2: {' '.join(command_2)}")
-   
-    logger.info(f"Running second transformation script: {xsl_2_Path}")
-    logger.debug(f"Command 2: {' '.join(command_2)}")
+    # --- 2nd Transformation ---
+    logger.info(f"Running second transformation: {xsl_2_Path}")
+    post_processing_html.main(str(HTML_TEMPLATE), str(intermediate_Path), str(parameter), str(out_html_Path))
 
-    # Verify the length of command_2
-    if len(command_2) < 5:
-        logger.error(f"command_2 has insufficient arguments: {command_2}")
-        raise IndexError("command_2 has insufficient arguments")
-
-    subprocess.run(command_2, check=True)
-
-
-    # --- finished transforms ---
+    # --- Finished Transforms ---
     logger.info(f"Created: {out_html_Path}")
     webbrowser.open(out_html_Path.as_uri())
     logger.info("Done.")
-
-    return command_1, command_2
 
 if __name__ == "__main__":
     main()
