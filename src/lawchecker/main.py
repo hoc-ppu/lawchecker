@@ -15,7 +15,7 @@ import webview
 from webview import Window
 
 from lawchecker.lawchecker_logger import logger
-from lawchecker import added_names_report, pp_xml_lxml, settings
+from lawchecker import added_names_report_v2, pp_xml_lxml, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
@@ -224,7 +224,7 @@ class Api:
             input_Path = Path(self.dash_xml_file).resolve()
 
             try:
-                added_names_report.run_xslts(
+                added_names_report_v2.run_xslts(
                     input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
                 )
                 return "Report created successfully."

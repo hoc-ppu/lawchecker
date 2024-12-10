@@ -13,6 +13,7 @@ import { BodyProps } from "./Body";
 const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   const [date, setDate] = useState<string>("");
   const [workingFolderPath, setWorkingFolderPath] = useState<string>("");
+  const [selectedSPXML, setSelectedSPXML] = useState<string>("");
   const [marshalDir, setMarshalDir] = useState<string>("");
 
   // Create working folder
@@ -20,7 +21,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("Creating working folder");
     const result = await window.pywebview.api.anr_create_working_folder(date);
     console.log("API call result:", result);
-    alert(result); // Using a pop-up in lieu of modal for now
+    
     if (result.startsWith("Working folder created: ")) {
       setWorkingFolderPath(result.replace("Working folder created: ", ""));
     }
@@ -44,17 +45,29 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   // Select dashboard XML file
   const handleSelectSPXML = async () => {
     console.log("Selecting dashboard XML file");
-    const result = await window.pywebview.api.open_dash_xml_file();
-    console.log("API call result:", result);
-    alert(result);
+    try {
+      let fileResult: string = await window.pywebview.api.open_dash_xml_file();
+      console.log("API call result:", fileResult);
+  
+      if (fileResult.startsWith("Selected file: ")) {
+        fileResult = fileResult.replace("Selected file: ", "");
+        fileResult = addWordBreaksToPath(fileResult);
+        setSelectedSPXML(fileResult); // Update state with file path
+        console.log("File path set successfully:", fileResult);
+      } else {
+        console.error("Unexpected fileResult format:", fileResult);
+      }
+    } catch (error) {
+      console.error("Error selecting file:", error);
+    }
   };
+  
 
   // Select marshalling XML directory
   const handleSelectMarshalDir = async () => {
     console.log("Selecting amendment XML directory");
     let result: string = await window.pywebview.api.anr_open_amd_xml_dir();
     console.log("API call result:", result);
-    alert(result);
     if (result.startsWith("Selected directory: ")) {
       result = result.replace("Selected directory: ", "");
 
@@ -141,13 +154,18 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           text="Select downloaded data"
           handleClick={handleSelectSPXML}
         />
+        {selectedSPXML && (
+          <p className="mt-3">
+            <strong>Selected file:</strong>{" "}
+            <span dangerouslySetInnerHTML={{ __html: selectedSPXML }} />
+          </p>
+          )}
       </Card>
       <Card step="Step&nbsp;3 (Optional)" info="Add marshalling info">
         <p>
-          If you want the amendments in the report marshalling: save the XML
-          file(s) for the paper(s) (downloaded LawMaker, or saved from
-          FrameMaker) into a folder (ideally within the folder created above).
-          Select that folder with the button below.
+          If you want the amendments in the report marshalling: save the Lawmaker 
+          XML file(s) for the paper(s) into a folder (ideally within the folder 
+          created above). Select that folder with the button below.
         </p>
         <Button
           id="AN_Select_Marshal_Dir"
