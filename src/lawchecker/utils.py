@@ -1,6 +1,7 @@
 import difflib
 import re
 
+from lxml import etree
 from lxml.etree import Element, QName, _Element
 
 from lawchecker.lawchecker_logger import logger
@@ -54,7 +55,10 @@ def clean_whitespace(parent_element: _Element) -> _Element:
     # https://docs.oasis-open.org/legaldocml/akn-core/v1.0/cos01/part2-specs/schemas/akomantoso30.xsd
     # //xsd:schema/xsd:group[@name="HTMLinline"]/xsd:choice
     # plus ref and def which are also inline
-    inlines = ("b", "i", "a", "u", "sub", "sup", "abbr", "span", "ref", "def")
+    inlines = (
+        "b", "i", "a", "u", "sub", "sup", "abbr", "span",
+        "ref", "rref", "mref", "def"
+    )
 
     # paragraph elements. Add new line after.
     paragraphs = ("p", "docIntroducer", "docProponent", "heading",)  # "mod"?
@@ -85,11 +89,13 @@ def clean_whitespace(parent_element: _Element) -> _Element:
                 last_child = None
 
             if last_child is not None:
+                # print(f"{tag=}, {last_child=}")
                 # add test for this.
                 if last_child.tail:
                     last_child.tail = f"{last_child.tail}\n"
                 else:
                     last_child.tail = "\n"
+                # print(f"{last_child.tail=}")
             elif element.text:
                 element.text = f"{element.text.rstrip()}\n"
             if element.tail and not element.tail.isspace():
@@ -97,7 +103,10 @@ def clean_whitespace(parent_element: _Element) -> _Element:
                 # e.g. see Leasehold and Freehold Reform Bill from about January 2024
                 element.tail = f"{element.tail}\n"
 
+            # print(f"{etree.tostring(element).decode()}\n")
+
         if tag == "mod" and element.text:
+            # TODO: improve this. See Terrorism (Protection of Premises)  2R & AAC. Session 2024-25
             element.text = f"{element.text}\n"
 
         if tag == "quotedStructure" and element.getprevious() is not None:
