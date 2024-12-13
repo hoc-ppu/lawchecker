@@ -73,7 +73,7 @@ def main(input_path, output_path):
         matched_numbers = etree.SubElement(numbers, "matched-numbers")
 
         # Tokenize based on delimiters: newline, comma, semicolon, "and", and "&amp;"
-        tokens = re.split(r'[\n,;]+|\b(?:and|&amp;)\b', original_text)
+        tokens = re.split(r'[\n,;]+|(?:and|&amp;|&)', original_text)
 
         # Define regex patterns to match various number formats
         nc_pattern = re.compile(r'NC\d+')  # Matches NC-prefixed numbers
