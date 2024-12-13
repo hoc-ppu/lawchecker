@@ -37,10 +37,9 @@ DEFAULT_OUTPUT_NAME = "Added_Names_Report.html"
 
 XSLT_MARSHAL_PARAM_NAME = "marsh-path"
 
-XSL_1_NAME = "added-names-spo-rest.xsl"
-XSL_2_NAME = "post-processing-html.xsl"
+XSL_1_NAME = "added_names_spo_rest.py"
+XSL_2_NAME = "post_processing_html.py"
 AN_HTML_TEMPLATE = "template.html"
-
 
 XML_FOLDER = "Amendment_Paper_XML"
 DASHBOARD_DATA_FOLDER = "Dashboard_Data"
@@ -55,13 +54,13 @@ else:
     if not PARENT_FOLDER.joinpath("XSLT").exists():
         PARENT_FOLDER = PARENT_FOLDER.parent
 
-XSL_FOLDER = PARENT_FOLDER / "XSLT"
+XSL_FOLDER = PARENT_FOLDER / "src" / "lawchecker"
 
 REPORTS_FOLDER = PARENT_FOLDER / "_Reports"
 
 XSL_1_PATH = XSL_FOLDER / XSL_1_NAME
 XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
-HTML_TEMPLATE = XSL_FOLDER / AN_HTML_TEMPLATE
+HTML_TEMPLATE = PARENT_FOLDER / "XSLT" / AN_HTML_TEMPLATE
 
 COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath("compare_report_template.html")
 
