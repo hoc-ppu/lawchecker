@@ -1,11 +1,10 @@
 import difflib
 import re
 
-from lxml import etree
 from lxml.etree import Element, QName, _Element
 
-from lawchecker.lawchecker_logger import logger
 from lawchecker import xpath_helpers as xp
+from lawchecker.lawchecker_logger import logger
 
 
 def is_line_junk(line: str) -> bool:

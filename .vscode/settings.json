@@ -1,9 +1,13 @@
 {
     "cSpell.words": [
         "dotenv",
+        "edms",
+        "fdos",
         "FRBR",
         "guids",
+        "mref",
         "Rdate",
+        "rref",
         "Vite"
     ],
     "[typescriptreact]": {

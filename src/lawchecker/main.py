@@ -9,7 +9,7 @@ import traceback
 import webbrowser
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, cast
+from typing import cast
 
 import requests
 import webview
@@ -21,7 +21,7 @@ from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
 from lawchecker.compare_bill_numbering import CompareBillNumbering
-from lawchecker.settings import ANR_WORKING_FOLDER, HTML_TEMPLATE, NSMAP
+from lawchecker.settings import ANR_WORKING_FOLDER
 from lawchecker.ui_feedback import ProgressModal, UILogHandler
 
 APP_FROZEN = getattr(sys, 'frozen', False)
@@ -35,7 +35,7 @@ def set_version_info(window):
 
     pyproject_path = Path("pyproject.toml")
     if APP_FROZEN:
-        pyproject_path = Path(sys._MEIPASS, "pyproject.toml")
+        pyproject_path = Path(sys._MEIPASS, "pyproject.toml")  # type: ignore
 
     # TODO: add error handling
     with open(pyproject_path, 'rb') as f:
@@ -193,7 +193,7 @@ class Api:
         so we can't request it directly.
         """
         try:
-            webbrowser.open(settings.DASH_XML_URL)
+            webbrowser.open(settings.DASH_XML_URL)  # type: ignore
             return "Dashboard XML opened in browser."
         except Exception as e:
             return f"Error: Could not open browser {repr(e)}"
@@ -483,7 +483,7 @@ def main():
     #     html_ui_path = "ui/pup_app_ui.html"
 
     try:
-        logger.info(sys._MEIPASS)
+        logger.info(sys._MEIPASS)  # type: ignore
     except AttributeError:
         pass
 

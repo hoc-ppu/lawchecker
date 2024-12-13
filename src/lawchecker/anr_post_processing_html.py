@@ -7,6 +7,9 @@ import traceback
 import requests
 from lxml import etree as ET
 
+# TODO: Add logging
+# Run Black on this file
+
 
 def get_marshal_xml(folder_path):
     """Load additional XML files for checking amendments."""
@@ -39,7 +42,7 @@ def fetch_eligible_members():
         members_tree = ET.fromstring(response.content)
         # Extract <DisplayAs> text for each <Member> in the API response
         return {
-            member.find("DisplayAs").text
+            member.find("DisplayAs").text  # TODO: would it be better to use .findtext()?
             for member in members_tree.findall(".//Member")
             if member.find("DisplayAs") is not None
         }

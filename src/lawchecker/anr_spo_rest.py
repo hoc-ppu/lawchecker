@@ -1,7 +1,10 @@
 import re
 import sys
-from lxml import etree
 from datetime import datetime
+
+from lxml import etree
+
+# TODO: Run Black on this file
 
 def main(input_path, output_path):
     # Parse the input XML
@@ -234,7 +237,7 @@ def main(input_path, output_path):
 
 # Entry point
 if __name__ == "__main__":
-    import sys
+    import sys  # this is already at the top of the file is it not?
     if len(sys.argv) != 3:
         print("Usage: added-names-spo-rest.py <input_path> <output_path>")
         sys.exit(1)
