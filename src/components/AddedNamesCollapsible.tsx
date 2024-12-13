@@ -39,7 +39,6 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("Opening dashboard data in browser");
     const result = await window.pywebview.api.open_dash_xml_in_browser();
     console.log("API call result:", result);
-    alert(result);
   };
 
   // Select dashboard XML file
