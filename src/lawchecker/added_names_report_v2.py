@@ -14,6 +14,7 @@ from lawchecker import added_names_spo_rest, post_processing_html
 from lawchecker import settings
 from lawchecker.settings import HTML_TEMPLATE
 
+
 def main():
     # do cmd line version
 
@@ -61,7 +62,8 @@ def main():
     )
 
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         type=str,
         help="Output file name",
         default=settings.DEFAULT_OUTPUT_NAME,
@@ -89,56 +91,8 @@ def main():
         xsl_2_Path,
         HTML_TEMPLATE,
         parameter=marshal,
-        output_file_name=args.output
+        output_file_name=args.output,
     )
-
-
-def remove_docstring(parameter: Path):
-
-    """
-    Process FM XML files to remove docstring and overwrite original
-    """
-
-    # lets also turn it into an absolute path
-    parameter_abs = parameter.resolve()
-
-    # get all xml files in folder
-    fm_xml_files = list(parameter_abs.glob("*.xml"))
-
-    # loop through XML files and remove the doctypes
-    for file in fm_xml_files:
-
-        LM_XML = False
-        root_start = 0
-        file_lines = []
-
-        with open(file, "r", encoding="utf-8") as f:
-
-            # TODO: don't read the whole file into memory
-            file_lines = f.readlines()
-
-            for i, line in enumerate(file_lines):
-                if "<akomaNtoso" in line:
-                    # if LawMaker XML we expect the root to be akomaNtoso
-                    # in which case completely ignore
-                    LM_XML = True
-                    break
-                if re.search(r"<[A-Za-z0-9._]", line):
-                    # found root
-                    root_start = i
-                    break
-
-        if LM_XML:
-            # do not do anything to LM XML
-            continue
-
-        logger.info(f"Trying to remove docstring from {file.name}")
-
-        # try to overwrite file
-        with open(file, "w", encoding="UTF-8") as fi:
-            # need to remove FM doctype
-            # remove anything before the root element
-            fi.writelines(file_lines[root_start:])
 
 
 def extract_date(input_Path: Path) -> str:
@@ -226,18 +180,21 @@ def run_xslts(
         shutil.copy(input_Path, resave_Path)
     print(f"Resaved: {resave_Path}")
 
-    # --- 1st Transformation ---
+    # --- 1st Transformation - Intermediate XML ---
     logger.info(f"Running first transformation: {xsl_1_Path}")
     added_names_spo_rest.main(str(input_Path), str(intermediate_Path))
 
-    # --- 2nd Transformation ---
+    # --- 2nd Transformation - HTML report ---
     logger.info(f"Running second transformation: {xsl_2_Path}")
-    post_processing_html.main(str(HTML_TEMPLATE), str(intermediate_Path), str(parameter), str(out_html_Path))
+    post_processing_html.main(
+        str(HTML_TEMPLATE), str(intermediate_Path), str(parameter), str(out_html_Path)
+    )
 
     # --- Finished Transforms ---
     logger.info(f"Created: {out_html_Path}")
     webbrowser.open(out_html_Path.as_uri())
     logger.info("Done.")
+
 
 if __name__ == "__main__":
     main()
