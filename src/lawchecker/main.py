@@ -2,6 +2,7 @@ import io
 import logging
 import os
 import platform
+import subprocess
 import sys
 import tomllib
 import traceback
@@ -128,6 +129,14 @@ class Api:
                 print(f"Error: Unknown folder specifier: {folder_specifier}")
 
     def anr_create_working_folder(self, date_str: str) -> str:
+
+        """
+        Create a working folder for the Added Names Report.
+
+        @Called from: AddedNamesCollapsible <Button text="Create working folder">
+
+        """
+
         try:
             date_obj = datetime.strptime(date_str, "%Y-%m-%d")
             formatted_date = date_obj.strftime("%Y-%m-%d")
@@ -150,12 +159,31 @@ class Api:
             return f"Error: Could not create folder {repr(e)}"
 
     def open_folder(self, folder_path: str) -> str:
+
+        """
+        Open a folder in the default file manager.
+        """
+
         try:
-            # TODO: os.startfile only works on Windows
-            os.startfile(folder_path)
-            return f"Opened folder: {folder_path}"
+            if platform.system() == "Windows":
+                os.startfile(folder_path)  # type: ignore
+            elif platform.system() == "Darwin":
+                # macOS
+                subprocess.run(["open", folder_path])
+            else:
+                # Linux and other Unix-like systems
+                subprocess.run(["xdg-open", folder_path])
+
+            msg = f"Opened folder: {folder_path}"
+            logger.info(msg)
+            return msg
+
         except Exception as e:
-            return f"Error: Could not open folder {repr(e)}"
+            msg = f"Could not open folder {repr(e)}"
+            logger.error(msg)
+            return f"Error: {msg}"
+
+
 
     def open_dash_xml_in_browser(self) -> str:
         """
@@ -460,7 +488,7 @@ def main():
         pass
 
     api = Api()
-    print("Hello")
+
     window = webview.create_window(
         # url="file:///Users/mark/projects/pup-app/ui/pup_app_ui.html",  # no server
         # TODO: more robust solution to find the path to the html file
