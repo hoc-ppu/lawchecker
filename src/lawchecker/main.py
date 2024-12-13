@@ -213,6 +213,9 @@ class Api:
         return f"Selected directory: {self.lm_xml_folder}"
 
     def anr_run_xslts(self) -> str:
+        """
+        Run the transforms  to create the Added Names report.
+        """
         lm_xml_folder_Path: Path | None = None
 
         if self.lm_xml_folder:
@@ -224,10 +227,22 @@ class Api:
             input_Path = Path(self.dash_xml_file).resolve()
 
             try:
-                added_names_report_v2.run_xslts(
-                    input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
-                )
+                with ProgressModal() as modal:
+                    modal.update(f"Dashboard XML: {self.dash_xml_file}")
+
+                    if self.lm_xml_folder:
+                        modal.update(f"Marshal XML: {self.lm_xml_folder}")
+                    else:
+                        modal.update("No marshal XML selected")
+
+                    modal.update("Running...")
+                    added_names_report_v2.run_xslts(
+                        input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
+                    )
+                    modal.update("Report ready.")
+
                 return "Report created successfully."
+                 
             except Exception as e:
                 traceback.print_exc(file=sys.stdout)
                 return f"Error: {str(e)}"
