@@ -6,6 +6,7 @@ import re
 import sys
 from lxml import etree as ET
 
+
 def get_marshal_xml(folder_path):
     """Load additional XML files for checking amendments."""
     marshal_files = []
@@ -78,7 +79,7 @@ def reorder_amendments(marshal_files, bill_title, amendment_groups):
         root = checking_file.getroot()
         namespaces = {
             'akn': 'http://docs.oasis-open.org/legaldocml/ns/akn/3.0',
-            'ukl': 'https://www.legislation.gov.uk/namespaces/UK-AKN'  # Replace with the actual namespace URI for 'ukl'
+            'ukl': 'https://www.legislation.gov.uk/namespaces/UK-AKN'
         }
 
         # Match bill-title
@@ -114,7 +115,7 @@ def reorder_amendments(marshal_files, bill_title, amendment_groups):
             else:
                 print(f"[DEBUG] Amendment '{amendment_number}' not found in amendment groups.")
 
-     # Always process remaining amendments
+    # Always process remaining amendments
     if remaining_amendments:
         print(f"[DEBUG] Adding unmatched amendments for bill '{bill_title}': {list(remaining_amendments.keys())}")
     for unmatched_amendment in remaining_amendments.keys():
@@ -122,13 +123,13 @@ def reorder_amendments(marshal_files, bill_title, amendment_groups):
 
     return ordered_amendment_groups, was_reordered
 
-def generate_html(xml_file, marshal_file_dir, eligible_members):
+def generate_html(xml_file, checking_file_paths, eligible_members):
     """
     Generates HTML content, splitting it into summary and bill sections.
 
     Args:
         xml_file (str): Path to the input XML file.
-        marshal_file_dir (list): Paths to parsed marshalling XML files.
+        checking_file_paths (list): Paths to parsed marshalling XML files.
         eligible_members (set): Set of eligible members from the API.
 
     Returns:
@@ -138,7 +139,7 @@ def generate_html(xml_file, marshal_file_dir, eligible_members):
     root = tree.getroot()
 
     # Load checking files
-    marshal_files = get_marshal_xml(marshal_file_dir)
+    checking_files = get_marshal_xml(checking_file_paths)
 
     # Initialize the root element for dynamic content
     html = ET.Element("div", {"class": "dynamic-content"})
@@ -166,7 +167,7 @@ def generate_html(xml_file, marshal_file_dir, eligible_members):
         ).text = bill
 
     # Explanatory text
-    if marshal_files:
+    if checking_files:
         explanatory_text_1 = ET.SubElement(main_summary_div, "p")
         explanatory_text_1.text = "If you provide LawMaker XML: "
         ET.SubElement(explanatory_text_1, "span", {"class": "green"}).text = " ✔"
@@ -193,7 +194,7 @@ def generate_html(xml_file, marshal_file_dir, eligible_members):
             main_summary_div, "div", {"id": "collapsible-xml-files", "style": "display: none;"}
         )
         ul = ET.SubElement(collapsible_div, "ul")
-        for checking_file in marshal_files:
+        for checking_file in checking_files:
             li = ET.SubElement(ul, "li")
             li.text = (
                 os.path.basename(checking_file.getroot().base)
@@ -238,9 +239,9 @@ def generate_html(xml_file, marshal_file_dir, eligible_members):
         ET.SubElement(p, "b").text = str(len(amendment_groups))
 
         # Check for checking files and reorder amendments if available
-        if marshal_files:
+        if checking_files:
             ordered_amendments, was_reordered = reorder_amendments(
-                marshal_files, bill, amendment_groups
+                checking_files, bill, amendment_groups
             )
         else:
             # Fall back to unordered amendments
@@ -259,7 +260,7 @@ def generate_html(xml_file, marshal_file_dir, eligible_members):
                 h2 = ET.SubElement(num_info, "h2", {"class": "amendment-number"})
 
                 # Add fallback warning if amendments are not reordered
-                if not marshal_files or not was_reordered:
+                if not checking_files or not was_reordered:
                     h2.text = f"{amd_number}"
                     warning_span = ET.SubElement(
                         h2,
@@ -275,15 +276,14 @@ def generate_html(xml_file, marshal_file_dir, eligible_members):
 
                 # Add prefix for non-NC/NS amendments
                 if not re.match(r"(NC|NS)", amd_number):
-                    # Add "Amendment" prefix for non-NC/NS amendment numbers
                     h2.text = f"Amendment {amd_number}"
                 else:
-                    # Use the number as-is for NC/NS amendments
                     h2.text = amd_number
 
-                # Render names to add and remove
+                # Render names to add
                 names_to_add_div = ET.SubElement(amendment_div, "div", {"class": "names-to-add"})
                 ET.SubElement(names_to_add_div, "h4").text = "Names to add"
+
                 for item in group["items"]:
                     matched_names = item.find(".//names-to-add/matched-names")
                     if matched_names:
@@ -308,6 +308,7 @@ def generate_html(xml_file, marshal_file_dir, eligible_members):
                                 },
                             ).text = name_text
 
+                # Render names to remove
                 
                 if any(item.find(".//names-to-remove/matched-names") is not None for item in group["items"]):
                     names_to_remove_div = ET.SubElement(amendment_div, "div", {"class": "names-to-remove"})
@@ -398,6 +399,92 @@ def inject_html_template(template_path, output_path, summary_content, dynamic_co
 
     print(f"HTML file successfully generated: {output_path}")
 
+def ticks_and_crosses(output_html_file_path, marshal_file_dir):
+    """
+    Annotates HTML file with indicators (✔/✘) based on matches in marshal XML.
+    """
+
+    # Load the existing HTML file
+    try:
+        parser = ET.HTMLParser()
+        with open(output_html_file_path, 'r', encoding='utf-8') as html_file:
+            html_tree = ET.parse(html_file, parser)
+    except Exception as e:
+        print(f"[ERROR] Failed to load HTML file: {e}")
+        return
+
+    # Collect all checking XML files
+    checking_files = []
+    if os.path.isdir(marshal_file_dir):
+        for file_name in os.listdir(marshal_file_dir):
+            if file_name.endswith('.xml'):
+                try:
+                    checking_files.append(ET.parse(os.path.join(marshal_file_dir, file_name)))
+                except Exception as e:
+                    print(f"[WARNING] Failed to parse checking file '{file_name}': {e}")
+
+    if not checking_files:
+        print("[INFO] No valid checking files found. Skipping annotations.")
+        return
+
+    # Annotate the HTML file
+    for bill_div in html_tree.xpath("//div[@class='bill']"):
+        bill_title = bill_div.find(".//h1[@class='bill-title']")
+        if bill_title is None or not bill_title.text:
+            continue
+        bill_name = bill_title.text.strip()
+
+        for amendment_div in bill_div.xpath(".//div[@class='amendment']"):
+            amendment_number_element = amendment_div.find(".//div[@class='num-info']/h2[@class='amendment-number']")
+            if amendment_number_element is None or not amendment_number_element.text:
+                continue
+            amendment_number = amendment_number_element.text.strip()
+
+            for name_div in amendment_div.xpath(".//div[@class='names-to-add']/div[@class='name']"):
+                name_anchor = name_div.find(".//a")
+                if name_anchor is None or not name_anchor.text:
+                    print(f"[DEBUG] Skipping name without anchor text in amendment {amendment_number}.")
+                    continue
+                name_text = name_anchor.text.strip()
+                annotation = "✘"
+
+                for checking_file in checking_files:
+                    try:
+                        root = checking_file.getroot()
+                        # Match the amendment by number
+                        amendment_body = root.find(
+                            f".//component/amendment/amendmentBody[@eId='amnd_{amendment_number}']",
+                            namespaces={"ukl": "https://www.legislation.gov.uk/namespaces/UK-AKN"}
+                        )
+                        if amendment_body is None:
+                            continue
+
+                        # Match the name in proposer/supporter blocks
+                        proposer_supporter_blocks = amendment_body.xpath(
+                            ".//amendmentHeading/block[@name='proposer' or @name='supporters']"
+                        )
+                        for block in proposer_supporter_blocks:
+                            if any(name_text == elem.text.strip() for elem in block.xpath(".//docIntroducer | .//docProponent")):
+                                annotation = "✔"
+                                break
+                    except Exception as e:
+                        print(f"[ERROR] Error processing checking file: {e}")
+
+                # Add annotation span
+                annotation_span = ET.SubElement(
+                    name_div, "span",
+                    {"class": f"green name-in-xml-indicator" if annotation == "✔" else "red name-in-xml-indicator",
+                     "title": "This name appears to have been added." if annotation == "✔" else "This name does not appear to have been added."}
+                )
+                annotation_span.text = f" {annotation}"
+
+    # Save the updated HTML
+    try:
+        with open(output_html_file_path, 'wb') as output_file:
+            output_file.write(ET.tostring(html_tree, pretty_print=True, method='html', encoding='utf-8'))
+    except Exception as e:
+        print(f"[ERROR] Failed to save annotated HTML: {e}")
+
 def main(template_path, xml_file_path, marshal_file_dir, output_html_file_path):
     """Main function to execute the transformation."""
     try:
@@ -409,6 +496,9 @@ def main(template_path, xml_file_path, marshal_file_dir, output_html_file_path):
 
         # Inject content into the HTML template
         inject_html_template(template_path, output_html_file_path, summary_content, bill_content)
+
+        # Annotate ticks and crosses
+        ticks_and_crosses(output_html_file_path, marshal_file_dir)
 
     except Exception as e:
         print(f"Error: {e}")
