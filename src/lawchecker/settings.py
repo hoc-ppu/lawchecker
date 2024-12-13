@@ -4,15 +4,15 @@ from pathlib import Path
 from dotenv import dotenv_values
 from lxml import etree
 
-# on the bundeled app we expect the /env file to be in the temp folder
 try:
-    bundled_env = Path(sys._MEIPASS).joinpath(".env")
+    # on the bundled app we expect the /env file to be in the temp folder
+    bundled_env = Path(sys._MEIPASS).joinpath(".env")  # type: ignore
     if bundled_env.exists():
         secrets = dotenv_values(bundled_env)
     else:
         raise Exception
 except Exception:
-    # probably on nun bundled version so try loading from local .env file
+    # probably on un-bundled version so try loading from local .env file
     secrets = dotenv_values(".env")
 
 DASH_XML_KEY = "LAWCHECKER_ADDED_NAMES_DASH_XML"
