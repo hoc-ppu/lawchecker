@@ -2,17 +2,16 @@
 
 import argparse
 import re
+import shutil
 import sys
 import webbrowser
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-# 3rd party saxon imports
-import saxonche
-
 from lawchecker.lawchecker_logger import logger
-from lawchecker import settings
+from lawchecker import added_names_spo_rest, post_processing_html, settings
+from lawchecker.settings import HTML_TEMPLATE
 
 
 def main():
@@ -62,7 +61,8 @@ def main():
     )
 
     parser.add_argument(
-        "-o", "--output",
+        "-o",
+        "--output",
         type=str,
         help="Output file name",
         default=settings.DEFAULT_OUTPUT_NAME,
@@ -88,57 +88,10 @@ def main():
         input_Path,
         xsl_1_Path,
         xsl_2_Path,
+        HTML_TEMPLATE,
         parameter=marshal,
-        output_file_name=args.output
+        output_file_name=args.output,
     )
-
-
-def remove_docstring(parameter: Path):
-
-    """
-    Process FM XML files to remove docstring and overwrite original
-    """
-
-    # lets also turn it into an absolute path
-    parameter_abs = parameter.resolve()
-
-    # get all xml files in folder
-    fm_xml_files = list(parameter_abs.glob("*.xml"))
-
-    # loop through XML files and remove the doctypes
-    for file in fm_xml_files:
-
-        LM_XML = False
-        root_start = 0
-        file_lines = []
-
-        with open(file, "r", encoding="utf-8") as f:
-
-            # TODO: don't read the whole file into memory
-            file_lines = f.readlines()
-
-            for i, line in enumerate(file_lines):
-                if "<akomaNtoso" in line:
-                    # if LawMaker XML we expect the root to be akomaNtoso
-                    # in which case completely ignore
-                    LM_XML = True
-                    break
-                if re.search(r"<[A-Za-z0-9._]", line):
-                    # found root
-                    root_start = i
-                    break
-
-        if LM_XML:
-            # do not do anything to LM XML
-            continue
-
-        logger.info(f"Trying to remove docstring from {file.name}")
-
-        # try to overwrite file
-        with open(file, "w", encoding="UTF-8") as fi:
-            # need to remove FM doctype
-            # remove anything before the root element
-            fi.writelines(file_lines[root_start:])
 
 
 def extract_date(input_Path: Path) -> str:
@@ -165,29 +118,6 @@ def extract_date(input_Path: Path) -> str:
     return formated_date
 
 
-def check_xsl_paths(*xsls: Path) -> bool:
-    for xsl_Path in xsls:
-        try:
-            # check xsl paths are valid
-            xsl_Path = xsl_Path.resolve(strict=True)
-
-        except FileNotFoundError as e:
-            err_txt = (
-                "The following required XSLT file is missing:"
-                f"\n\n{xsl_Path}"
-                "\n\nUsually you should have two XSL files in a folder called 'XSLT'"
-                " and that folder should be in the same folder as this program."
-            )
-            logger.error("Error:", err_txt)
-            # if USE_GUI:
-            #     # this can be caught in the GUI code and the
-            #     # Error message displayed in a GUI window
-            #     raise Exception(err_txt) from e
-            return False
-
-    return True
-
-
 def run_xslts(
     input_Path: Path,
     xsl_1_Path: Path,
@@ -195,12 +125,7 @@ def run_xslts(
     parameter: Optional[Path] = None,
     output_file_name: str = settings.DEFAULT_OUTPUT_NAME,
 ):
-
     logger.info(f"{input_Path=}   {xsl_1_Path=}   {xsl_2_Path=}   {parameter=}")
-
-    xsls_exist = check_xsl_paths(xsl_1_Path, xsl_2_Path)
-    if not xsls_exist:
-        return
 
     formated_date = extract_date(input_Path)
 
@@ -210,76 +135,37 @@ def run_xslts(
     if settings.ANR_WORKING_FOLDER is None:
         dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formated_date).resolve()
     else:
-        dated_folder_Path = settings.ANR_WORKING_FOLDER.resolve()  # working folder selected in UI
+        dated_folder_Path = settings.ANR_WORKING_FOLDER.resolve()
     dated_folder_Path.mkdir(parents=True, exist_ok=True)
 
     xml_folder_Path = dated_folder_Path.joinpath(settings.DASHBOARD_DATA_FOLDER)
     xml_folder_Path.mkdir(parents=True, exist_ok=True)
 
-    intermidiate_Path = xml_folder_Path.joinpath(intermediate_file_name)
+    intermediate_Path = xml_folder_Path.joinpath(intermediate_file_name)
     out_html_Path = dated_folder_Path.joinpath(output_file_name)
 
-    logger.info(f"{intermidiate_Path=}   {out_html_Path=}")
+    logger.info(f"{intermediate_Path=}   {out_html_Path=}")
 
-    # resave the input file
+    # Resave the input file
     resave_Path = xml_folder_Path.joinpath(input_file_resave_name)
-    with open(resave_Path, "w") as f:
-        f.write(input_Path.read_text())
+    if input_Path != resave_Path:
+        shutil.copy(input_Path, resave_Path)
+    print(f"Resaved: {resave_Path}")
 
+    # --- 1st Transformation - Intermediate XML ---
+    logger.info(f"Running first transformation: {xsl_1_Path}")
+    added_names_spo_rest.main(str(input_Path), str(intermediate_Path))
 
-    with saxonche.PySaxonProcessor(license=False) as proc:
+    # --- 2nd Transformation - HTML report ---
+    logger.info(f"Running second transformation: {xsl_2_Path}")
+    post_processing_html.main(
+        str(HTML_TEMPLATE), str(intermediate_Path), str(parameter), str(out_html_Path)
+    )
 
-        # need to be as uri in case there are spaces in the path
-        input_path = input_Path.resolve().as_uri()
-        intermidiate_path = intermidiate_Path.resolve()
-        outfilepath = out_html_Path.resolve().as_uri()
-
-        # --- 1st XSLT ---
-        xsltproc = proc.new_xslt30_processor()
-
-        executable = xsltproc.compile_stylesheet(stylesheet_file=str(xsl_1_Path))
-        executable.set_initial_match_selection(file_name=input_path)
-        # Saxon seems to work poorly with file paths so insted
-        # transfrom to string then write to file form python
-        # executable.transform_to_file(source_file=input_path,
-        #                              output_file=intermidiate_path)
-
-        intermediate_content = executable.apply_templates_returning_string()
-
-        with open(intermidiate_path, "w", encoding="UTF-8") as f:
-            f.write(intermediate_content)
-
-        # --- 2nd XSLT ---
-        xsltproc2 = proc.new_xslt30_processor()
-
-        executable2 = xsltproc2.compile_stylesheet(stylesheet_file=str(xsl_2_Path))
-
-        if parameter:
-            # get path to folder containing LM/FM XML file(s) and pass this to
-            # the XSLT processor as a parameter. This is for marshelling.
-            remove_docstring(parameter)
-            parameter_str = parameter.resolve().as_uri()  # uri works best with Saxon
-            param = proc.make_string_value(parameter_str)
-
-            executable2.set_parameter(settings.XSLT_MARSHAL_PARAM_NAME, param)
-
-        # Saxon seems to work poorly with file paths so insted
-        # transfrom to string then write to file form python
-        # executable2.transform_to_file(source_file=intermidiate_path,
-        #                               output_file=outfilepath)
-        executable2.set_initial_match_selection(file_name=intermidiate_path.as_uri())
-        file_content = executable2.apply_templates_returning_string()
-
-        with open(out_html_Path, "w", encoding="UTF-8") as f:
-            f.write(file_content)
-
-        # --- finished transforms ---
-
-        logger.info(f"Created: {out_html_Path}")
-
-        webbrowser.open(outfilepath)
-
-        logger.info("Done.")
+    # --- Finished Transforms ---
+    logger.info(f"Created: {out_html_Path}")
+    webbrowser.open(out_html_Path.as_uri())
+    logger.info("Done.")
 
 
 if __name__ == "__main__":

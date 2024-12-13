@@ -2,15 +2,14 @@ import re
 import sys
 from pathlib import Path
 from typing import Iterable
-
-import click
-import pandas as pd
-from dateutil import parser as date_parser
+import csv
 from lxml import etree
 from lxml.etree import _Element
-from pandas import Series
+from dateutil import parser as date_parser
+import click
 
 from lawchecker.lawchecker_logger import logger  # must be imported before any other
+
 
 NSMAP = {
     "xmlns": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
@@ -18,104 +17,68 @@ NSMAP = {
     "ukl": "https://www.legislation.gov.uk/namespaces/UK-AKN"
 }
 
-
-# -------------------- Begin comand line interface ------------------- #
-
-@click.command()
-@click.option(
-    '--input-folder',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Specify a different folder for finding bill XML."
-         " Defaults to current directory.",
-)
-@click.option(
-    "--output-folder",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
-    help="Specify a different folder for saving the output CSV file(s) in."
-         " Defaults to current directory.",
-)
-def cli(input_folder, output_folder):
-
+def clean(string: str, no_space=False, file_name_safe=False) -> str:
     """
-    Takes in a UK bill XML files. Return CSV file(s) comparing
-    the numbering of each version of the same bill.
+    Clean up a string for use in filenames or as a column header.
     """
+    # Some general cleaning 
+    string = string.casefold()
+    string = re.sub(r"\s+", " ", string)
+    string = string.replace(",", "")
 
-    if input_folder is not None:
-        input_folder = Path(input_folder)
-    if output_folder is not None:
-        output_folder = Path(output_folder)
+    # Bill title cleaning
+    string = string.replace("[hl]", "").strip()
+    string = re.sub(r" bill$", "", string)
 
-    CompareBillNumbering.from_folder(input_folder).save_csv(output_folder)
+    # Cleanup
+    if file_name_safe or no_space:
+        string = string.replace(" ", "_")
+        string = "".join(c for c in string if c.isalnum() or c == "_")
 
+    return string.strip()
 
-# ------------------------ Begin main program ------------------------ #
 
 class Bill:
-
     def __init__(self, bill_xml: _Element, file_name: str):
-
-        # self.root = etree.parse(str(file)).getroot()
         self.root = bill_xml
-
-        # self.file = file
         self.file_name = file_name
         self.version = self.get_version()
         self.title = self.get_bill_title()
         self.published_dt = self.get_published_date()
 
     def get_published_date(self) -> str | None:
-
         xpath = '//xmlns:FRBRManifestation/xmlns:FRBRdate[@name != "akn_xml"]/@date[not(.="")]'
-
         try:
-            date_time: str = self.root.xpath(xpath, namespaces=NSMAP)[0]  # type: ignore
+            date_time: str = self.root.xpath(xpath, namespaces=NSMAP)[0]
             dt = date_parser.parse(date_time)
-            formatted = dt.strftime("%Y-%m-%d-%H-%M-%S")
-
+            return dt.strftime("%Y-%m-%d-%H-%M-%S")
         except Exception:
-            # logger.error(f"Date not found in {self.file.name}")
             logger.warning(f"Date not found in {self.file_name}")
             return None
 
-        return formatted
-
     def get_version(self) -> str:
-
         xpath_temp = '//xmlns:references/*[@eId="{}"]/@showAs'
         stage_xp = xpath_temp.format("varStageVersion")
         house_xp = xpath_temp.format("varHouse")
-
         try:
-            stage: str = self.root.xpath(stage_xp, namespaces=NSMAP)[0]  # type: ignore
-            house: str = self.root.xpath(house_xp, namespaces=NSMAP)[0]  # type: ignore
+            stage = self.root.xpath(stage_xp, namespaces=NSMAP)[0] # type: ignore 
+            house = self.root.xpath(house_xp, namespaces=NSMAP)[0] # type: ignore
+            return f"{house.replace('House of ', '')}, {stage}"
         except IndexError:
-            # if the above fails, we probably do not have a LM bill
+             # if the above fails, we probably do not have a LM bill
             raise
 
-        house = house.replace("House of ", "")
-
-        return f"{house}, {stage}"
-
     def get_bill_title(self) -> str:
-
         xpath = '//xmlns:TLCConcept[@eId="varBillTitle"]/@showAs'
         try:
-            title: str = self.root.xpath(xpath, namespaces=NSMAP)[0]  # type: ignore
-            assert isinstance(title, str)
+            title: str = self.root.xpath(xpath, namespaces=NSMAP)[0]
+            return clean(title)
         except Exception:
-            # logger.error(f"Bill title not found in {self.file.name}")
-            logger.error(f"Date not found in {self.file_name}")
+            logger.error(f"Bill title not found in {self.file_name}")
             sys.exit(1)
 
-        title = clean(title)
-
-        return title
-
     def get_sections(self):
-
         ref_col_name = clean(self.version, no_space=True)
-
         # ref_col_name will contain eId
         attrs = {"guid": [], ref_col_name: []}
 
@@ -128,8 +91,16 @@ class Bill:
             "and not(contains(@eId, 'subpara')) "  # remove subpara
             "and not(contains(@eId, 'qstr'))]"     # and qstr (duplicated)
         )
+        secs_n_paras = self.root.xpath(xpath, namespaces=NSMAP)
 
-        secs_n_paras: list[etree._Element] = self.root.xpath(xpath, namespaces=NSMAP)  # type: ignore
+        for element in secs_n_paras:
+            guid = element.get("GUID")
+            eid = element.get("eId")
+            if guid is None or eid is None:
+                logger.warning("Section with no GUID or EID")
+                continue
+            attrs["guid"].append(guid)
+            attrs[ref_col_name].append(re.sub(r"__oc_\d+", "", eid.split("__")[0]))
 
         if len(secs_n_paras) == 0:
             logger.warning("No sections or paragraphs found")
@@ -164,193 +135,156 @@ class Bill:
         return attrs
 
 class CompareBillNumbering:
-    def __init__(self, xml_files: Iterable[tuple[_Element, str]]):
-
-        # Sort all bills into a dictionary with the bill title as the key.
-        # The value is a list of Bill objects. So different versions of the same
-        # bill are grouped together.
+    def __init__(self, xml_files: Iterable[tuple[etree._Element, str]]):
+        """Sorts all bills into a dictionary with the bill title as the key.
+        The value is a list of Bill objects. So different versions of the same
+        bill are grouped together."""
 
         self.bills_container = {}
+        print("CompareBillNumbering initialized")
 
         # parse each bill and store in dictionary
         for xml_file in xml_files:
-
-            logger.info(f"file_name: {xml_file[1]}")
-
             try:
                 bill = Bill(*xml_file)
+                self.bills_container.setdefault(bill.title, []).append(bill)
+                print(f"Bill added: {bill.title}")
             except IndexError as e:
-                logger.error(
-                    f"Error parsing {xml_file[1]}. File probably not a LM bill xml file."
-                )
-                logger.error(repr(e))
-                continue
-
-            if bill.title not in self.bills_container:
-                self.bills_container[bill.title] = [bill]
-            else:
-                self.bills_container[bill.title].append(bill)
-
-        self.bill_comparison_dict: dict[str, pd.DataFrame] = self._create_comparison_df()
+                logger.error(f"Error parsing {xml_file[1]}: {repr(e)}")
 
     @classmethod
     def from_folder(cls, in_folder: Path | None):
-        if in_folder is None:
-            in_folder = Path(".")
-        else:
-            in_folder = in_folder
+        print(f"from_folder called with in_folder: {in_folder}")
+        in_folder = Path(in_folder or ".")
+        xml_files = []
 
-        logger.info(f"Folder path: {in_folder.resolve()}")
-
-        # get all the XML files in the input folder
-        xml_files = in_folder.glob("*.xml")
-
-        xml_files2 = [(etree.parse(str(file)).getroot(), file.name) for file in xml_files]
-
-        return CompareBillNumbering(xml_files2)
-
-
-    def _create_comparison_df(self) -> dict[str, pd.DataFrame]:
-
-        bill_comparison_dict: dict[str, pd.DataFrame] = {}
-
-        df = pd.DataFrame()  # empty dataframe
-
+        for xml_file_path in in_folder.glob("*.xml"):
+            try:
+                tree = etree.parse(str(xml_file_path))
+                root = tree.getroot()
+                xml_files.append((root, str(xml_file_path)))
+                print(f"XML file parsed: {xml_file_path}")
+            except etree.XMLSyntaxError as e:
+                logger.error(f"Error parsing {xml_file_path}: {repr(e)}")
+        print(f"Total XML files parsed: {len(xml_files)}")
+        return cls(xml_files)
+    
+    def compare_bill(self):
+        """
+        Compare the numbering of bills and return the result.
+        """
+        print("compare_bill called")
+        bill_comparison_dict = self._create_comparison_data()
+        return bill_comparison_dict
+    
+    def _create_comparison_data(self) -> dict[str, dict[str, list]]:
+        """
+        Create a comparison dictionary similar to the pandas DataFrame output.
+        Returns:
+            A dictionary where:
+                - keys are bill titles
+                - values are dictionaries with "headers" (list of column headers)
+                  and "rows" (list of row data)
+        """
+        bill_comparison_dict = {}
+        print("Creating comparison data")
         for title, bills in self.bills_container.items():
-
-            # if there is less than 2 bills, we can't compare them
+            # If there are fewer than 2 bills, skip comparison
             if len(bills) < 2:
                 logger.warning(f"Only one '{title}' bill found. Cannot compare.")
                 continue
 
-            if not all(bill.published_dt for bill in bills):
-                logger.warning("Published date not found for all bills. Bills may note be ordered correctly.")
-            else:
-                bills.sort(key=lambda x: x.published_dt)  # sort by published date
+            # Sort bills by published date if available
+            if all(bill.published_dt for bill in bills):
+                bills.sort(key=lambda x: x.published_dt)
 
-            data_frames: list[pd.DataFrame] = []
+            # Initialize comparison structure
+            headers = ["eid"] + [clean(bill.version, no_space=True) for bill in bills]
+            rows = {}
 
+            # Populate rows with eIds and corresponding data for each version
             for bill in bills:
+                sections = bill.get_sections()
+                eid_list = sections[clean(bill.version, no_space=True)]
+                guid_list = sections["guid"]
 
-                # get the sections, store in a dataframe
-                df = pd.DataFrame(bill.get_sections())
+                for guid, eid in zip(guid_list, eid_list):
+                    if eid not in rows:
+                        rows[eid] = ["-"] * (len(headers) - 1)  # Initialize row with placeholders
+                    version_index = headers.index(clean(bill.version, no_space=True)) - 1
+                    rows[eid][version_index] = guid  # Store GUID for this eId
 
-                # add col for later sorting
-                df['order'] = df.apply(get_sort_number, axis=1)
+            # Sort rows by eId
+            sorted_rows = sorted(rows.items(), key=lambda x: self._get_sort_number(x[0]))
 
-                data_frames.append(df)
-
-            # outer join all dataframes
-            df = data_frames[0]
-            for i, x in enumerate(data_frames[1:]):
-                # suffixes are added to column names to avoid collision when joining
-                df = df.merge(x, how="outer", on='guid', suffixes=(f"_{i}l", f"_{i}r"))
-
-
-            # Need to sort rows as (sadly) an outer join doesn't keep the order.
-
-            # get the ordering columns (suffixes are added during join)
-            order_cols = [col for col in df.columns if col.startswith("order")]
-
-            # add master order column with mean order (NaN not included in mean)
-            df['order_master'] = df[order_cols].mean(axis=1)
-            order_cols.append('order_master')
-
-            df.sort_values(by='order_master', inplace=True)
-
-            # remove the order columns
-            df.drop(columns=order_cols, inplace=True)
-
-            bill_comparison_dict[title] = df
-
+            # Store data for this bill
+            bill_comparison_dict[title] = {
+                "headers": headers,
+                "rows": [[eid] + data for eid, data in sorted_rows]
+            }
+        print("Comparison data created")
         return bill_comparison_dict
 
-    def save_csv(self, out_folder: Path | None) -> list[Path]:
+    def _get_sort_number(self, eid: str) -> int:
+        """Create a number from the digits in the eId for sorting."""
+        digits = re.findall(r'\d+', eid)  # Extract digits from the eId
+        if not digits:
+            return 0  # If no digits are found, treat as zero for sorting
+        return int("".join(d.zfill(3) for d in digits))  # Combine digits for sorting
 
-        saved_csv_files: list[Path] = []
+    # Make the CSV
+    def save_csv(self, out_folder: Path | None):
+        out_folder = Path(out_folder or ".")
+        for title, bills in self.bills_container.items():
+            file_name = clean(title, file_name_safe=True) + ".csv"
+            csv_path = out_folder / file_name
+            with open(csv_path, mode="w", newline="", encoding="utf-8") as csvfile:
+                writer = csv.writer(csvfile)
 
-        for title, df in self.bill_comparison_dict.items():
+                # Prepare headers
+                headers = ["guid"] + [clean(bill.version, no_space=True) for bill in bills]
+                writer.writerow(headers)
 
-            csv_file_name = f"{clean(title, file_name_safe=True)}.csv"
+                # Prepare rows dictionary
+                rows = {}
+                for bill in bills:
+                    sections = bill.get_sections()
+                    guid_list = sections["guid"]
+                    eid_list = sections[clean(bill.version, no_space=True)]
 
-            if out_folder is not None:
-                csv_file_name = out_folder / csv_file_name
-            else:
-                csv_file_name = Path(csv_file_name)
+                    # Populate rows dictionary
+                    for guid, eid in zip(guid_list, eid_list):
+                        if guid not in rows:
+                            rows[guid] = ["-"] * (len(headers) - 1)  # Initialize empty row
+                        version_index = headers.index(clean(bill.version, no_space=True)) - 1
+                        rows[guid][version_index] = eid
 
-            df.to_csv(csv_file_name, index=False)
+                # Write rows
+                for guid, values in rows.items():
+                    writer.writerow([guid] + values)
 
-            saved_csv_files.append(csv_file_name)
+            print(f"Saved CSV: {csv_path}")
 
-            msg = f"Saved: {csv_file_name.resolve()}"
-            logger.info(msg)
-            print(msg)
-
-        print("Done")
-        return saved_csv_files
-
-    def to_html(self) -> list[str]:
-
-        html_list = []
-
-        for _, df in self.bill_comparison_dict.items():
-
-            html = df.to_html(
-                index=False,
-                na_rep='-',  # replace NaN with a dash
-                justify="left",
-                classes=("sticky-head", "table-responsive-md", "table")
-            )
-            # print(html)
-            html_list.append(html)
-
-        return html_list
-
-
-
-# ------------------------ Begin helper functions ------------------------ #
-
-def get_sort_number(row: Series) -> int:
-
-    """Create a number from the digits in the eId for sorting."""
-
-    # assumption! eId is always in position 1
-    digits = re.findall(r'\d+', row.iloc[1])
-
-    # pad with zeros and concatenate
-    string = "".join(x.zfill(3) for x in digits)
-
-    try:
-        return int(string)
-    except ValueError:
-        return 0  # problem so put these at the top
-
-
-def clean(string: str, no_space=False, file_name_safe=False) -> str:
-
-    # some general cleaning
-    string = string.casefold()  # makes lowercase and removes accents
-    string = re.sub(r"\s+", " ", string)
-    string = string.replace(",", "")
-
-    # bill title cleaning
-    string = string.replace("[hl]", "").strip()
-    string = re.sub(r" bill$", "", string)
-
-    # I don't like spaces in file names 😛
-    if file_name_safe:
-        no_space = True
-
-    if no_space:
-        # replace spaces with underscores
-        string = string.replace(" ", "_")
-
-    if file_name_safe:
-        keep = ("_")
-        string = "".join(c for c in string if c.isalnum() or c in keep)
-
-    return string.strip()
-
+# CLI
+@click.command()
+@click.option(
+    '--input-folder',
+    type=click.Path(exists=True, file_okay=False, dir_okay=True),
+    help="Specify a different folder for finding bill XML. Defaults to current directory.",
+)
+@click.option(
+    "--output-folder",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
+    help="Specify a different folder for saving the output files. Defaults to current directory.",
+)
+def cli(input_folder, output_folder):
+    """
+    Takes in UK bill XML files and generates CSV and HTML comparison reports.
+    """
+    input_folder = Path(input_folder or ".")
+    output_folder = Path(output_folder or ".")
+    compare = CompareBillNumbering.from_folder(input_folder)
+    compare.save_csv(output_folder)
 
 if __name__ == "__main__":
     cli()
