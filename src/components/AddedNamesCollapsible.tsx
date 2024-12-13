@@ -21,7 +21,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("Creating working folder");
     const result = await window.pywebview.api.anr_create_working_folder(date);
     console.log("API call result:", result);
-    
+
     if (result.startsWith("Working folder created: ")) {
       setWorkingFolderPath(result.replace("Working folder created: ", ""));
     }
@@ -47,7 +47,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     try {
       let fileResult: string = await window.pywebview.api.open_dash_xml_file();
       console.log("API call result:", fileResult);
-  
+
       if (fileResult.startsWith("Selected file: ")) {
         fileResult = fileResult.replace("Selected file: ", "");
         fileResult = addWordBreaksToPath(fileResult);
@@ -60,7 +60,6 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
       console.error("Error selecting file:", error);
     }
   };
-  
 
   // Select marshalling XML directory
   const handleSelectMarshalDir = async () => {
@@ -89,7 +88,6 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("Creating report");
     const result = await window.pywebview.api.anr_run_xslts();
     console.log("API call result:", result);
-    alert(result);
     clearMarshalDirAfterReport();
   };
 
@@ -164,13 +162,13 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
             <strong>Selected file:</strong>{" "}
             <span dangerouslySetInnerHTML={{ __html: selectedSPXML }} />
           </p>
-          )}
+        )}
       </Card>
       <Card step="Step&nbsp;3 (Optional)" info="Add marshalling info">
         <p>
-          If you want the amendments in the report marshalling: save the Lawmaker 
-          XML file(s) for the paper(s) into a folder (ideally within the folder 
-          created above). Select that folder with the button below.
+          If you want the amendments in the report marshalling: save the
+          Lawmaker XML file(s) for the paper(s) into a folder (ideally within
+          the folder created above). Select that folder with the button below.
         </p>
         <Button
           id="AN_Select_Marshal_Dir"

@@ -39,7 +39,9 @@ XSLT_MARSHAL_PARAM_NAME = "marsh-path"
 
 XSL_1_NAME = "added_names_spo_rest.py"
 XSL_2_NAME = "post_processing_html.py"
-AN_HTML_TEMPLATE = "template.html"
+AN_HTML_TEMPLATE = "anr_template.html"
+COMPARE_REPORT_TEMPLATE_NAME = "compare_report_template.html"
+TEMPLATES_FOLDER = "templates"
 
 XML_FOLDER = "Amendment_Paper_XML"
 DASHBOARD_DATA_FOLDER = "Dashboard_Data"
@@ -50,8 +52,9 @@ if hasattr(sys, "executable") and hasattr(sys, "_MEIPASS"):
     PARENT_FOLDER = Path(sys.executable).parent
 else:
     # assume running as python script via usual interpreter
+    # TODO: do we still need this?
     PARENT_FOLDER = Path(__file__).parent.parent
-    if not PARENT_FOLDER.joinpath("XSLT").exists():
+    if not PARENT_FOLDER.joinpath("template").exists():
         PARENT_FOLDER = PARENT_FOLDER.parent
 
 XSL_FOLDER = PARENT_FOLDER / "src" / "lawchecker"
@@ -60,18 +63,18 @@ REPORTS_FOLDER = PARENT_FOLDER / "_Reports"
 
 XSL_1_PATH = XSL_FOLDER / XSL_1_NAME
 XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
-HTML_TEMPLATE = PARENT_FOLDER / "XSLT" / AN_HTML_TEMPLATE
+HTML_TEMPLATE = PARENT_FOLDER / TEMPLATES_FOLDER / AN_HTML_TEMPLATE
 
-COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath("compare_report_template.html")
+COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath(
+    TEMPLATES_FOLDER, COMPARE_REPORT_TEMPLATE_NAME
+)
 
 if not COMPARE_REPORT_TEMPLATE.exists():
-    COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.parent.parent.joinpath("compare_report_template.html")
+    COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.parent.parent.joinpath(
+        TEMPLATES_FOLDER, COMPARE_REPORT_TEMPLATE_NAME
+    )
 
 ANR_WORKING_FOLDER: Path | None = None
-
-
-
-
 
 
 # ------------------------- default xml stuff ------------------------ #

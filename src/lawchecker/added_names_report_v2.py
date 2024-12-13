@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
-import shutil
 import re
+import shutil
 import sys
 import webbrowser
 from datetime import datetime
@@ -10,8 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from lawchecker.lawchecker_logger import logger
-from lawchecker import added_names_spo_rest, post_processing_html
-from lawchecker import settings
+from lawchecker import added_names_spo_rest, post_processing_html, settings
 from lawchecker.settings import HTML_TEMPLATE
 
 
@@ -119,29 +118,6 @@ def extract_date(input_Path: Path) -> str:
     return formated_date
 
 
-def check_xsl_paths(*xsls: Path) -> bool:
-    for xsl_Path in xsls:
-        try:
-            # check xsl paths are valid
-            xsl_Path = xsl_Path.resolve(strict=True)
-
-        except FileNotFoundError as e:
-            err_txt = (
-                "The following required XSLT file is missing:"
-                f"\n\n{xsl_Path}"
-                "\n\nUsually you should have two XSL files in a folder called 'XSLT'"
-                " and that folder should be in the same folder as this program."
-            )
-            logger.error("Error:", err_txt)
-            # if USE_GUI:
-            #     # this can be caught in the GUI code and the
-            #     # Error message displayed in a GUI window
-            #     raise Exception(err_txt) from e
-            return False
-
-    return True
-
-
 def run_xslts(
     input_Path: Path,
     xsl_1_Path: Path,
@@ -150,10 +126,6 @@ def run_xslts(
     output_file_name: str = settings.DEFAULT_OUTPUT_NAME,
 ):
     logger.info(f"{input_Path=}   {xsl_1_Path=}   {xsl_2_Path=}   {parameter=}")
-
-    xsls_exist = check_xsl_paths(xsl_1_Path, xsl_2_Path)
-    if not xsls_exist:
-        return
 
     formated_date = extract_date(input_Path)
 
