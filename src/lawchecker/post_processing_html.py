@@ -399,11 +399,11 @@ def inject_html_template(template_path, output_path, summary_content, dynamic_co
 
     print(f"HTML file successfully generated: {output_path}")
 
+# Add ticks and crosses to the HTML file according to the marshalling XML
 def ticks_and_crosses(output_html_file_path, marshal_file_dir):
     """
     Annotates HTML file with indicators (✔/✘) based on matches in marshal XML.
     """
-
     # Load the existing HTML file
     try:
         parser = ET.HTMLParser()
@@ -413,13 +413,13 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
         print(f"[ERROR] Failed to load HTML file: {e}")
         return
 
-    # Collect all checking XML files
+    # Collect marshal XML files
     checking_files = []
     if os.path.isdir(marshal_file_dir):
         for file_name in os.listdir(marshal_file_dir):
             if file_name.endswith('.xml'):
                 try:
-                    checking_files.append(ET.parse(os.path.join(marshal_file_dir, file_name)))
+                    checking_files.append((file_name, ET.parse(os.path.join(marshal_file_dir, file_name))))
                 except Exception as e:
                     print(f"[WARNING] Failed to parse checking file '{file_name}': {e}")
 
@@ -438,7 +438,7 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
             amendment_number_element = amendment_div.find(".//div[@class='num-info']/h2[@class='amendment-number']")
             if amendment_number_element is None or not amendment_number_element.text:
                 continue
-            amendment_number = amendment_number_element.text.strip()
+            amendment_number = amendment_number_element.text.strip().replace("Amendment ", "")  # Remove "Amendment "
 
             for name_div in amendment_div.xpath(".//div[@class='names-to-add']/div[@class='name']"):
                 name_anchor = name_div.find(".//a")
@@ -448,27 +448,46 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
                 name_text = name_anchor.text.strip()
                 annotation = "✘"
 
-                for checking_file in checking_files:
+                print(f"[DEBUG] Checking name: {name_text} for amendment {amendment_number} in bill {bill_name}")
+
+                for file_name, checking_file in checking_files:
+                    print(f"[DEBUG] Processing checking file: {file_name}")
                     try:
                         root = checking_file.getroot()
-                        # Match the amendment by number
-                        amendment_body = root.find(
-                            f".//component/amendment/amendmentBody[@eId='amnd_{amendment_number}']",
-                            namespaces={"ukl": "https://www.legislation.gov.uk/namespaces/UK-AKN"}
+
+                        # Check if bill name matches
+                        bill_matches = root.xpath(
+                            f"/akomaNtoso/amendmentList/meta/references/TLCConcept[@showAs='{bill_name}']",
+                            namespaces={"akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0"}
                         )
-                        if amendment_body is None:
+                        if not bill_matches:
+                            print(f"[DEBUG] No match for bill: {bill_name} in file: {file_name}.")
+                            continue
+
+                        # Match the amendment by number using <num> element with @ukl:dnum
+                        amendment_numbers = [
+                            elem.text.strip() for elem in root.xpath(
+                                "/akomaNtoso/amendmentList/component/amendment/amendmentBody/akn:num[@ukl:dnum]",
+                                namespaces={"akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
+                                            "ukl": "https://www.legislation.gov.uk/namespaces/UK-AKN"}
+                            )
+                        ]
+                        if amendment_number not in amendment_numbers:
+                            print(f"[DEBUG] Amendment number {amendment_number} not found in file: {file_name}.")
                             continue
 
                         # Match the name in proposer/supporter blocks
-                        proposer_supporter_blocks = amendment_body.xpath(
-                            ".//amendmentHeading/block[@name='proposer' or @name='supporters']"
+                        proposer_supporter_blocks = root.xpath(
+                            f"/akomaNtoso/amendmentList/component/amendment[amendmentBody/akn:num[text()='{amendment_number}']]"
+                            "/amendmentHeading/block[@name='proposer' or @name='supporters']",
+                            namespaces={"akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0"}
                         )
                         for block in proposer_supporter_blocks:
                             if any(name_text == elem.text.strip() for elem in block.xpath(".//docIntroducer | .//docProponent")):
                                 annotation = "✔"
                                 break
                     except Exception as e:
-                        print(f"[ERROR] Error processing checking file: {e}")
+                        print(f"[ERROR] Error processing checking file: {file_name}, error: {e}")
 
                 # Add annotation span
                 annotation_span = ET.SubElement(
@@ -484,6 +503,7 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
             output_file.write(ET.tostring(html_tree, pretty_print=True, method='html', encoding='utf-8'))
     except Exception as e:
         print(f"[ERROR] Failed to save annotated HTML: {e}")
+
 
 def main(template_path, xml_file_path, marshal_file_dir, output_html_file_path):
     """Main function to execute the transformation."""
