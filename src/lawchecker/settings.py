@@ -37,8 +37,8 @@ DEFAULT_OUTPUT_NAME = "Added_Names_Report.html"
 
 XSLT_MARSHAL_PARAM_NAME = "marsh-path"
 
-XSL_1_NAME = "added_names_spo_rest.py"
-XSL_2_NAME = "post_processing_html.py"
+XSL_1_NAME = "anr_spo_rest.py"
+XSL_2_NAME = "anr_post_processing_html.py"
 AN_HTML_TEMPLATE = "anr_template.html"
 COMPARE_REPORT_TEMPLATE_NAME = "compare_report_template.html"
 TEMPLATES_FOLDER = "templates"

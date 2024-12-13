@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from lawchecker.lawchecker_logger import logger
-from lawchecker import added_names_spo_rest, post_processing_html, settings
+from lawchecker import anr_post_processing_html, anr_spo_rest, settings
 from lawchecker.settings import HTML_TEMPLATE
 
 
@@ -125,6 +125,10 @@ def run_xslts(
     parameter: Optional[Path] = None,
     output_file_name: str = settings.DEFAULT_OUTPUT_NAME,
 ):
+
+    # TODO: think about removing xsl_1_Path and xsl_2_Path from the signature
+    # only used to print out the paths to the python files
+
     logger.info(f"{input_Path=}   {xsl_1_Path=}   {xsl_2_Path=}   {parameter=}")
 
     formated_date = extract_date(input_Path)
@@ -154,11 +158,11 @@ def run_xslts(
 
     # --- 1st Transformation - Intermediate XML ---
     logger.info(f"Running first transformation: {xsl_1_Path}")
-    added_names_spo_rest.main(str(input_Path), str(intermediate_Path))
+    anr_spo_rest.main(str(input_Path), str(intermediate_Path))
 
     # --- 2nd Transformation - HTML report ---
     logger.info(f"Running second transformation: {xsl_2_Path}")
-    post_processing_html.main(
+    anr_post_processing_html.main(
         str(HTML_TEMPLATE), str(intermediate_Path), str(parameter), str(out_html_Path)
     )
 

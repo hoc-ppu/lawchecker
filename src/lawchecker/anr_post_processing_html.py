@@ -1,19 +1,20 @@
-import os
 import glob
-import requests
-import traceback
+import os
 import re
 import sys
+import traceback
+
+import requests
 from lxml import etree as ET
 
 
 def get_marshal_xml(folder_path):
     """Load additional XML files for checking amendments."""
     marshal_files = []
-    
+
     # Get all XML files in the folder
     xml_files = glob.glob(os.path.join(folder_path, "*.xml"))
-    
+
     if not xml_files:
         print(f"[WARNING] No XML files found in the folder: {folder_path}")
         return marshal_files
@@ -54,7 +55,7 @@ def check_amendment_in_files(amendment_num, bill_title, marshal_files):
         namespaces = {k if k else "default": v for k, v in file_tree.getroot().nsmap.items()}
         tlc_query = f"//*[local-name()='TLCConcept' and @eId='varBillTitle'][@showAs='{bill_title}']"
         amendments_query = f"//*[local-name()='num' and @ukl:dnum='{amendment_num}']"
-        
+
         tlc_elements = file_tree.xpath(tlc_query, namespaces=namespaces)
         if tlc_elements:
             amendment_elements = file_tree.xpath(amendments_query, namespaces=namespaces)
@@ -215,7 +216,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
             html, "div", {"class": "bill", "id": bill.lower().replace(" ", "-")}
         )
         ET.SubElement(bill_div, "h1", {"class": "bill-title"}).text = bill
-       
+
         # Initialize amendment_groups as a dictionary
         amendment_groups = {}
         for item in root.findall(".//item"):
@@ -309,7 +310,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                             ).text = name_text
 
                 # Render names to remove
-                
+
                 if any(item.find(".//names-to-remove/matched-names") is not None for item in group["items"]):
                     names_to_remove_div = ET.SubElement(amendment_div, "div", {"class": "names-to-remove"})
                     ET.SubElement(names_to_remove_div, "h4").text = "Names to remove"
@@ -345,7 +346,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                             dashboard_link_p = ET.SubElement(
                                 comments_div, "p", {"style": "font-size:smaller;color:#4d4d4d;"}
                             )
-                            
+
                             dashboard_link_a = ET.SubElement(
                                 dashboard_link_p,
                                 "a",
@@ -527,7 +528,7 @@ def main(template_path, xml_file_path, marshal_file_dir, output_html_file_path):
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print("Usage: python post_processing_html.py <template_path> <xml_file_path> <marshal_file_dir> <output_html_file_path>")
+        print("Usage: python anr_post_processing_html.py <template_path> <xml_file_path> <marshal_file_dir> <output_html_file_path>")
         sys.exit(1)
 
     template_path = sys.argv[1]
