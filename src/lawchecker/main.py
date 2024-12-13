@@ -280,21 +280,27 @@ class Api:
             logger.error(f"New XML file is not valid XML: {new_xml_path}")
             return
 
-
         out_html_Path = old_xml_path.parent.joinpath("Compare_Bills.html")
 
-        report = BillReport(
-            old_xml_path,
-            new_xml_path,
-        )
-        report.html_tree.write(
-            str(out_html_Path),
-            method="html",
-            encoding="utf-8",
-            doctype="<!DOCTYPE html>"
-        )
+        with ProgressModal() as modal:
 
-        webbrowser.open(out_html_Path.resolve().as_uri())
+            modal.update(f"Old XML path: {old_xml_path}")
+            modal.update(f"New XML path: {new_xml_path}")
+
+            report = BillReport(
+                old_xml_path,
+                new_xml_path,
+            )
+            report.html_tree.write(
+                str(out_html_Path),
+                method="html",
+                encoding="utf-8",
+                doctype="<!DOCTYPE html>"
+            )
+            modal.update(f"HTML report created: {out_html_Path}")
+            modal.update("Attempting to open in browser...")
+
+            webbrowser.open(out_html_Path.resolve().as_uri())
 
     def bill_compare_in_vs_code(self):
 

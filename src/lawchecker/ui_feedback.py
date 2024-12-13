@@ -1,12 +1,18 @@
 import logging
 
+import webview
 from webview import Window
 
 
 class ProgressModal:
 
-    def __init__(self, window: Window) -> None:
-        self.window = window
+    def __init__(self, window: Window | None = None) -> None:
+        if window is not None:
+            self.window = window
+        elif webview.active_window() is not None:
+            self.window = webview.active_window()
+        else:
+            raise ValueError("No active window found")
 
     def __enter__(self):
 

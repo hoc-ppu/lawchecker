@@ -4,10 +4,9 @@ version = "2.0.0"
 license = { file = "LICENCE" }
 dependencies = [
     "lxml",
-    "pyside6-essentials",
-    "saxonche",
+    "requests",
+    "pywebview",
     "click",
-    "pandas",
     "python-dateutil",
     "python-dotenv",
 ]
@@ -24,10 +23,9 @@ build-backend = "setuptools.build_meta"
 [project.scripts]
 an_report = "lawchecker.added_names_report:main"
 compare_report = "lawchecker.compare_amendment_documents:main"
-startgui = "lawchecker.gui:main"
+startgui = "lawchecker.gui:main"  # update this
 compare_bills = "lawchecker.compare_bill_documents:main"
 bill_numbering = "lawchecker.compare_bill_numbering:cli"
 
 [tool.isort]
 profile = "black"
-force_to_top = ["lawchecker.lawchecker_logger"]  # no longer needed
