@@ -8,6 +8,7 @@ Create logger and handlers that all classes and functions can tap into.
 """
 
 logger = logging.getLogger("LawChecker")
+logger.setLevel(logging.DEBUG)  # Set the logger's level to DEBUG
 
 log_file_path = Path("logs", os.getlogin(), "LawChecker.log").resolve()
 log_file_path.parent.mkdir(parents=True, exist_ok=True)
