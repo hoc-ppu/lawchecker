@@ -22,7 +22,7 @@ export default defineConfig({
   // Set the root directory to 'reactUi' insted of default 'src'
   // root: 'reactUi',
   // consider changing the build dir
-  // build: {
-  //   outDir: '../dist', // Adjust the output directory if needed
-  // },
+  build: {
+    outDir: "../ui_bundle", // Adjust the output directory if needed
+  },
 });

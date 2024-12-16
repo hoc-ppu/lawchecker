@@ -460,7 +460,7 @@ def get_entrypoint():
                 return url
         except requests.exceptions.RequestException:
             print('Vite server not running. Trying static files')
-        return Path('dist/index.html').resolve().as_uri()   # TODO: fix this
+        return Path('ui_bundle/index.html').resolve().as_uri()   # TODO: fix this
 
     # if exists('../Resources/gui/index.html'):  # frozen py2app
     #     return '../Resources/gui/index.html'
@@ -478,7 +478,7 @@ def main():
     logger.info(f"entry={Path(entry).resolve().as_uri()}")
     print(logger.handlers)
 
-    # html_ui_path = "../../dist/index.html"  # path if not frozen
+    # html_ui_path = "../../ui_bundle/index.html"  # path if not frozen
     # if APP_FROZEN:
     #     # The application is frozen
     #     logger.info("App is frozen")
