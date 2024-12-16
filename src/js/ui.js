@@ -17,8 +17,9 @@ function progress_modal_ok_button_handler(event) {
 
     // Clear the modal's contents
     progress_modal_clear();
-
 }
+window.progress_modal_ok_button_handler = progress_modal_ok_button_handler;
+
 
 progress_modal_ok_button_element.addEventListener('click', progress_modal_ok_button_handler);
 
@@ -27,22 +28,20 @@ function enable_progress_modal_ok_button_element() {
     progress_modal_spinner_element.style.display = 'none';
 
     progress_modal_ok_button_element.disabled = false;
-
 }
+window.enable_progress_modal_ok_button_element = enable_progress_modal_ok_button_element;
+
 
 function disable_progress_modal_ok_button_element() {
-
     progress_modal_spinner_element.style.display = 'inline-block';
-
     progress_modal_ok_button_element.disabled = true;
-
 }
+window.disable_progress_modal_ok_button_element = disable_progress_modal_ok_button_element;
 
 function progress_modal_show() {
-
     progress_modal.show();
-
 }
+window.progress_modal_show = progress_modal_show;
 
 function progress_modal_hide() {
 
@@ -50,8 +49,8 @@ function progress_modal_hide() {
 
     // Clear the modal's contents
     progress_modal_clear();
-
 }
+window.progress_modal_hide = progress_modal_hide;
 
 /**
  * progress_modal_clear
@@ -62,8 +61,8 @@ function progress_modal_clear() {
 
     // Clear any existing content in `progress_modal_text_element`
     Array.from(document.querySelector('#progress_modal_text').childNodes).forEach(node => node.remove());
-
 }
+window.progress_modal_clear = progress_modal_clear;
 
 /**
  * progress_modal_update
@@ -106,7 +105,8 @@ function progress_modal_update(text) {
         progress_modal_text_element.innerHTML += text;
 
     }
-
 }
+window.progress_modal_update = progress_modal_update;
+
 
 //#endregion

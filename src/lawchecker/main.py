@@ -13,14 +13,14 @@ from typing import cast
 
 import requests
 import webview
-from webview import Window
+from webview import Window  # TODO: fix this
 
-from lawchecker.lawchecker_logger import logger
 from lawchecker import added_names_report, pp_xml_lxml, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
 from lawchecker.compare_bill_numbering import CompareBillNumbering
+from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import ANR_WORKING_FOLDER
 from lawchecker.ui_feedback import ProgressModal, UILogHandler
 
@@ -460,7 +460,7 @@ def get_entrypoint():
                 return url
         except requests.exceptions.RequestException:
             print('Vite server not running. Trying static files')
-        return '../gui/index.html'   # TODO: fix this
+        return Path('dist/index.html').resolve().as_uri()   # TODO: fix this
 
     # if exists('../Resources/gui/index.html'):  # frozen py2app
     #     return '../Resources/gui/index.html'
@@ -474,6 +474,9 @@ def get_entrypoint():
 
 def main():
     entry = get_entrypoint()
+
+    logger.info(f"entry={Path(entry).resolve().as_uri()}")
+    print(logger.handlers)
 
     # html_ui_path = "../../dist/index.html"  # path if not frozen
     # if APP_FROZEN:
@@ -489,7 +492,7 @@ def main():
 
     api = Api()
 
-    window = webview.create_window(
+    window: Window = webview.create_window(
         # url="file:///Users/mark/projects/pup-app/ui/pup_app_ui.html",  # no server
         # TODO: more robust solution to find the path to the html file
         url=entry,
@@ -505,6 +508,8 @@ def main():
         # vibrancy=True,
         # frameless=False
     )
+
+    window = cast(Window, window)
 
     # window.events.loaded += on_loaded
 

@@ -23,7 +23,7 @@ build-backend = "setuptools.build_meta"
 [project.scripts]
 an_report = "lawchecker.added_names_report:main"
 compare_report = "lawchecker.compare_amendment_documents:main"
-startgui = "lawchecker.gui:main"  # update this
+startgui = "lawchecker.main:main"
 compare_bills = "lawchecker.compare_bill_documents:main"
 bill_numbering = "lawchecker.compare_bill_numbering:cli"
 
