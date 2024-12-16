@@ -113,7 +113,11 @@ class Card:
 
 
 class Table:
-    def __init__(self, table_headings: Iterable[str]):
+    def __init__(
+        self,
+        table_headings: Iterable[str],
+        table_rows: Iterable[Iterable[str | _Element]] = []
+    ):
 
         self.html = deepcopy(_table)
 
@@ -124,6 +128,10 @@ class Table:
             self.table_head.append(html.fromstring(
                 '<tr><th scope="col">' + '</th><th scope="col">'.join(table_headings) + '</th></tr>'
             ))
+
+        if table_rows:
+            for row in table_rows:
+                self.add_row(row)
 
     def add_row(self, row: Iterable[str | _Element]):
 
@@ -196,6 +204,7 @@ class NameChangeContextSection:
 
     def clear(self):
         self.html = html.Element("div")
+
 
 class SmallCollapsableSection:
     def __init__(self, heading: str | _Element = ""):

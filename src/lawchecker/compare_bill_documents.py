@@ -14,10 +14,10 @@ from typing import NamedTuple
 from lxml import etree, html
 from lxml.etree import _Element
 
-from lawchecker.lawchecker_logger import logger
 from lawchecker import templates
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_bill_numbering import CompareBillNumbering
+from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, PARSER
 from lawchecker.utils import diff_xml_content
 
@@ -27,6 +27,7 @@ class ChangedSect(NamedTuple):
     old_num: str
     new_num: str
     html_diff: str
+
 
 class Section:
     # section includes clauses (aka sections) and schedules
@@ -295,7 +296,9 @@ class Report:
         # ----------- Removed and added amendments section ----------- #
 
         # create spans with section number add guid as tooltip.
-        span_template = '<span class="col-12 col-sm-6 col-md-4 col-lg-3" data-toggle="tooltip" title="{guid}">{num}</span> '
+        span_template = (
+            '<span class="col-12 col-sm-6 col-md-4 col-lg-3" data-toggle="tooltip" title="{guid}">{num}</span> '
+        )
         removed_spans = [
             span_template.format(guid=x.guid, num=x.num) for x in self.removed_sects
         ]
@@ -364,21 +367,31 @@ class Report:
         )
 
         # we only expect one table but the to_html method returns a list of tables...
-        bill_numbering_html_tables = '\n'.join(_bill_renumbering.to_html())
+        # bill_numbering_html_tables = '\n'.join(_bill_renumbering.to_html())
 
-        bill_numbering_html_tables = re.sub(r"sec_(\d+)", r"C \1", bill_numbering_html_tables)
-        bill_numbering_html_tables = re.sub(r"sched_", "S ", bill_numbering_html_tables)
-        bill_numbering_html_tables = re.sub(r"__para_?", " p ", bill_numbering_html_tables)
-        bill_numbering_html_tables = re.sub(r"([a-z])_([a-z])", r"\1 \2", bill_numbering_html_tables)
+        elements = _bill_renumbering.to_html_tables()
+
+        find_and_replaces = (
+            (r"sec_(\d+)", r"C \1"),
+            (r"sched_", "S "),
+            (r"__para_?", " p "),
+            (r"([a-z])_([a-z])", r"\1 \2"),
+        )
+
+        for element in elements:
+            for find, replace in find_and_replaces:
+                recursive_replace(element, find, replace)
 
         card = templates.Card("Clauses or schedule paragraphs numbering changes")
         info = ("<p>Each clause and schedule paragraph has a GUID (or global unique identifier)"
                 " which should stay the same even as a bill is renumbered. The table below "
                 "shows any changes in the numbering (of each clause or schedule paragraph) "
                 "between the two bills.</p>")
+
         card.secondary_info.extend(
             # html.fromstring('<div>' + '\n'.join(_bill_renumbering.to_html()) + '</div>')
-            html.fragments_fromstring(info + bill_numbering_html_tables)
+            # html.fragments_fromstring(info + bill_numbering_html_tables)
+            elements
         )
 
         return card.html
@@ -490,6 +503,7 @@ def main():
 
         diff_in_vscode(report.old_doc.root, report.new_doc.root)
 
+
 def diff_in_vscode(old_doc: _Element, new_doc: _Element):
 
     cleaned_bill_1 = clean_bill_xml(old_doc)
@@ -597,6 +611,17 @@ def clean_text(body_text: str) -> str:
     t = re.sub(r'  +', ' ', t)
 
     return t
+
+
+def recursive_replace(
+    element: _Element, pattern: str, replacement: str
+):
+    if element.text:
+        element.text = re.sub(pattern, replacement, element.text)
+    if element.tail:
+        element.tail = re.sub(pattern, replacement, element.tail)
+    for child in element:
+        recursive_replace(child, pattern, replacement)
 
 
 if __name__ == '__main__':

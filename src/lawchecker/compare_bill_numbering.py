@@ -1,15 +1,17 @@
+import csv
 import re
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
-import csv
+
+import click
+from dateutil import parser as date_parser
 from lxml import etree
 from lxml.etree import _Element
-from dateutil import parser as date_parser
-import click
 
-from lawchecker.lawchecker_logger import logger  # must be imported before any other
-
+from lawchecker.lawchecker_logger import logger
+from lawchecker.templates import Table
 
 NSMAP = {
     "xmlns": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
@@ -17,11 +19,12 @@ NSMAP = {
     "ukl": "https://www.legislation.gov.uk/namespaces/UK-AKN"
 }
 
+
 def clean(string: str, no_space=False, file_name_safe=False) -> str:
     """
     Clean up a string for use in filenames or as a column header.
     """
-    # Some general cleaning 
+    # Some general cleaning
     string = string.casefold()
     string = re.sub(r"\s+", " ", string)
     string = string.replace(",", "")
@@ -36,6 +39,13 @@ def clean(string: str, no_space=False, file_name_safe=False) -> str:
         string = "".join(c for c in string if c.isalnum() or c == "_")
 
     return string.strip()
+
+
+@dataclass
+class ComparisonTableContainer:
+    bill_title: str
+    headers: list[str]
+    rows: list[list[str]]
 
 
 class Bill:
@@ -61,11 +71,11 @@ class Bill:
         stage_xp = xpath_temp.format("varStageVersion")
         house_xp = xpath_temp.format("varHouse")
         try:
-            stage = self.root.xpath(stage_xp, namespaces=NSMAP)[0] # type: ignore 
-            house = self.root.xpath(house_xp, namespaces=NSMAP)[0] # type: ignore
+            stage = self.root.xpath(stage_xp, namespaces=NSMAP)[0]  # type: ignore
+            house = self.root.xpath(house_xp, namespaces=NSMAP)[0]  # type: ignore
             return f"{house.replace('House of ', '')}, {stage}"
         except IndexError:
-             # if the above fails, we probably do not have a LM bill
+            # if the above fails, we probably do not have a LM bill
             raise
 
     def get_bill_title(self) -> str:
@@ -91,7 +101,7 @@ class Bill:
             "and not(contains(@eId, 'subpara')) "  # remove subpara
             "and not(contains(@eId, 'qstr'))]"     # and qstr (duplicated)
         )
-        secs_n_paras = self.root.xpath(xpath, namespaces=NSMAP)
+        secs_n_paras: list[etree._Element] = self.root.xpath(xpath, namespaces=NSMAP)  # type: ignore
 
         for element in secs_n_paras:
             guid = element.get("GUID")
@@ -134,6 +144,7 @@ class Bill:
 
         return attrs
 
+
 class CompareBillNumbering:
     def __init__(self, xml_files: Iterable[tuple[etree._Element, str]]):
         """Sorts all bills into a dictionary with the bill title as the key.
@@ -168,7 +179,7 @@ class CompareBillNumbering:
                 logger.error(f"Error parsing {xml_file_path}: {repr(e)}")
         print(f"Total XML files parsed: {len(xml_files)}")
         return cls(xml_files)
-    
+
     def compare_bill(self):
         """
         Compare the numbering of bills and return the result.
@@ -176,7 +187,7 @@ class CompareBillNumbering:
         print("compare_bill called")
         bill_comparison_dict = self._create_comparison_data()
         return bill_comparison_dict
-    
+
     def _create_comparison_data(self) -> dict[str, dict[str, list]]:
         """
         Create a comparison dictionary similar to the pandas DataFrame output.
@@ -232,38 +243,107 @@ class CompareBillNumbering:
             return 0  # If no digits are found, treat as zero for sorting
         return int("".join(d.zfill(3) for d in digits))  # Combine digits for sorting
 
+    def _create_comparison_table_containers(self) -> list[ComparisonTableContainer]:
+
+        comparison_tables = []
+
+        for title, bills in self.bills_container.items():
+
+            # Initialize comparison structure
+            headers = ["guid"] + [clean(bill.version, no_space=True) for bill in bills]
+
+            # Populate rows with eIds and corresponding data for each version
+            rows = {}
+            for bill in bills:
+                sections = bill.get_sections()
+                eid_list = sections[clean(bill.version, no_space=True)]
+                guid_list = sections["guid"]
+
+                for guid, eid in zip(guid_list, eid_list):
+                    if guid not in rows:
+                        rows[guid] = ["-"] * (len(headers) - 1)  # Initialize empty row
+
+                    version_index = headers.index(clean(bill.version, no_space=True)) - 1
+                    rows[guid][version_index] = eid
+
+            comparison_tables.append(
+                ComparisonTableContainer(
+                    title, headers, [[guid] + values for guid, values in rows.items()]
+                )
+            )
+
+        return comparison_tables
+
     # Make the CSV
     def save_csv(self, out_folder: Path | None):
         out_folder = Path(out_folder or ".")
-        for title, bills in self.bills_container.items():
+
+        comparison_table_containers = self._create_comparison_table_containers()
+
+        for comparison_table_container in comparison_table_containers:
+            title = comparison_table_container.bill_title
+            headers = comparison_table_container.headers
+
             file_name = clean(title, file_name_safe=True) + ".csv"
             csv_path = out_folder / file_name
+
             with open(csv_path, mode="w", newline="", encoding="utf-8") as csvfile:
                 writer = csv.writer(csvfile)
 
                 # Prepare headers
-                headers = ["guid"] + [clean(bill.version, no_space=True) for bill in bills]
                 writer.writerow(headers)
 
-                # Prepare rows dictionary
-                rows = {}
-                for bill in bills:
-                    sections = bill.get_sections()
-                    guid_list = sections["guid"]
-                    eid_list = sections[clean(bill.version, no_space=True)]
+                # Prepare rows
+                for row in comparison_table_container.rows:
+                    writer.writerow(row)
 
-                    # Populate rows dictionary
-                    for guid, eid in zip(guid_list, eid_list):
-                        if guid not in rows:
-                            rows[guid] = ["-"] * (len(headers) - 1)  # Initialize empty row
-                        version_index = headers.index(clean(bill.version, no_space=True)) - 1
-                        rows[guid][version_index] = eid
+        print(f"Saved CSV: {csv_path}")
 
-                # Write rows
-                for guid, values in rows.items():
-                    writer.writerow([guid] + values)
+        # for title, bills in self.bills_container.items():
+        #     file_name = clean(title, file_name_safe=True) + ".csv"
+        #     csv_path = out_folder / file_name
+        #     with open(csv_path, mode="w", newline="", encoding="utf-8") as csvfile:
+        #         writer = csv.writer(csvfile)
 
-            print(f"Saved CSV: {csv_path}")
+        #         # Prepare headers
+        #         headers = ["guid"] + [clean(bill.version, no_space=True) for bill in bills]
+        #         writer.writerow(headers)
+
+        #         # Prepare rows dictionary
+        #         rows = {}
+        #         for bill in bills:
+        #             sections = bill.get_sections()
+        #             guid_list = sections["guid"]
+        #             eid_list = sections[clean(bill.version, no_space=True)]
+
+        #             # Populate rows dictionary
+        #             for guid, eid in zip(guid_list, eid_list):
+        #                 if guid not in rows:
+        #                     rows[guid] = ["-"] * (len(headers) - 1)  # Initialize empty row
+        #                 version_index = headers.index(clean(bill.version, no_space=True)) - 1
+        #                 rows[guid][version_index] = eid
+
+        #         # Write rows
+        #         for guid, values in rows.items():
+        #             writer.writerow([guid] + values)
+
+        #     print(f"Saved CSV: {csv_path}")
+
+
+    def to_html_tables(self) -> list[etree._Element]:
+
+        comparison_table_containers = self._create_comparison_table_containers()
+
+        html_list = []
+
+        for table in comparison_table_containers:
+            table_html = Table(table.headers, table.rows).html
+
+            # consider changing the below to return an etree.Element insted
+            html_list.append(table_html)
+
+        return html_list
+
 
 # CLI
 @click.command()
@@ -285,6 +365,7 @@ def cli(input_folder, output_folder):
     output_folder = Path(output_folder or ".")
     compare = CompareBillNumbering.from_folder(input_folder)
     compare.save_csv(output_folder)
+
 
 if __name__ == "__main__":
     cli()
