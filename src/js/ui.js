@@ -1,4 +1,3 @@
-// import "../js/bootstrap.bundle.min.js";
 import {Modal} from 'bootstrap'
 
 //#region Progress modal

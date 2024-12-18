@@ -3,6 +3,7 @@ import logging
 import os
 import platform
 import subprocess
+import time
 import sys
 import tomllib
 import traceback
@@ -31,7 +32,12 @@ window: Window | None = None
 
 # add modal to the logger
 
-def set_version_info(window):
+def set_version_info(window_local: Window | None = None):
+
+    logger.info(f"{window_local=}")
+    if not window_local:
+        window_local = window
+
 
     pyproject_path = Path("pyproject.toml")
     if APP_FROZEN:
@@ -44,8 +50,8 @@ def set_version_info(window):
     version_str = toml_data.get('project', {}).get("version", "No version info")
     logger.info(f"{version_str=}")
 
-    # window.evaluate_js(f"updateVersionInfo('{version_str}')")
-    window.evaluate_js(f"window.pywebview.state.setVersionInfo(\"{version_str}\")")
+    # window_local.evaluate_js(f"updateVersionInfo('{version_str}')")
+    window_local.evaluate_js(f"window.pywebview.state.setVersionInfo(\"{version_str}\")")
 
 class Api:
     def __init__(self):
@@ -465,8 +471,17 @@ def get_entrypoint():
     # if exists('../Resources/gui/index.html'):  # frozen py2app
     #     return '../Resources/gui/index.html'
 
-    # if exists('../gui/gui/index.html'):
-    #     return '../gui/gui/index.html'
+    if hasattr(sys, '_MEIPASS'):
+        # path to pyinstaller frozen app
+        frozen_windows_path = Path(sys._MEIPASS, 'ui/index.html')
+        print(frozen_windows_path)
+        print(frozen_windows_path.exists())
+        if frozen_windows_path.exists():  # frozen pyinstaller
+            uri = frozen_windows_path.as_uri()
+            logger.info(f"{uri=}")
+            return uri
+    
+    time.sleep(20)
 
     raise Exception('No index.html found')
 
@@ -475,8 +490,7 @@ def get_entrypoint():
 def main():
     entry = get_entrypoint()
 
-    logger.info(f"entry={Path(entry).resolve().as_uri()}")
-    print(logger.handlers)
+    logger.info(f"{entry=}")
 
     # html_ui_path = "../../ui_bundle/index.html"  # path if not frozen
     # if APP_FROZEN:
@@ -492,7 +506,8 @@ def main():
 
     api = Api()
 
-    window: Window = webview.create_window(
+    global window
+    window = webview.create_window(
         # url="file:///Users/mark/projects/pup-app/ui/pup_app_ui.html",  # no server
         # TODO: more robust solution to find the path to the html file
         url=entry,
@@ -504,16 +519,14 @@ def main():
         text_select=True,
         zoomable=True,
         # server=False,
-        # transparent=True,
-        # vibrancy=True,
-        # frameless=False
+
     )
 
     window = cast(Window, window)
 
     # window.events.loaded += on_loaded
 
-    debug = sys.platform != "win32"  # dont want to be in debug mode on windows
+    debug = not APP_FROZEN  # dont want to be in build app
     # debug = True
 
     # add ui logger
