@@ -152,7 +152,7 @@ class CompareBillNumbering:
         bill are grouped together."""
 
         self.bills_container = {}
-        print("CompareBillNumbering initialized")
+        logger.info("CompareBillNumbering initialized")
 
         # parse each bill and store in dictionary
         for xml_file in xml_files:
@@ -165,7 +165,7 @@ class CompareBillNumbering:
 
     @classmethod
     def from_folder(cls, in_folder: Path | None):
-        print(f"from_folder called with in_folder: {in_folder}")
+        logger.info(f"from_folder called with in_folder: {in_folder}")
         in_folder = Path(in_folder or ".")
         xml_files = []
 
@@ -174,17 +174,17 @@ class CompareBillNumbering:
                 tree = etree.parse(str(xml_file_path))
                 root = tree.getroot()
                 xml_files.append((root, str(xml_file_path)))
-                print(f"XML file parsed: {xml_file_path}")
+                logger.info(f"XML file parsed: {xml_file_path}")
             except etree.XMLSyntaxError as e:
                 logger.error(f"Error parsing {xml_file_path}: {repr(e)}")
-        print(f"Total XML files parsed: {len(xml_files)}")
+        logger.info(f"Total XML files parsed: {len(xml_files)}")
         return cls(xml_files)
 
     def compare_bill(self):
         """
         Compare the numbering of bills and return the result.
         """
-        print("compare_bill called")
+        logger.info("compare_bill called")
         bill_comparison_dict = self._create_comparison_data()
         return bill_comparison_dict
 
@@ -198,7 +198,7 @@ class CompareBillNumbering:
                   and "rows" (list of row data)
         """
         bill_comparison_dict = {}
-        print("Creating comparison data")
+        logger.info("Creating comparison data")
         for title, bills in self.bills_container.items():
             # If there are fewer than 2 bills, skip comparison
             if len(bills) < 2:
@@ -233,7 +233,7 @@ class CompareBillNumbering:
                 "headers": headers,
                 "rows": [[eid] + data for eid, data in sorted_rows]
             }
-        print("Comparison data created")
+        logger.info("Comparison data created")
         return bill_comparison_dict
 
     def _get_sort_number(self, eid: str) -> int:
@@ -297,7 +297,7 @@ class CompareBillNumbering:
                 for row in comparison_table_container.rows:
                     writer.writerow(row)
 
-        print(f"Saved CSV: {csv_path}")
+        logger.info(f"Saved CSV: {csv_path}")
 
         # for title, bills in self.bills_container.items():
         #     file_name = clean(title, file_name_safe=True) + ".csv"
