@@ -18,9 +18,9 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
 
   // Create working folder
   const handleCreateWorkingFolder = async () => {
-    console.log("Creating working folder");
+    // console.log("Creating working folder");
     const result = await window.pywebview.api.anr_create_working_folder(date);
-    console.log("API call result:", result);
+    // console.log("API call result:", result);
 
     if (result.startsWith("Working folder created: ")) {
       setWorkingFolderPath(result.replace("Working folder created: ", ""));
@@ -29,16 +29,16 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
 
   // Open folder in file explorer
   const handleOpenFolder = async (folderPath: string) => {
-    console.log("Opening folder in file explorer");
+    // console.log("Opening folder in file explorer");
     const result = await window.pywebview.api.open_folder(folderPath);
-    console.log("API call result:", result);
+    // console.log("API call result:", result);
   };
 
   // Open dashboard data in browser
   const handleOpenDashboardData = async () => {
-    console.log("Opening dashboard data in browser");
+    // console.log("Opening dashboard data in browser");
     const result = await window.pywebview.api.open_dash_xml_in_browser();
-    console.log("API call result:", result);
+    // console.log("API call result:", result);
   };
 
   // Select dashboard XML file
@@ -46,13 +46,13 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
     console.log("Selecting dashboard XML file");
     try {
       let fileResult: string = await window.pywebview.api.open_dash_xml_file();
-      console.log("API call result:", fileResult);
+      // console.log("API call result:", fileResult);
 
       if (fileResult.startsWith("Selected file: ")) {
         fileResult = fileResult.replace("Selected file: ", "");
         fileResult = addWordBreaksToPath(fileResult);
         setSelectedSPXML(fileResult); // Update state with file path
-        console.log("File path set successfully:", fileResult);
+        // console.log("File path set successfully:", fileResult);
       } else {
         console.error("Unexpected fileResult format:", fileResult);
       }
@@ -65,7 +65,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   const handleSelectMarshalDir = async () => {
     console.log("Selecting amendment XML directory");
     let result: string = await window.pywebview.api.anr_open_amd_xml_dir();
-    console.log("API call result:", result);
+    // console.log("API call result:", result);
     if (result.startsWith("Selected directory: ")) {
       result = result.replace("Selected directory: ", "");
 
@@ -87,7 +87,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
   const handleCreateReport = async () => {
     console.log("Creating report");
     const result = await window.pywebview.api.anr_run_xslts();
-    console.log("API call result:", result);
+    // console.log("API call result:", result);
     clearMarshalDirAfterReport();
   };
 
