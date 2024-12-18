@@ -1,11 +1,17 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import svgr from "vite-plugin-svgr";
+import { viteSingleFile } from "vite-plugin-singlefile";
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "", // Use relative paths (important if the built app does not include a server)
-  plugins: [svgr(), react()],
+  plugins: [
+    svgr(),
+    react(),
+    // viteSingleFile({ removeViteModuleLoader: true, inlinePattern: /\.(js|css)$/ })
+    viteSingleFile()
+  ],
   server: {
     host: "localhost",
     port: 5175,
@@ -23,6 +29,6 @@ export default defineConfig({
   // root: 'reactUi',
   // consider changing the build dir
   build: {
-    outDir: "../ui_bundle", // Adjust the output directory if needed
+    outDir: "ui_bundle", // Adjust the output directory if needed
   },
 });

@@ -1,9 +1,10 @@
-
+// import "../js/bootstrap.bundle.min.js";
+import {Modal} from 'bootstrap'
 
 //#region Progress modal
 
 // Register modal
-const progress_modal = new bootstrap.Modal(document.querySelector('#progress_modal'), {
+const progress_modal = new Modal(document.querySelector('#progress_modal'), {
     keyboard: false
 })
 
