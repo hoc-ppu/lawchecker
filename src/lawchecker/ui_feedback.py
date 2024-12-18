@@ -61,6 +61,9 @@ class UILogHandler(logging.StreamHandler):
         # Default `message` is the whole of `record.msg`
         message = record.msg
 
+        if not isinstance(message, str):
+            message = repr(message)
+
         # Pass `record.levelname` and `message` to modal
         with ProgressModal(self.window) as modal:
 
