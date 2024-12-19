@@ -3,8 +3,8 @@ import logging
 import os
 import platform
 import subprocess
-import time
 import sys
+import time
 import tomllib
 import traceback
 import webbrowser
@@ -52,6 +52,7 @@ def set_version_info(window_local: Window | None = None):
 
     # window_local.evaluate_js(f"updateVersionInfo('{version_str}')")
     window_local.evaluate_js(f"window.pywebview.state.setVersionInfo(\"{version_str}\")")
+
 
 class Api:
     def __init__(self):
@@ -216,7 +217,12 @@ class Api:
         active_window = cast(Window, active_window)
 
         result = active_window.create_file_dialog(
-            webview.OPEN_DIALOG, directory=str(default_location), file_types=("XML files (*.xml)",)
+            webview.OPEN_DIALOG, directory=str(default_location)
+            # Allow all files instead of just XML. This is because when users
+            # download the data from sharepoint it is saved as .txt. It is
+            # easier for uses to be able to select the .txt file rather than
+            # first having to change the file extension.
+            # , file_types=("XML files (*.xml)",)
         )
 
         if result is None:
@@ -473,14 +479,14 @@ def get_entrypoint():
 
     if hasattr(sys, '_MEIPASS'):
         # path to pyinstaller frozen app
-        frozen_windows_path = Path(sys._MEIPASS, 'ui/index.html')
-        print(frozen_windows_path)
-        print(frozen_windows_path.exists())
-        if frozen_windows_path.exists():  # frozen pyinstaller
-            uri = frozen_windows_path.as_uri()
+        frozen_windows_ui_path = Path(sys._MEIPASS, 'ui/index.html')  # type: ignore
+        logger.info(frozen_windows_ui_path)
+        logger.info(frozen_windows_ui_path.exists())
+        if frozen_windows_ui_path.exists():  # frozen pyinstaller
+            uri = frozen_windows_ui_path.as_uri()
             logger.info(f"{uri=}")
             return uri
-    
+
     time.sleep(20)
 
     raise Exception('No index.html found')
