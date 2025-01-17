@@ -41,7 +41,10 @@ def set_version_info(window_local: Window | None = None):
 
     pyproject_path = Path("pyproject.toml")
     if APP_FROZEN:
-        pyproject_path = Path(sys._MEIPASS, "pyproject.toml")  # type: ignore
+        if hasattr(sys, '_MEIPASS'):
+            pyproject_path = Path(sys._MEIPASS, "pyproject.toml")  # type: ignore
+        elif Path("../Resources").exists():
+            pyproject_path = Path("../Resources/pyproject.toml")
 
     # TODO: add error handling
     with open(pyproject_path, 'rb') as f:
@@ -474,8 +477,11 @@ def get_entrypoint():
             print('Vite server not running. Trying static files')
         return Path('ui_bundle/index.html').resolve().as_uri()   # TODO: fix this
 
-    # if exists('../Resources/gui/index.html'):  # frozen py2app
-    #     return '../Resources/gui/index.html'
+    py_2_app_path = Path("../Resources/ui_bundle/index.html")
+    if py_2_app_path.exists():  # frozen py2app
+        uri = py_2_app_path.resolve().as_uri()
+        logger.info(f"{uri=}")
+        return uri
 
     if hasattr(sys, '_MEIPASS'):
         # path to pyinstaller frozen app
@@ -487,13 +493,17 @@ def get_entrypoint():
             logger.info(f"{uri=}")
             return uri
 
-    time.sleep(20)
+    time.sleep(5)
 
     raise Exception('No index.html found')
 
 
 
 def main():
+    with open("what.txt", "w") as f:
+        for k, v in sys.__dict__.items():
+            f.write(f"{k}: {v}\n")
+    # print(repr(sys.__dict__))
     entry = get_entrypoint()
 
     logger.info(f"{entry=}")
@@ -528,7 +538,10 @@ def main():
 
     )
 
+    print("Loaded")
+
     window = cast(Window, window)
+
 
     # window.events.loaded += on_loaded
 
