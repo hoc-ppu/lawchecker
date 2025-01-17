@@ -6,6 +6,9 @@ import traceback
 
 import requests
 from lxml import etree as ET
+from lxml.etree import iselement
+
+from lawchecker.lawchecker_logger import logger
 
 # TODO: Add logging
 # Run Black on this file
@@ -19,18 +22,18 @@ def get_marshal_xml(folder_path):
     xml_files = glob.glob(os.path.join(folder_path, "*.xml"))
 
     if not xml_files:
-        print(f"[WARNING] No XML files found in the folder: {folder_path}")
+        logger.info(f"No XML files found in the folder: {folder_path}")
         return marshal_files
 
     for file_path in xml_files:
         try:
             tree = ET.parse(file_path)
             marshal_files.append(tree)
-            print(f"[INFO] Loaded XML file: {file_path}")
+            logger.info(f"Loaded XML file: {file_path}")
         except ET.XMLSyntaxError as e:
-            print(f"[ERROR] Failed to parse XML file at {file_path}: {e}")
+            logger.error(f"Failed to parse XML file at {file_path}: {e}")
         except Exception as e:
-            print(f"[ERROR] Unexpected error while loading {file_path}: {e}")
+            logger.error(f"Unexpected error while loading {file_path}: {e}")
 
     return marshal_files
 
@@ -63,12 +66,12 @@ def check_amendment_in_files(amendment_num, bill_title, marshal_files):
         if tlc_elements:
             amendment_elements = file_tree.xpath(amendments_query, namespaces=namespaces)
             if amendment_elements:
-                print(f"[DEBUG] Found amendment '{amendment_num}' in bill '{bill_title}'")
+                logger.debug(f"Found amendment '{amendment_num}' in bill '{bill_title}'")
                 return True
             else:
-                print(f"[DEBUG] Amendment '{amendment_num}' not found for bill '{bill_title}' in checking XML.")
+                logger.debug(f"Amendment '{amendment_num}' not found for bill '{bill_title}' in checking XML.")
         else:
-            print(f"[DEBUG] Bill '{bill_title}' not found in checking XML.")
+            logger.debug(f"Bill '{bill_title}' not found in checking XML.")
     return False
 
 def reorder_amendments(marshal_files, bill_title, amendment_groups):
@@ -89,39 +92,39 @@ def reorder_amendments(marshal_files, bill_title, amendment_groups):
         # Match bill-title
         bill_title_match = root.xpath(".//akn:TLCConcept[@eId='varBillTitle']/@showAs", namespaces=namespaces)
         if not bill_title_match:
-            print(f"[DEBUG] No bill-title found in {checking_file.docinfo.URL}")
+            logger.debug(f"No bill-title found in {checking_file.docinfo.URL}")
             continue
 
         if bill_title_match[0] != bill_title:
-            print(f"[DEBUG] Bill title '{bill_title}' does not match '{bill_title_match[0]}' in {checking_file.docinfo.URL}")
+            logger.debug(f"Bill title '{bill_title}' does not match '{bill_title_match[0]}' in {checking_file.docinfo.URL}")
             continue
 
-        print(f"[DEBUG] Matched Bill Title: {bill_title_match[0]} in {checking_file.docinfo.URL}")
+        logger.debug(f"Matched Bill Title: {bill_title_match[0]} in {checking_file.docinfo.URL}")
 
         all_nums = root.xpath(".//akn:num[@ukl:dnum]", namespaces={
         "akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
         "ukl": "https://www.legislation.gov.uk/namespaces/UK-AKN"
         })
-        print(f"[DEBUG] Found {len(all_nums)} <num> elements in the XML.")
+        logger.debug(f"Found {len(all_nums)} <num> elements in the XML.")
         for num in all_nums:
-            print(f"  [DEBUG] <num>: {ET.tostring(num, pretty_print=True, encoding='unicode')}")
+            print(f"  <num>: {ET.tostring(num, pretty_print=True, encoding='unicode')}")
 
         # Extract amendment order from checking file
         amendment_order = root.xpath(".//akn:num[@ukl:dnum]/text()", namespaces=namespaces)
-        print(f"[DEBUG] Amendment Order from Checking File: {amendment_order}")
+        logger.debug(f"Amendment Order from Checking File: {amendment_order}")
 
         # Order amendment groups based on checking file order
         for amendment_number in amendment_order:
             if amendment_number in remaining_amendments:
-                print(f"[DEBUG] Found matching amendment: {amendment_number}")
+                logger.debug(f"Found matching amendment: {amendment_number}")
                 ordered_amendment_groups.append((amendment_number, remaining_amendments.pop(amendment_number)))
                 was_reordered = True  # Mark as reordered
             else:
-                print(f"[DEBUG] Amendment '{amendment_number}' not found in amendment groups.")
+                logger.debug(f"Amendment '{amendment_number}' not found in amendment groups.")
 
     # Always process remaining amendments
     if remaining_amendments:
-        print(f"[DEBUG] Adding unmatched amendments for bill '{bill_title}': {list(remaining_amendments.keys())}")
+        logger.debug(f"Adding unmatched amendments for bill '{bill_title}': {list(remaining_amendments.keys())}")
     for unmatched_amendment in remaining_amendments.keys():
         ordered_amendment_groups.append((unmatched_amendment, remaining_amendments[unmatched_amendment]))
 
@@ -223,7 +226,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
         # Initialize amendment_groups as a dictionary
         amendment_groups = {}
         for item in root.findall(".//item"):
-            if item.find("bill").text == bill:
+            if item.findtext("bill") == bill:
                 for amd_no in item.findall(".//matched-numbers/amd-no"):
                     amd_number = amd_no.text
                     if amd_number not in amendment_groups:
@@ -249,13 +252,13 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
             )
         else:
             # Fall back to unordered amendments
-            print(f"[WARNING] No valid checking files found for bill '{bill}'. Rendering amendments in original order.")
+            logger.info(f"No valid checking files found for bill '{bill}'. Rendering amendments in original order.")
             ordered_amendments = list(amendment_groups.items())
             was_reordered = False
 
         # Render amendments (ordered or unordered based on availability of checking files)
         if not amendment_groups:
-            print(f"[DEBUG] No amendments found for bill '{bill}'.")
+            logger.debug(f"No amendments found for bill '{bill}'.")
         else:
             for amd_number, group in ordered_amendments:
                 amendment_div = ET.SubElement(bill_div, "div", {"class": "amendment"})
@@ -289,19 +292,48 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                 ET.SubElement(names_to_add_div, "h4").text = "Names to add"
 
                 for item in group["items"]:
+
                     matched_names = item.find(".//names-to-add/matched-names")
-                    if matched_names:
+                    if not iselement(matched_names):
+                        continue
+
+                    for name in matched_names.findall("name"):
+                        name_text = name.text
+                        name_div = ET.SubElement(names_to_add_div, "div", {"class": "name"})
+                        name_span = ET.SubElement(name_div, "span")
+
+                        # Style based on whether the name matches MNIS
+                        style = (
+                            "text-decoration: none; color: black;"
+                            if name_text in eligible_members
+                            else "text-decoration: underline red 1px; color: black;"
+                        )
+                        ET.SubElement(
+                            name_span,
+                            "a",
+                            {
+                                "title": f"Dashboard ID:{item.find('dashboard-id').text}",
+                                "href": f"https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID={item.find('dashboard-id').text}",
+                                "style": style,
+                            },
+                        ).text = name_text
+
+                # Render names to remove
+
+                if any(item.find(".//names-to-remove/matched-names") is not None for item in group["items"]):
+                    names_to_remove_div = ET.SubElement(amendment_div, "div", {"class": "names-to-remove"})
+                    ET.SubElement(names_to_remove_div, "h4").text = "Names to remove"
+                    for item in group["items"]:
+
+                        matched_names = item.find(".//names-to-remove/matched-names")
+                        if not iselement(matched_names):
+                            continue
+
                         for name in matched_names.findall("name"):
                             name_text = name.text
-                            name_div = ET.SubElement(names_to_add_div, "div", {"class": "name"})
+                            name_div = ET.SubElement(names_to_remove_div, "div", {"class": "name"})
                             name_span = ET.SubElement(name_div, "span")
 
-                            # Style based on whether the name matches MNIS
-                            style = (
-                                "text-decoration: none; color: black;"
-                                if name_text in eligible_members
-                                else "text-decoration: underline red 1px; color: black;"
-                            )
                             ET.SubElement(
                                 name_span,
                                 "a",
@@ -312,29 +344,6 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
                                 },
                             ).text = name_text
 
-                # Render names to remove
-
-                if any(item.find(".//names-to-remove/matched-names") is not None for item in group["items"]):
-                    names_to_remove_div = ET.SubElement(amendment_div, "div", {"class": "names-to-remove"})
-                    ET.SubElement(names_to_remove_div, "h4").text = "Names to remove"
-                    for item in group["items"]:
-                        matched_names = item.find(".//names-to-remove/matched-names")
-                        if matched_names:
-                            for name in matched_names.findall("name"):
-                                name_text = name.text
-                                name_div = ET.SubElement(names_to_remove_div, "div", {"class": "name"})
-                                name_span = ET.SubElement(name_div, "span")
-
-                                ET.SubElement(
-                                    name_span,
-                                    "a",
-                                    {
-                                        "title": f"Dashboard ID:{item.find('dashboard-id').text}",
-                                        "href": f"https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID={item.find('dashboard-id').text}",
-                                        "style": style,
-                                    },
-                                ).text = name_text
-
                 # Comments Section
                 if group["comments"]:
                     comments_div = ET.SubElement(amendment_div, "div", {"class": "comments"})
@@ -342,7 +351,7 @@ def generate_html(xml_file, checking_file_paths, eligible_members):
 
                     for comment in group["comments"]:
                         parent_comments = comment.getparent()
-                        dashboard_id = parent_comments.get("dashboard-id") if parent_comments else None
+                        dashboard_id = parent_comments.get("dashboard-id") if iselement(parent_comments) else None
                         comment_url = f"https://hopuk.sharepoint.com/sites/bct-ppu/Lists/AddNames/DispForm.aspx?ID={dashboard_id}" if dashboard_id else None
 
                         if dashboard_id:
@@ -414,21 +423,21 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
         with open(output_html_file_path, 'r', encoding='utf-8') as html_file:
             html_tree = ET.parse(html_file, parser)
     except Exception as e:
-        print(f"[ERROR] Failed to load HTML file: {e}")
+        logger.error(f"Failed to load HTML file: {e}")
         return
 
     # Collect marshal XML files
     checking_files = []
-    if os.path.isdir(marshal_file_dir):
+    if os.path.isdir(marshal_file_dir):  # TODO: change to Path
         for file_name in os.listdir(marshal_file_dir):
             if file_name.endswith('.xml'):
                 try:
                     checking_files.append((file_name, ET.parse(os.path.join(marshal_file_dir, file_name))))
                 except Exception as e:
-                    print(f"[WARNING] Failed to parse checking file '{file_name}': {e}")
+                    logger.warning(f"Failed to parse checking file '{file_name}': {e}")
 
     if not checking_files:
-        print("[INFO] No valid checking files found. Skipping annotations.")
+        logger.info("No valid checking files found. Skipping annotations.")
         return
 
     # Annotate the HTML file
@@ -447,15 +456,15 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
             for name_div in amendment_div.xpath(".//div[@class='names-to-add']/div[@class='name']"):
                 name_anchor = name_div.find(".//a")
                 if name_anchor is None or not name_anchor.text:
-                    print(f"[DEBUG] Skipping name without anchor text in amendment {amendment_number}.")
+                    logger.debug(f"Skipping name without anchor text in amendment {amendment_number}.")
                     continue
                 name_text = name_anchor.text.strip()
                 annotation = "✘"
 
-                print(f"[DEBUG] Checking name: {name_text} for amendment {amendment_number} in bill {bill_name}")
+                logger.debug(f"Checking name: {name_text} for amendment {amendment_number} in bill {bill_name}")
 
                 for file_name, checking_file in checking_files:
-                    print(f"[DEBUG] Processing checking file: {file_name}")
+                    logger.debug(f"Processing checking file: {file_name}")
                     try:
                         root = checking_file.getroot()
 
@@ -465,7 +474,7 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
                             namespaces={"akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0"}
                         )
                         if not bill_matches:
-                            print(f"[DEBUG] No match for bill: {bill_name} in file: {file_name}.")
+                            logger.debug(f"No match for bill: {bill_name} in file: {file_name}.")
                             continue
 
                         # Match the amendment by number using <num> element with @ukl:dnum
@@ -477,7 +486,7 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
                             )
                         ]
                         if amendment_number not in amendment_numbers:
-                            print(f"[DEBUG] Amendment number {amendment_number} not found in file: {file_name}.")
+                            logger.debug(f"Amendment number {amendment_number} not found in file: {file_name}.")
                             continue
 
                         # Match the name in proposer/supporter blocks
@@ -491,7 +500,7 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
                                 annotation = "✔"
                                 break
                     except Exception as e:
-                        print(f"[ERROR] Error processing checking file: {file_name}, error: {e}")
+                        logger.error(f"Error processing checking file: {file_name}, error: {e}")
 
                 # Add annotation span
                 annotation_span = ET.SubElement(
@@ -506,7 +515,7 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
         with open(output_html_file_path, 'wb') as output_file:
             output_file.write(ET.tostring(html_tree, pretty_print=True, method='html', encoding='utf-8'))
     except Exception as e:
-        print(f"[ERROR] Failed to save annotated HTML: {e}")
+        logger.error(f"Failed to save annotated HTML: {e}")
 
 
 def main(template_path, xml_file_path, marshal_file_dir, output_html_file_path):

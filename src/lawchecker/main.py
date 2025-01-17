@@ -5,7 +5,6 @@ import platform
 import subprocess
 import sys
 import time
-import tomllib
 import traceback
 import webbrowser
 from datetime import datetime
@@ -16,6 +15,7 @@ import requests
 import webview
 from webview import Window  # TODO: fix this
 
+import lawchecker.settings as settings
 from lawchecker import added_names_report, pp_xml_lxml, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
@@ -38,16 +38,21 @@ def set_version_info(window_local: Window | None = None):
     if not window_local:
         window_local = window
 
+    match settings.RUNTIME_ENV:
+        case settings.RtEnv.EXE:
+            version_path = Path(sys._MEIPASS, "VERSION")  # type: ignore
+        case settings.RtEnv.APP:
+            version_path = Path("../Resources/VERSION")
+        case _:
+            version_path = Path("VERSION")
 
-    pyproject_path = Path("pyproject.toml")
-    if APP_FROZEN:
-        pyproject_path = Path(sys._MEIPASS, "pyproject.toml")  # type: ignore
+    version_str = "No version str"
+    try:
+        with open("VERSION") as version_path:
+            version_str = version_path.read().strip()
+    except Exception:
+        pass
 
-    # TODO: add error handling
-    with open(pyproject_path, 'rb') as f:
-        toml_data = tomllib.load(f)
-
-    version_str = toml_data.get('project', {}).get("version", "No version info")
     logger.info(f"{version_str=}")
 
     # window_local.evaluate_js(f"updateVersionInfo('{version_str}')")
@@ -261,33 +266,32 @@ class Api:
         if self.lm_xml_folder:
             lm_xml_folder_Path = Path(self.lm_xml_folder)
 
-        if self.dash_xml_file and Path(self.dash_xml_file).resolve().exists():
-            xsl_1_Path = settings.XSL_1_PATH
-            xsl_2_Path = settings.XSL_2_PATH
-            input_Path = Path(self.dash_xml_file).resolve()
-
-            try:
-                with ProgressModal() as modal:
-                    modal.update(f"Dashboard XML: {self.dash_xml_file}")
-
-                    if self.lm_xml_folder:
-                        modal.update(f"Marshal XML: {self.lm_xml_folder}")
-                    else:
-                        modal.update("No marshal XML selected")
-
-                    modal.update("Running...")
-                    added_names_report.run_xslts(
-                        input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
-                    )
-                    modal.update("Report ready.")
-
-                return "Report created successfully."
-
-            except Exception as e:
-                traceback.print_exc(file=sys.stdout)
-                return f"Error: {str(e)}"
-        else:
+        if not (self.dash_xml_file and Path(self.dash_xml_file).resolve().exists()):
             return "No XML file selected."
+
+        input_Path = Path(self.dash_xml_file).resolve()
+
+        try:
+            with ProgressModal() as modal:
+                modal.update(f"Dashboard XML: {self.dash_xml_file}")
+
+                if self.lm_xml_folder:
+                    modal.update(f"Marshal XML: {self.lm_xml_folder}")
+                else:
+                    modal.update("No marshal XML selected")
+
+                modal.update("Running...")
+                added_names_report.run_xslts(
+                    input_Path, parameter=lm_xml_folder_Path
+                )
+                modal.update("Report ready.")
+
+            return "Report created successfully."
+
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            return f"Error: {str(e)}"
+
 
     def bill_create_html_compare(self):
         """
@@ -474,8 +478,11 @@ def get_entrypoint():
             print('Vite server not running. Trying static files')
         return Path('ui_bundle/index.html').resolve().as_uri()   # TODO: fix this
 
-    # if exists('../Resources/gui/index.html'):  # frozen py2app
-    #     return '../Resources/gui/index.html'
+    py_2_app_path = Path("../Resources/ui_bundle/index.html")
+    if py_2_app_path.exists():  # frozen py2app
+        uri = py_2_app_path.resolve().as_uri()
+        logger.info(f"{uri=}")
+        return uri
 
     if hasattr(sys, '_MEIPASS'):
         # path to pyinstaller frozen app
@@ -487,13 +494,17 @@ def get_entrypoint():
             logger.info(f"{uri=}")
             return uri
 
-    time.sleep(20)
+    time.sleep(5)
 
     raise Exception('No index.html found')
 
 
 
 def main():
+    with open("what.txt", "w") as f:
+        for k, v in sys.__dict__.items():
+            f.write(f"{k}: {v}\n")
+    # print(repr(sys.__dict__))
     entry = get_entrypoint()
 
     logger.info(f"{entry=}")
@@ -528,7 +539,10 @@ def main():
 
     )
 
+    print("Loaded")
+
     window = cast(Window, window)
+
 
     # window.events.loaded += on_loaded
 

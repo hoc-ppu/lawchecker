@@ -1,12 +1,12 @@
+import argparse
 import csv
 import re
 import sys
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Iterable
 
-import click
-from dateutil import parser as date_parser
 from lxml import etree
 from lxml.etree import _Element
 
@@ -18,6 +18,12 @@ NSMAP = {
     "xsi": "http://www.w3.org/2001/XMLSchema-instance",
     "ukl": "https://www.legislation.gov.uk/namespaces/UK-AKN"
 }
+
+LIKELY_DATE_FORMATS = [
+    "%Y-%m-%dT%H:%M:%S",
+    "%Y-%m-%d",
+    "%Y-%m-%dT%H:%M:%S%z",
+]
 
 
 def clean(string: str, no_space=False, file_name_safe=False) -> str:
@@ -48,6 +54,31 @@ class ComparisonTableContainer:
     rows: list[list[str]]
 
 
+def try_parse_date(
+    date_str: str,
+    date_formats: list[str] = LIKELY_DATE_FORMATS
+) -> datetime | None:
+
+    date_formats = LIKELY_DATE_FORMATS
+
+    date_str = date_str.strip()
+
+    # sometimes dates follow the ISO 8601 standard so try that first
+    if date_str.endswith("Z"):
+        date_str = date_str[:-1] + "+00:00"
+        try:
+            return datetime.fromisoformat(date_str)
+        except ValueError:
+            pass
+
+    for date_format in date_formats:
+        try:
+            return datetime.strptime(date_str, date_format)
+        except ValueError:
+            continue
+    return None
+
+
 class Bill:
     def __init__(self, bill_xml: _Element, file_name: str):
         self.root = bill_xml
@@ -58,13 +89,26 @@ class Bill:
 
     def get_published_date(self) -> str | None:
         xpath = '//xmlns:FRBRManifestation/xmlns:FRBRdate[@name != "akn_xml"]/@date[not(.="")]'
+
         try:
-            date_time: str = self.root.xpath(xpath, namespaces=NSMAP)[0]
-            dt = date_parser.parse(date_time)
-            return dt.strftime("%Y-%m-%d-%H-%M-%S")
+            dt = try_parse_date(self.root.xpath(xpath, namespaces=NSMAP)[0])
+
+            if not dt:
+                raise Exception("Date not found")
+
         except Exception:
             logger.warning(f"Date not found in {self.file_name}")
             return None
+        else:
+            return dt.strftime("%Y-%m-%d-%H-%M-%S")
+
+        # try:
+        #     date_time: str = self.root.xpath(xpath, namespaces=NSMAP)[0]
+        #     dt = date_parser.parse(date_time)
+        #     return dt.strftime("%Y-%m-%d-%H-%M-%S")
+        # except Exception:
+        #     logger.warning(f"Date not found in {self.file_name}")
+        #     return None
 
     def get_version(self) -> str:
         xpath_temp = '//xmlns:references/*[@eId="{}"]/@showAs'
@@ -345,26 +389,54 @@ class CompareBillNumbering:
         return html_list
 
 
+def cli():
+    parser = argparse.ArgumentParser(
+        description=(
+            "Takes in UK Bill XML files and generates CSV files(s) showing how numbering (of clauses etc.) has changed."
+        )
+    )
+
+    parser.add_argument(
+        "--input-folder",
+        type=Path,
+        help="Specify a different folder for finding bill XML. Defaults to current directory.",
+    )
+
+    parser.add_argument(
+        "--output-folder",
+        type=Path,
+        help="Specify a different folder for saving the output files. Defaults to current directory.",
+    )
+
+    args = parser.parse_args(sys.argv[1:])
+
+    print(repr(args))
+
+    input_folder = Path(args.input_folder or ".")
+    output_folder = Path(args.output_folder or ".")
+    compile = CompareBillNumbering.from_folder(input_folder)
+    compile.save_csv(output_folder)
+
 # CLI
-@click.command()
-@click.option(
-    '--input-folder',
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help="Specify a different folder for finding bill XML. Defaults to current directory.",
-)
-@click.option(
-    "--output-folder",
-    type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
-    help="Specify a different folder for saving the output files. Defaults to current directory.",
-)
-def cli(input_folder, output_folder):
-    """
-    Takes in UK bill XML files and generates CSV and HTML comparison reports.
-    """
-    input_folder = Path(input_folder or ".")
-    output_folder = Path(output_folder or ".")
-    compare = CompareBillNumbering.from_folder(input_folder)
-    compare.save_csv(output_folder)
+# @click.command()
+# @click.option(
+#     '--input-folder',
+#     type=click.Path(exists=True, file_okay=False, dir_okay=True),
+#     help="Specify a different folder for finding bill XML. Defaults to current directory.",
+# )
+# @click.option(
+#     "--output-folder",
+#     type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
+#     help="Specify a different folder for saving the output files. Defaults to current directory.",
+# )
+# def cli_old(input_folder, output_folder):
+#     """
+#     Takes in UK bill XML files and generates CSV and HTML comparison reports.
+#     """
+#     input_folder = Path(input_folder or ".")
+#     output_folder = Path(output_folder or ".")
+#     compare = CompareBillNumbering.from_folder(input_folder)
+#     compare.save_csv(output_folder)
 
 
 if __name__ == "__main__":

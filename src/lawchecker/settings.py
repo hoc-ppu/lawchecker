@@ -1,8 +1,27 @@
 import sys
+from enum import Enum
 from pathlib import Path
 
 from dotenv import dotenv_values
 from lxml import etree
+
+
+class RtEnv(Enum):
+    EXE = 1  # running from a pyInstaller single file .exe
+    APP = 2  # running from a py2app app bundle
+    SCRIPT = 3  # with default unbundled interpreter
+
+
+RUNTIME_ENV = RtEnv.SCRIPT  # by default assume running as a script
+
+if hasattr(sys, "executable") and hasattr(sys, "_MEIPASS"):
+    # we are using the bundled app on windows
+    RUNTIME_ENV = RtEnv.EXE
+elif hasattr(sys, "frozen") and Path("../Resources").exists():
+    # we are using the bundled app on macos
+    RUNTIME_ENV = RtEnv.APP
+
+
 
 try:
     # on the bundled app we expect the /env file to be in the temp folder
@@ -47,22 +66,26 @@ XML_FOLDER = "Amendment_Paper_XML"
 DASHBOARD_DATA_FOLDER = "Dashboard_Data"
 
 # path to folder containing the XSLT files
-if hasattr(sys, "executable") and hasattr(sys, "_MEIPASS"):
-    # we are using the bundled app
-    PARENT_FOLDER = Path(sys.executable).parent
-else:
-    # assume running as python script via usual interpreter
-    # TODO: do we still need this?
-    PARENT_FOLDER = Path(__file__).parent.parent
-    if not PARENT_FOLDER.joinpath("template").exists():
-        PARENT_FOLDER = PARENT_FOLDER.parent
+match RUNTIME_ENV:
+    case RtEnv.EXE:
+        PARENT_FOLDER = Path(sys.executable).parent
+    case RtEnv.APP:
+        PARENT_FOLDER = Path("../Resources")
+    case _:
+        # assume running as python script via usual interpreter
+        # TODO: do we still need this?
+        PARENT_FOLDER = Path(__file__).parent.parent
+        if not PARENT_FOLDER.joinpath("template").exists():
+            PARENT_FOLDER = PARENT_FOLDER.parent
 
-XSL_FOLDER = PARENT_FOLDER / "src" / "lawchecker"
 
-REPORTS_FOLDER = PARENT_FOLDER / "_Reports"
+REPORTS_FOLDER = Path.home() / "UK Parliament" / "PPU - Scripts" / "added_names_report" / "_Reports"
 
-XSL_1_PATH = XSL_FOLDER / XSL_1_NAME
-XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
+if RUNTIME_ENV == RtEnv.SCRIPT or not REPORTS_FOLDER.exists():
+    # if running as a script or the REPORTS_FOLDER does not exist
+    REPORTS_FOLDER = PARENT_FOLDER / "_Reports"
+
+
 HTML_TEMPLATE = PARENT_FOLDER / TEMPLATES_FOLDER / AN_HTML_TEMPLATE
 
 COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath(

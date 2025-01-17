@@ -4,6 +4,8 @@ from datetime import datetime
 
 from lxml import etree
 
+from lawchecker.lawchecker_logger import logger
+
 # TODO: Run Black on this file
 
 def main(input_path, output_path):
@@ -110,7 +112,7 @@ def main(input_path, output_path):
         return numbers
 
     # Print the generated XML for review
-    print(etree.tostring(root, pretty_print=True).decode("utf-8"))
+    # print(etree.tostring(root, pretty_print=True).decode("utf-8"))
 
     def names(element, parent, namespaces):
         # Create the container element for 'names-to-add'
@@ -142,7 +144,7 @@ def main(input_path, output_path):
                     name = etree.SubElement(matched_names, "name")
                     name.text = name_content
                 else:
-                    print(f"No match for token: {token}")  # Debugging output
+                    logger.debug(f"No match for token: {token}")  # Debugging output
         else:
             # If no delimiters are found, create a single 'name' element with normalized text
             name = etree.SubElement(matched_names, "name")
@@ -233,7 +235,7 @@ def main(input_path, output_path):
 # Save intermediate XML
     with open(output_path, 'w', encoding='utf-8') as file:
         file.write(output_xml)
-    print(f"Saved to: {output_path}")
+    logger.info(f"Saved to: {output_path}")
 
 # Entry point
 if __name__ == "__main__":

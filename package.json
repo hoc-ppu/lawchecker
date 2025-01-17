@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently --kill-others --names vite,python \"vite --config vite.config.ts\"  \"sleep 0.2 & python src/lawchecker/main.py\"",
-    "build": "tsc -b && vite build",
+    "bundle": "vite build",
+    "build": "npm run clean && npm run frontend:prod && run-script-os",
+    "build:macos": "python build-macos.py py2app",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -27,6 +29,7 @@
     "globals": "^15.9.0",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.7.0",
+    "run-script-os": "^1.1.6",
     "vite": "^5.4.11",
     "vite-plugin-singlefile": "^2.1.0",
     "vite-plugin-svgr": "^4.2.0"
