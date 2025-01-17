@@ -9,8 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from lawchecker.lawchecker_logger import logger
 from lawchecker import anr_post_processing_html, anr_spo_rest, settings
+from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import HTML_TEMPLATE
 
 
@@ -42,16 +42,6 @@ def main():
     )
 
     parser.add_argument(
-        "--xslts",
-        metavar="XSLT Folder",
-        type=_dir_path,
-        help=(
-            "Optional Path to the folder containing the XSLTs you wish to run."
-            " Use quotes if there are spaces."
-        ),
-    )
-
-    parser.add_argument(
         "--marshal",
         metavar="Folder",
         type=_dir_path,
@@ -72,13 +62,6 @@ def main():
 
     input_Path = Path(args.file.name)
 
-    if args.xslts:
-        xsl_1_Path = Path(args.xslts) / settings.XSL_1_NAME
-        xsl_2_Path = Path(args.xslts) / settings.XSL_2_NAME
-    else:
-        xsl_1_Path = settings.XSL_1_PATH
-        xsl_2_Path = settings.XSL_2_PATH
-
     if args.marshal:
         marshal = Path(args.marshal)
     else:
@@ -86,8 +69,6 @@ def main():
 
     run_xslts(
         input_Path,
-        xsl_1_Path,
-        xsl_2_Path,
         HTML_TEMPLATE,
         parameter=marshal,
         output_file_name=args.output,
@@ -120,16 +101,11 @@ def extract_date(input_Path: Path) -> str:
 
 def run_xslts(
     input_Path: Path,
-    xsl_1_Path: Path,
-    xsl_2_Path: Path,
     parameter: Optional[Path] = None,
     output_file_name: str = settings.DEFAULT_OUTPUT_NAME,
 ):
 
-    # TODO: think about removing xsl_1_Path and xsl_2_Path from the signature
-    # only used to print out the paths to the python files
-
-    logger.info(f"{input_Path=}   {xsl_1_Path=}   {xsl_2_Path=}   {parameter=}")
+    logger.info(f"{input_Path=} {parameter=}")
 
     formated_date = extract_date(input_Path)
 
@@ -157,11 +133,11 @@ def run_xslts(
     print(f"Resaved: {resave_Path}")
 
     # --- 1st Transformation - Intermediate XML ---
-    logger.info(f"Running first transformation: {xsl_1_Path}")
+    logger.info("Running first transformation")
     anr_spo_rest.main(str(input_Path), str(intermediate_Path))
 
     # --- 2nd Transformation - HTML report ---
-    logger.info(f"Running second transformation: {xsl_2_Path}")
+    logger.info("Running second transformation")
     anr_post_processing_html.main(
         str(HTML_TEMPLATE), str(intermediate_Path), str(parameter), str(out_html_Path)
     )

@@ -79,17 +79,13 @@ match RUNTIME_ENV:
             PARENT_FOLDER = PARENT_FOLDER.parent
 
 
-
-XSL_FOLDER = PARENT_FOLDER / "src" / "lawchecker"
-
 REPORTS_FOLDER = Path.home() / "UK Parliament" / "PPU - Scripts" / "added_names_report" / "_Reports"
 
 if RUNTIME_ENV == RtEnv.SCRIPT or not REPORTS_FOLDER.exists():
     # if running as a script or the REPORTS_FOLDER does not exist
     REPORTS_FOLDER = PARENT_FOLDER / "_Reports"
 
-XSL_1_PATH = XSL_FOLDER / XSL_1_NAME
-XSL_2_PATH = XSL_FOLDER / XSL_2_NAME
+
 HTML_TEMPLATE = PARENT_FOLDER / TEMPLATES_FOLDER / AN_HTML_TEMPLATE
 
 COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath(

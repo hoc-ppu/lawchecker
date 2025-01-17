@@ -264,33 +264,32 @@ class Api:
         if self.lm_xml_folder:
             lm_xml_folder_Path = Path(self.lm_xml_folder)
 
-        if self.dash_xml_file and Path(self.dash_xml_file).resolve().exists():
-            xsl_1_Path = settings.XSL_1_PATH
-            xsl_2_Path = settings.XSL_2_PATH
-            input_Path = Path(self.dash_xml_file).resolve()
-
-            try:
-                with ProgressModal() as modal:
-                    modal.update(f"Dashboard XML: {self.dash_xml_file}")
-
-                    if self.lm_xml_folder:
-                        modal.update(f"Marshal XML: {self.lm_xml_folder}")
-                    else:
-                        modal.update("No marshal XML selected")
-
-                    modal.update("Running...")
-                    added_names_report.run_xslts(
-                        input_Path, xsl_1_Path, xsl_2_Path, parameter=lm_xml_folder_Path
-                    )
-                    modal.update("Report ready.")
-
-                return "Report created successfully."
-
-            except Exception as e:
-                traceback.print_exc(file=sys.stdout)
-                return f"Error: {str(e)}"
-        else:
+        if not (self.dash_xml_file and Path(self.dash_xml_file).resolve().exists()):
             return "No XML file selected."
+
+        input_Path = Path(self.dash_xml_file).resolve()
+
+        try:
+            with ProgressModal() as modal:
+                modal.update(f"Dashboard XML: {self.dash_xml_file}")
+
+                if self.lm_xml_folder:
+                    modal.update(f"Marshal XML: {self.lm_xml_folder}")
+                else:
+                    modal.update("No marshal XML selected")
+
+                modal.update("Running...")
+                added_names_report.run_xslts(
+                    input_Path, parameter=lm_xml_folder_Path
+                )
+                modal.update("Report ready.")
+
+            return "Report created successfully."
+
+        except Exception as e:
+            traceback.print_exc(file=sys.stdout)
+            return f"Error: {str(e)}"
+
 
     def bill_create_html_compare(self):
         """
