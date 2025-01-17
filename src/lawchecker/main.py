@@ -5,7 +5,6 @@ import platform
 import subprocess
 import sys
 import time
-import tomllib
 import traceback
 import webbrowser
 from datetime import datetime
@@ -16,6 +15,7 @@ import requests
 import webview
 from webview import Window  # TODO: fix this
 
+import lawchecker.settings as settings
 from lawchecker import added_names_report, pp_xml_lxml, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
@@ -38,19 +38,21 @@ def set_version_info(window_local: Window | None = None):
     if not window_local:
         window_local = window
 
+    match settings.RUNTIME_ENV:
+        case settings.RtEnv.EXE:
+            version_path = Path(sys._MEIPASS, "VERSION")  # type: ignore
+        case settings.RtEnv.APP:
+            version_path = Path("../Resources/VERSION")
+        case _:
+            version_path = Path("VERSION")
 
-    pyproject_path = Path("pyproject.toml")
-    if APP_FROZEN:
-        if hasattr(sys, '_MEIPASS'):
-            pyproject_path = Path(sys._MEIPASS, "pyproject.toml")  # type: ignore
-        elif Path("../Resources").exists():
-            pyproject_path = Path("../Resources/pyproject.toml")
+    version_str = "No version str"
+    try:
+        with open("VERSION") as version_path:
+            version_str = version_path.read().strip()
+    except Exception:
+        pass
 
-    # TODO: add error handling
-    with open(pyproject_path, 'rb') as f:
-        toml_data = tomllib.load(f)
-
-    version_str = toml_data.get('project', {}).get("version", "No version info")
     logger.info(f"{version_str=}")
 
     # window_local.evaluate_js(f"updateVersionInfo('{version_str}')")

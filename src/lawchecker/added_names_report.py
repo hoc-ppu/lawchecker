@@ -130,7 +130,7 @@ def run_xslts(
     resave_Path = xml_folder_Path.joinpath(input_file_resave_name)
     if input_Path != resave_Path:
         shutil.copy(input_Path, resave_Path)
-    print(f"Resaved: {resave_Path}")
+    logger.info(f"Resaved: {resave_Path}")
 
     # --- 1st Transformation - Intermediate XML ---
     logger.info("Running first transformation")
