@@ -38,7 +38,11 @@ def get_marshal_xml(folder_path):
     return marshal_files
 
 def fetch_eligible_members():
+
     """Returns the member names from MNIS API for name checking."""
+
+    # TODO: cache the response for a certain period of time
+
     url = "https://data.parliament.uk/membersdataplatform/services/mnis/members/query/House=Commons|IsEligible=true/"
     response = requests.get(url)
     if response.status_code == 200:
