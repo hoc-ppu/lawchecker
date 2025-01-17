@@ -9,4 +9,5 @@ pyinstaller --onefile ^
 --add-data=.\pyproject.toml;. ^
 --runtime-hook=.\additional_runtime_hooks_lawchecker\hook-lawchecker.py ^
 --name LawChecker ^
+--strip ^
 .\src\lawchecker\main.py
