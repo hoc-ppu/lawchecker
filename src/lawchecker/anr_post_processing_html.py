@@ -111,7 +111,7 @@ def reorder_amendments(marshal_files, bill_title, amendment_groups):
         })
         logger.debug(f"Found {len(all_nums)} <num> elements in the XML.")
         for num in all_nums:
-            print(f"  <num>: {ET.tostring(num, pretty_print=True, encoding='unicode')}")
+            logger.debug(f"<num>: {ET.tostring(num, pretty_print=True, encoding='unicode')}".strip())
 
         # Extract amendment order from checking file
         amendment_order = root.xpath(".//akn:num[@ukl:dnum]/text()", namespaces=namespaces)
@@ -474,7 +474,7 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
 
                         # Check if bill name matches
                         bill_matches = root.xpath(
-                            f"/akomaNtoso/amendmentList/meta/references/TLCConcept[@showAs='{bill_name}']",
+                            f'/akomaNtoso/amendmentList/meta/references/TLCConcept[@showAs="{bill_name}"]',
                             namespaces={"akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0"}
                         )
                         if not bill_matches:

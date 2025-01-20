@@ -11,7 +11,7 @@ from typing import Optional
 
 from lawchecker import anr_post_processing_html, anr_spo_rest, settings
 from lawchecker.lawchecker_logger import logger
-from lawchecker.settings import HTML_TEMPLATE
+from lawchecker.settings import GLOBAL_VARS, HTML_TEMPLATE
 
 
 def main():
@@ -69,7 +69,6 @@ def main():
 
     run_xslts(
         input_Path,
-        HTML_TEMPLATE,
         parameter=marshal,
         output_file_name=args.output,
     )
@@ -112,12 +111,12 @@ def run_xslts(
     intermediate_file_name = f"{formated_date}_intermediate.xml"
     input_file_resave_name = f"{formated_date}_input_from_SP.xml"
 
-    if settings.ANR_WORKING_FOLDER is None:
+    if GLOBAL_VARS.anr_working_folder is None:
         # TODO: change this
         dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formated_date).resolve()
-        logger.info(f"From ANR: {dated_folder_Path=}")
     else:
-        dated_folder_Path = settings.ANR_WORKING_FOLDER.resolve()
+        dated_folder_Path = GLOBAL_VARS.anr_working_folder.resolve()
+
     dated_folder_Path.mkdir(parents=True, exist_ok=True)
 
     xml_folder_Path = dated_folder_Path.joinpath(settings.DASHBOARD_DATA_FOLDER)
