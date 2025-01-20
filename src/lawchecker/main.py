@@ -21,7 +21,6 @@ from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
 from lawchecker.compare_bill_numbering import CompareBillNumbering
 from lawchecker.lawchecker_logger import logger
-from lawchecker.settings import ANR_WORKING_FOLDER
 from lawchecker.ui_feedback import ProgressModal, UILogHandler
 
 APP_FROZEN = getattr(sys, 'frozen', False)
@@ -155,9 +154,8 @@ class Api:
             self.dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formatted_date)
             self.dated_folder_Path.mkdir(parents=True, exist_ok=True)
 
-            global ANR_WORKING_FOLDER
-            ANR_WORKING_FOLDER = self.dated_folder_Path
-            logger.info(f"{ANR_WORKING_FOLDER=}")
+            settings.GLOBAL_VARS.anr_working_folder = self.dated_folder_Path
+            logger.info(f"{settings.GLOBAL_VARS.anr_working_folder=}")
 
             # create subfolders for dashboard XML (and intermediate)
             # as well as lawmaker/framemaker XML

@@ -97,7 +97,10 @@ if not COMPARE_REPORT_TEMPLATE.exists():
         TEMPLATES_FOLDER, COMPARE_REPORT_TEMPLATE_NAME
     )
 
-ANR_WORKING_FOLDER: Path | None = None
+
+class GLOBAL_VARS:
+    anr_working_folder: Path | None = None
+
 
 
 # ------------------------- default xml stuff ------------------------ #
