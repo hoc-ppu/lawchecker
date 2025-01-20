@@ -1,3 +1,6 @@
+
+<img alt="LawChecker version running on Mac OS" src="icon/Screenshot_version_2.png" style="display: block; margin-left: auto; margin-right: auto; margin-bottom: 2rem; width: 50%;"/>
+
 # LawChecker
 
 Automated checks/compares for UK Parliament legislative papers.
@@ -8,8 +11,6 @@ You can create:
 - an HTML report which compares two Amendment paper XML files
 - an HTML added names report
 numbers
-
-![LawChecker version running on Mac OS](icon/Screenshot_version_2.png)
 
 ## Installation
 Clone the repository if you have not already done so. [Here is a guide to cloning](https://www.youtube.com/watch?v=CKcqniGu3tA).
