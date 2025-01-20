@@ -113,7 +113,9 @@ def run_xslts(
     input_file_resave_name = f"{formated_date}_input_from_SP.xml"
 
     if settings.ANR_WORKING_FOLDER is None:
+        # TODO: change this
         dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formated_date).resolve()
+        logger.info(f"From ANR: {dated_folder_Path=}")
     else:
         dated_folder_Path = settings.ANR_WORKING_FOLDER.resolve()
     dated_folder_Path.mkdir(parents=True, exist_ok=True)

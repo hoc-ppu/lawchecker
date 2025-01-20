@@ -157,6 +157,7 @@ class Api:
 
             global ANR_WORKING_FOLDER
             ANR_WORKING_FOLDER = self.dated_folder_Path
+            logger.info(f"{ANR_WORKING_FOLDER=}")
 
             # create subfolders for dashboard XML (and intermediate)
             # as well as lawmaker/framemaker XML
