@@ -15,7 +15,6 @@ import requests
 import webview
 from webview import Window  # TODO: fix this
 
-import lawchecker.settings as settings
 from lawchecker import added_names_report, pp_xml_lxml, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
@@ -557,7 +556,7 @@ def main():
 
     webview.start(
         debug=debug,
-        storage_path=str(Path.home() / "pywebview"),
+        storage_path=str(Path.home() / "pywebview" / "lawchecker"),
         # http_server=False,
     )
 
