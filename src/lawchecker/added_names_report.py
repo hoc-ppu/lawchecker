@@ -112,7 +112,7 @@ def run_xslts(
     input_file_resave_name = f"{formated_date}_input_from_SP.xml"
 
     if GLOBAL_VARS.anr_working_folder is None:
-        # TODO: change this
+        # TODO: change this it should not be formatted date and instead should just have the date
         dated_folder_Path = settings.REPORTS_FOLDER.joinpath(formated_date).resolve()
     else:
         dated_folder_Path = GLOBAL_VARS.anr_working_folder.resolve()

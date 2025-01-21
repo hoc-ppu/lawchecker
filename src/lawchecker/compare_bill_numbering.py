@@ -319,8 +319,11 @@ class CompareBillNumbering:
         return comparison_tables
 
     # Make the CSV
-    def save_csv(self, out_folder: Path | None):
+    def save_csv(self, out_folder: Path | None) -> list[Path]:
+
         out_folder = Path(out_folder or ".")
+
+        created_csv_files: list[Path] = []
 
         comparison_table_containers = self._create_comparison_table_containers()
 
@@ -341,37 +344,11 @@ class CompareBillNumbering:
                 for row in comparison_table_container.rows:
                     writer.writerow(row)
 
+            created_csv_files.append(csv_path)
+
         logger.info(f"Saved CSV: {csv_path}")
 
-        # for title, bills in self.bills_container.items():
-        #     file_name = clean(title, file_name_safe=True) + ".csv"
-        #     csv_path = out_folder / file_name
-        #     with open(csv_path, mode="w", newline="", encoding="utf-8") as csvfile:
-        #         writer = csv.writer(csvfile)
-
-        #         # Prepare headers
-        #         headers = ["guid"] + [clean(bill.version, no_space=True) for bill in bills]
-        #         writer.writerow(headers)
-
-        #         # Prepare rows dictionary
-        #         rows = {}
-        #         for bill in bills:
-        #             sections = bill.get_sections()
-        #             guid_list = sections["guid"]
-        #             eid_list = sections[clean(bill.version, no_space=True)]
-
-        #             # Populate rows dictionary
-        #             for guid, eid in zip(guid_list, eid_list):
-        #                 if guid not in rows:
-        #                     rows[guid] = ["-"] * (len(headers) - 1)  # Initialize empty row
-        #                 version_index = headers.index(clean(bill.version, no_space=True)) - 1
-        #                 rows[guid][version_index] = eid
-
-        #         # Write rows
-        #         for guid, values in rows.items():
-        #             writer.writerow([guid] + values)
-
-        #     print(f"Saved CSV: {csv_path}")
+        return created_csv_files
 
 
     def to_html_tables(self) -> list[etree._Element]:

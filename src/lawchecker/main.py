@@ -32,7 +32,7 @@ window: Window | None = None
 
 def set_version_info(window_local: Window | None = None):
 
-    logger.info(f"{window_local=}")
+    # logger.info(f"{window_local=}")
     if not window_local:
         window_local = window
 
@@ -397,8 +397,12 @@ class Api:
         compare = CompareBillNumbering.from_folder(compare_dir)
         print("CompareBillNumbering instance created")
 
-        compare.save_csv(compare_dir)
+        created_files = compare.save_csv(compare_dir)
         print("CSV files created")
+        if created_files:
+            with ProgressModal() as modal:
+                for file in created_files:
+                    modal.update(f"CSV file created: {file}")
 
 
     def amend_create_html_compare(
