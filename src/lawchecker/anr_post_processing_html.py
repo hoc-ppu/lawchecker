@@ -474,7 +474,7 @@ def ticks_and_crosses(output_html_file_path, marshal_file_dir):
 
                         # Check if bill name matches
                         bill_matches = root.xpath(
-                            f"/akomaNtoso/amendmentList/meta/references/TLCConcept[@showAs='{bill_name}']",
+                            f'/akomaNtoso/amendmentList/meta/references/TLCConcept[@showAs="{bill_name}"]',  # HOTFIX: switch quote mark types to handle apostrophes in bill
                             namespaces={"akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0"}
                         )
                         if not bill_matches:
