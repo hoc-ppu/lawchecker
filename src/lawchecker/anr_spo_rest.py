@@ -71,20 +71,35 @@ def main(input_path, output_path):
 
         # Normalize and store the original text
         original_text = element.text.strip() if element.text else ""
+        # Normalize spaces (collapse multiple spaces, remove leading/trailing spaces)
+        normalized_text = re.sub(r'\s+', ' ', original_text)
+
         original_string = etree.SubElement(numbers, "original-string")
-        original_string.text = original_text
+        original_string.text = normalized_text
+
+        # Check for and split out the "Amendments" prefix
+        prefix_pattern = re.compile(r'^(Amendments|Amendment|Amdt):?\s?', re.IGNORECASE)
+        prefix_match = prefix_pattern.match(normalized_text)
+
+        if prefix_match:
+            prefix = prefix_match.group(1)  # Extract the prefix
+            normalized_text = normalized_text[len(prefix_match.group(0)):].strip()  # Remove the prefix from text
+        else:
+            prefix = None  # No prefix present
 
         # Create 'matched-numbers' element
         matched_numbers = etree.SubElement(numbers, "matched-numbers")
 
-        # Tokenize based on delimiters: newline, comma, semicolon, "and", and "&amp;"
-        tokens = re.split(r'[\n,;]+|(?:and|&amp;|&)', original_text)
+        # Define tokenization delimiters and tokenize the input string
+        tokens = re.split(r'[\n,;]+|(?: and | &amp; | & | \+|\s+)', normalized_text)
 
-        # Define regex patterns to match various number formats
-        nc_pattern = re.compile(r'NC\d+')  # Matches NC-prefixed numbers
-        number_pattern = re.compile(r'^\d+$')  # Matches plain numbers
+        # Define regex patterns
+        nc_pattern = re.compile(r'(NC|New Clause|new clause|Nc|nc):?\s?(\d+)', re.IGNORECASE)
+        ns_pattern = re.compile(r'(NS|New Schedule|new schedule|Ns|ns):?\s?(\d+)', re.IGNORECASE)
+        a_pattern = re.compile(r'(A|Amendment|Amendments|Amdt|amdt):?\s?(\d+)', re.IGNORECASE)
+        range_pattern = re.compile(r'(\d+)\s?[\u2010-\u2015\u002d\u2012\u2013\u2212to]+\s?(\d+)')
+        plain_number_pattern = re.compile(r'^\d+$')
 
-        # Process each token to create <amd-no> elements or handle unmatched content
         unmatched_tokens = []  # Collect unmatched tokens for 'unmatched-numbers-etc'
 
         for token in tokens:
@@ -93,16 +108,41 @@ def main(input_path, output_path):
                 continue
 
             # Match NC-prefixed numbers
-            if nc_pattern.fullmatch(token):
+            match = nc_pattern.fullmatch(token)
+            if match:
                 amd_no = etree.SubElement(matched_numbers, "amd-no")
-                amd_no.text = token
+                amd_no.text = f"NC{match.group(2)}"
+                continue
+
+            # Match NS-prefixed numbers
+            match = ns_pattern.fullmatch(token)
+            if match:
+                amd_no = etree.SubElement(matched_numbers, "amd-no")
+                amd_no.text = f"NS{match.group(2)}"
+                continue
+
+            # Match A-prefixed numbers
+            match = a_pattern.fullmatch(token)
+            if match:
+                amd_no = etree.SubElement(matched_numbers, "amd-no")
+                amd_no.text = match.group(2)
+                continue
+
+            # Match ranges and expand them
+            match = range_pattern.fullmatch(token)
+            if match:
+                start, end = int(match.group(1)), int(match.group(2))
+                for num in range(start, end + 1):
+                    amd_no = etree.SubElement(matched_numbers, "amd-no")
+                    amd_no.text = str(num)
+                continue
+
             # Match plain numbers
-            elif number_pattern.fullmatch(token):
+            if plain_number_pattern.fullmatch(token):
                 amd_no = etree.SubElement(matched_numbers, "amd-no")
                 amd_no.text = token
             else:
-                # Collect unmatched tokens
-                unmatched_tokens.append(token)
+                unmatched_tokens.append(token)  # Collect unmatched tokens
 
         # Add unmatched tokens to 'unmatched-numbers-etc'
         if unmatched_tokens:
@@ -110,6 +150,8 @@ def main(input_path, output_path):
             unmatched_numbers.text = ", ".join(unmatched_tokens)
 
         return numbers
+
+
 
     # Print the generated XML for review
     # print(etree.tostring(root, pretty_print=True).decode("utf-8"))
