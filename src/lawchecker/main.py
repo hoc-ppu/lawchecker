@@ -46,8 +46,7 @@ def set_version_info(window_local: Window | None = None):
 
     version_str = "No version str"
     try:
-        with open("VERSION") as version_path:
-            version_str = version_path.read().strip()
+        version_path.read_text().strip()
     except Exception:
         pass
 
