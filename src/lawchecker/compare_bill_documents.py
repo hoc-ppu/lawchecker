@@ -2,6 +2,7 @@
 
 import argparse
 import re
+import shutil
 import subprocess
 import sys
 import webbrowser
@@ -531,6 +532,12 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
     if sys.platform == 'win32':
         # for some reason shell=True is needed on Windows
         subprocess.run(subprocess_args, shell=True)
+    elif sys.platform == 'darwin':
+        if shutil.which("code") is not None:
+            subprocess.run(subprocess_args, shell=False)
+        else:
+            _args2 = ["/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"] + subprocess_args[1:]
+            subprocess.run(_args2, shell=False)
     else:
         subprocess.run(subprocess_args, shell=False)
 
