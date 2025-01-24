@@ -1,5 +1,7 @@
 
-<img alt="LawChecker version running on Mac OS" src="icon/Screenshot_version_2.png" style="display: block; margin-left: auto; margin-right: auto; margin-bottom: 2rem; width: 50%;"/>
+<p align="center">
+  <img alt="LawChecker version running on Mac OS" src="icon/Screenshot_version_2.png" style="display: block; width: 60%;"/>
+</p>
 
 # LawChecker
 
