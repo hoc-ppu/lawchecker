@@ -101,15 +101,19 @@ def main(input_path, output_path):
         # Regex patterns
         # Pattern to match ranges with optional prefixes
         range_pattern = re.compile(
-            r'''(?P<prefix>NC|Nc|New\s+Clause|New\s+Clauses|New\s+clause|New\s+clauses|
-                        NS|Ns|New\s+Schedule|New\s+Schedules|New\s+schedule|New\s+schedules|
-                        A|Amendment|Amendments|Amdt|Amdts)?
-                \s*[::]?\s*
-                (?P<start>\d{1,3})
-                \s*(?:[-‐‑‒–—﹣]| to )\s*
-                (?P<end>\d{1,3})''',
-            re.IGNORECASE | re.VERBOSE
-        )
+        r'''(?P<prefix>NC|Nc|New\s+Clause|New\s+Clauses|New\s+clause|New\s+clauses|
+                NS|Ns|New\s+Schedule|New\s+Schedules|New\s+schedule|New\s+schedules|
+                A|Amendment|Amendments|Amdt|Amdts)?
+            \s*[::]?\s*
+            (?P<start>\d{1,3})
+            \s*(?:[-‐‑‒–—﹣]| to )
+            \s*(?P<end_prefix>NC|Nc|New\s+Clause|New\s+Clauses|New\s+clause|New\s+clauses|
+                NS|Ns|New\s+Schedule|New\s+Schedules|New\s+schedule|New\s+schedules|
+                A|Amendment|Amendments|Amdt|Amdts)?
+            \s*[::]?\s*
+            (?P<end>\d{1,3})''',
+        re.IGNORECASE | re.VERBOSE
+            )
 
         # Pattern to match single numbers with optional prefixes
         single_pattern = re.compile(
@@ -126,23 +130,21 @@ def main(input_path, output_path):
         # Process ranges first
         for match in range_pattern.finditer(normalized_text):
             prefix = match.group('prefix') or ''
-            prefix_std = standardize_prefix(prefix)
+            end_prefix = match.group('end_prefix') or prefix  # Use start prefix if end prefix is missing
+            prefix_std = standardize_prefix(prefix) or standardize_prefix(end_prefix)
             start_num = int(match.group('start'))
             end_num = int(match.group('end'))
 
             if start_num <= end_num:
                 if prefix_std == 'A':
-                    # For Amendments, no prefix in output
                     for num in range(start_num, end_num + 1):
                         amd_no = etree.SubElement(matched_numbers, "amd-no")
                         amd_no.text = str(num)
                 elif prefix_std in ['NC', 'NS']:
-                    # For NC and NS prefixes
                     for num in range(start_num, end_num + 1):
                         amd_no = etree.SubElement(matched_numbers, "amd-no")
                         amd_no.text = f"{prefix_std}{num}"
                 else:
-                    # No prefix
                     for num in range(start_num, end_num + 1):
                         amd_no = etree.SubElement(matched_numbers, "amd-no")
                         amd_no.text = str(num)
