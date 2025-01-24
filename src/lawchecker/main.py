@@ -46,8 +46,9 @@ def set_version_info(window_local: Window | None = None):
 
     version_str = "No version str"
     try:
-        version_path.read_text().strip()
+        version_str = version_path.read_text().strip()
     except Exception:
+        logger.info("Could not read version file")
         pass
 
     logger.info(f"{version_str=}")
