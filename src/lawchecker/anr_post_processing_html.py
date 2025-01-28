@@ -9,6 +9,15 @@ from lxml import etree as ET
 from lxml.etree import iselement
 
 from lawchecker.lawchecker_logger import logger
+import logging
+
+# Configure logger
+logger.setLevel(logging.DEBUG)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
 
 # TODO: Add logging
 # Run Black on this file
@@ -99,11 +108,15 @@ def reorder_amendments(marshal_files, bill_title, amendment_groups):
             logger.debug(f"No bill-title found in {checking_file.docinfo.URL}")
             continue
 
-        if bill_title_match[0] != bill_title:
-            logger.debug(f"Bill title '{bill_title}' does not match '{bill_title_match[0]}' in {checking_file.docinfo.URL}")
+        # Normalize apostrophes for comparison
+        normalized_bill_title = bill_title.replace("’", "'")
+        normalized_bill_title_match = bill_title_match[0].replace("’", "'")
+
+        if normalized_bill_title != normalized_bill_title_match:
+            logger.debug(f"Bill title '{normalized_bill_title}' does not match '{normalized_bill_title_match}' in {checking_file.docinfo.URL}")
             continue
 
-        logger.debug(f"Matched Bill Title: {bill_title_match[0]} in {checking_file.docinfo.URL}")
+        logger.debug(f"Matched Bill Title: {normalized_bill_title_match} in {checking_file.docinfo.URL}")
 
         all_nums = root.xpath(".//akn:num[@ukl:dnum]", namespaces={
         "akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
