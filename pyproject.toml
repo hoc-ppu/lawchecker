@@ -8,6 +8,17 @@ dependencies = [
     "python-dotenv",
 ]
 requires-python = ">=3.11"
+keywords = [
+    "pywebview",
+    "react",
+    "python",
+    "javascript",
+    "parliament",
+    "law",
+    "bills",
+    "amendments",
+    "legislation"
+]
 
 dynamic = ["version"]
 
@@ -35,4 +46,4 @@ bill_numbering = "lawchecker.compare_bill_numbering:cli"
 profile = "black"
 
 [tool.setuptools.dynamic]
-version = {file = "VERSION"}
+version = {attr = "lawchecker.__version__"}

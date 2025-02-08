@@ -40,10 +40,10 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
       <Card step="Introduction" info="">
         {/* You can put more than one button in here */}
         <p>
-          You can create a report comparing consecutive versions an amendment
+          You can create a report comparing consecutive versions of an amendment
           paper. This report will show you: Added and removed amendments, Added
           and removed names, Any stars that have not been changed correctly, and
-          standing amendments with changes. You will need the XML files for each
+          standing amendments with changes. You will need the LM XML files for
           both the older paper and the newer paper.
         </p>
         <p>

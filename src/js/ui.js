@@ -64,6 +64,13 @@ function progress_modal_clear() {
 }
 window.progress_modal_clear = progress_modal_clear;
 
+function splitOnSubstringAtStart(str, substring) {
+    if (str.startsWith(substring)) {
+        return [substring, str.substring(substring.length)];
+    }
+    return [str];
+}
+
 /**
  * progress_modal_update
  *
@@ -79,6 +86,7 @@ function progress_modal_update(text) {
     // this is to allow file paths to break at the slash
 
     text = text.replace(/[\\/]/g, "<wbr/>$&");
+    text = text.trim();
 
     if (text.startsWith("<wbr/>")){
         // remove <wbr/> if it is at the beginning of the string
@@ -86,11 +94,14 @@ function progress_modal_update(text) {
     }
 
     // If this is an error message...
-    if (text.startsWith('ERROR:')) {
+    const error_split = splitOnSubstringAtStart(text, 'ERROR:');
+    const warning_split = splitOnSubstringAtStart(text, 'WARNING:');
 
+    if (error_split.length > 1) {
         // Add an appropriate class to the HTML
-        text = `<p class="progress_error">${text}</p>`;
-
+        text = `<p><span class="progress_error">${error_split[0]}</span>${error_split[1]}</p>`;
+    } else if (warning_split.length > 1) {
+        text = `<p><span class="progress_warning">${warning_split[0]}</span>${warning_split[1]}</p>`;
     }
 
     // If text is already wrapped in a tag...

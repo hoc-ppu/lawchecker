@@ -11,12 +11,12 @@ from typing import NamedTuple
 from lxml import etree, html
 from lxml.etree import QName, _Element
 
-from lawchecker.lawchecker_logger import logger
 from lawchecker import templates
 from lawchecker import xpath_helpers as xp
+from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
-from lawchecker.utils import diff_xml_content
+from lawchecker.utils import diff_xml_content, truncate_string
 
 # TODO: [x] put all sections in HTML document
 # Add messages for Nil return
@@ -103,6 +103,7 @@ class SupDocument(Mapping):
             tree = etree.ElementTree(xml)
             self.root = xml
 
+        self.short_file_name = truncate_string(self.file_name).replace(".xml", "")
 
         # build up metadata
         self.meta_list_type: str
@@ -154,10 +155,13 @@ class SupDocument(Mapping):
             self.meta_pub_date = datetime.strptime(
                 published_date.get("date", default=""), "%Y-%m-%d"  # type: ignore
             ).strftime("%A %d %B %Y")
+
         except Exception as e:
             warning_msg = f"Can't find Published Date meta data. Check {self.file_name}"
             self.meta_pub_date = warning_msg
-            logger.warning(f"Problem parsing XML. {warning_msg}: {repr(e)}")
+            if not isinstance(e, AttributeError):
+                warning_msg += f": {repr(e)}"
+            logger.info(f"Problem parsing XML. {warning_msg}")
 
     def _create_amdt_map(self) -> dict[str, Amendment]:
         _amdt_map: dict[str, Amendment] = {}

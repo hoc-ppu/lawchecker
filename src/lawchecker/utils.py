@@ -7,6 +7,24 @@ from lawchecker import xpath_helpers as xp
 from lawchecker.lawchecker_logger import logger
 
 
+def truncate_string(s, max_length=26):
+
+    """
+    Truncate a string to a maximum length by replacing the middle characters with three dots.
+
+    If the string length is greater than the specified maximum length, the
+    middle characters are replaced with '__'. The resulting string will have
+    the specified maximum length.
+    """
+
+    if len(s) <= max_length:
+        return s
+    else:
+        # Calculate the number of characters to keep on each side
+        keep_length = (max_length - 2) // 2
+        return s[:keep_length] + '__' + s[-keep_length:]
+
+
 def is_line_junk(line: str) -> bool:
     """
     Return True if line is considered junk, False otherwise.

@@ -15,7 +15,7 @@ import requests
 import webview
 from webview import Window  # TODO: fix this
 
-from lawchecker import added_names_report, pp_xml_lxml, settings
+from lawchecker import __version__, added_names_report, pp_xml_lxml, settings
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
@@ -36,20 +36,15 @@ def set_version_info(window_local: Window | None = None):
     if not window_local:
         window_local = window
 
-    match settings.RUNTIME_ENV:
-        case settings.RtEnv.EXE:
-            version_path = Path(sys._MEIPASS, "VERSION")  # type: ignore
-        case settings.RtEnv.APP:
-            version_path = Path("../Resources/VERSION")
-        case _:
-            version_path = Path("VERSION")
+    # match settings.RUNTIME_ENV:
+    #     case settings.RtEnv.EXE:
+    #         version_path = Path(sys._MEIPASS, "VERSION")  # type: ignore
+    #     case settings.RtEnv.APP:
+    #         version_path = Path("../Resources/VERSION")
+    #     case _:
+    #         version_path = Path("VERSION")
 
-    version_str = "No version str"
-    try:
-        version_str = version_path.read_text().strip()
-    except Exception:
-        logger.info("Could not read version file")
-        pass
+    version_str = __version__
 
     logger.info(f"{version_str=}")
 
@@ -322,7 +317,7 @@ class Api:
             logger.error(f"New XML file is not valid XML: {new_xml_path}")
             return
 
-        out_html_Path = old_xml_path.parent.joinpath("Compare_Bills.html")
+        out_html_path = old_xml_path.parent.joinpath("Compare_Bills.html")
 
         with ProgressModal() as modal:
 
@@ -334,15 +329,15 @@ class Api:
                 new_xml_path,
             )
             report.html_tree.write(
-                str(out_html_Path),
+                str(out_html_path),
                 method="html",
                 encoding="utf-8",
                 doctype="<!DOCTYPE html>"
             )
-            modal.update(f"HTML report created: {out_html_Path}")
+            modal.update(f"HTML report created: {out_html_path}")
             modal.update("Attempting to open in browser...")
 
-            webbrowser.open(out_html_Path.resolve().as_uri())
+            webbrowser.open(out_html_path.resolve().as_uri())
 
     def bill_compare_in_vs_code(self):
 
@@ -440,22 +435,26 @@ class Api:
             logger.error(f"New XML file is not valid XML: {new_xml_path}")
             return
 
-        out_html_Path = old_xml_path.parent.joinpath("Compare_Amendments.html")
-
         report = Report(
             old_xml_path,
             new_xml_path,
             days_between_papers,
         )
+
+        report_file_name = f"Comp_Amdts_{report.old_doc.short_file_name}.html"
+        out_html_path = old_xml_path.parent.joinpath(report_file_name)
+
         report.html_tree.write(
-            str(out_html_Path),
+            str(out_html_path),
             method="html",
             encoding="utf-8",
             doctype="<!DOCTYPE html>"
         )
 
-        logger.warning(f"Opening {out_html_Path=}")
-        webbrowser.open(out_html_Path.resolve().as_uri())
+        with ProgressModal() as modal:
+            modal.update(f"Opening: {out_html_path}")
+
+        webbrowser.open(out_html_path.resolve().as_uri())
 
 
     def set_v_info(self):

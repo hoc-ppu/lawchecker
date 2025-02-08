@@ -288,6 +288,9 @@
 .progress_error {
   color: #DE2E32;
 }
+.progress_warning {
+  color: #E0B507;
+}
 
 .sr-only {
   position: absolute;
