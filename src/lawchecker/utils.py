@@ -48,11 +48,11 @@ def remove_refs(parent_element: _Element) -> _Element:
     """
 
     # Create a copy of the parent element
-    # we will remove references only from the copy
-    # so that the original parent element is not modified
-    # this is because sometimes the cross references are taken out
-    # but the text that was within in the ref element is left behind
-    # if we don't do this, and remove the ref element from the original
+    # we will remove references only from the copy so that the
+    # original parent element is not modified this is because
+    # sometimes the cross references are taken out in LM but the
+    # text that was within in the ref element is left behind if
+    # we don't do this, and remove the ref element from the original
     # when comparing the text content of the two elements, we will get
     # a difference where there is none
     parent_copy = deepcopy(parent_element)
