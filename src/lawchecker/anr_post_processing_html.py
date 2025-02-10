@@ -9,18 +9,6 @@ from lxml import etree as ET
 from lxml.etree import iselement
 
 from lawchecker.lawchecker_logger import logger
-import logging
-
-# Configure logger
-logger.setLevel(logging.DEBUG)
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
-
-# TODO: Add logging
-# Run Black on this file
 
 
 def get_marshal_xml(folder_path):
@@ -63,7 +51,7 @@ def fetch_eligible_members():
             if member.find("DisplayAs") is not None
         }
     else:
-        print("Failed to fetch data from MNIS API.")
+        logger.info("Failed to fetch data from MNIS API.")
         return set()
 
 def check_amendment_in_files(amendment_num, bill_title, marshal_files):
@@ -427,7 +415,7 @@ def inject_html_template(template_path, output_path, summary_content, dynamic_co
     with open(output_path, "w", encoding="utf-8") as output_file:
         output_file.write(template_html)
 
-    print(f"HTML file successfully generated: {output_path}")
+    logger.info(f"HTML file successfully generated: {output_path}")
 
 # Add ticks and crosses to the HTML file according to the marshalling XML
 def ticks_and_crosses(output_html_file_path, marshal_file_dir):
@@ -551,9 +539,10 @@ def main(template_path, xml_file_path, marshal_file_dir, output_html_file_path):
         ticks_and_crosses(output_html_file_path, marshal_file_dir)
 
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"{e}")
         traceback.print_exc()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
