@@ -9,7 +9,7 @@ import traceback
 import webbrowser
 from datetime import datetime
 from pathlib import Path
-from typing import cast
+from typing import Literal, cast
 
 import requests
 import webview
@@ -28,13 +28,15 @@ APP_FROZEN = getattr(sys, 'frozen', False)
 # Reference to the active window will be stored here
 window: Window | None = None
 
-# add modal to the logger
 
 def set_version_info(window_local: Window | None = None):
 
     # logger.info(f"{window_local=}")
     if not window_local:
         window_local = window
+    if not window_local:
+        logger.error("No window object.")
+        return
 
     # match settings.RUNTIME_ENV:
     #     case settings.RtEnv.EXE:
@@ -66,7 +68,6 @@ class Api:
         self.com_amend_old_xml: Path | None = None
         self.com_amend_new_xml: Path | None = None
 
-
     def _open_file_dialog(self, file_type="") -> Path | None:
 
         # select a file
@@ -81,15 +82,20 @@ class Api:
         else:
             file_types = ("All files (*.*)",)
 
-        result = active_window.create_file_dialog(
-            webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types
-        )
+        try:
+            # result is None if the user cancels the dialog
+            result = active_window.create_file_dialog(
+                webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types
+            )
+        except AttributeError:
+            # occasionally on macos, if the user switches applications
+            # the active window can be none
+            result = None
 
         if result is None:
             return None
 
         return Path(result[0])
-
 
     def open_file_dialog(self, file_specifier: str, file_type="") -> str:
         # select a file
@@ -188,8 +194,6 @@ class Api:
             logger.error(msg)
             return f"Error: {msg}"
 
-
-
     def open_dash_xml_in_browser(self) -> str:
         """
         Loads the Added Names dashboard XML in the default web browser.
@@ -285,26 +289,32 @@ class Api:
             traceback.print_exc(file=sys.stdout)
             return f"Error: {str(e)}"
 
+    def _create_html_compare(
+        self, report_type: Literal["bills", "amendments"], days_between_papers: bool = False
+    ):
+        """
+        Create the compare report for either bills or amendments
+        """
 
-    def bill_create_html_compare(self):
-        """
-        Create the compare report for bills
-        """
+        if report_type == "bills":
+            old_xml_path = self.com_bill_old_xml
+            new_xml_path = self.com_bill_new_xml
+        elif report_type == "amendments":
+            old_xml_path = self.com_amend_old_xml
+            new_xml_path = self.com_amend_new_xml
+        else:
+            raise ValueError(f"Unknown report type: {report_type}")
 
         # TODO: add better validation and error handling
-        if not self.com_bill_old_xml:
+        if not old_xml_path:
             logger.error("No old XML file selected.")
             return
 
-        if not self.com_bill_new_xml:
+        if not new_xml_path:
             logger.error("No new XML file selected.")
             return
 
-        old_xml_path = Path(self.com_bill_old_xml).resolve()
-        new_xml_path = Path(self.com_bill_new_xml).resolve()
-
         # Check the Old and New XML files can both be parsed as XML
-
         old_xml = pp_xml_lxml.load_xml(str(old_xml_path))
         new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
 
@@ -317,27 +327,45 @@ class Api:
             logger.error(f"New XML file is not valid XML: {new_xml_path}")
             return
 
-        out_html_path = old_xml_path.parent.joinpath("Compare_Bills.html")
-
-        with ProgressModal() as modal:
-
-            modal.update(f"Old XML path: {old_xml_path}")
-            modal.update(f"New XML path: {new_xml_path}")
-
+        if report_type == "bills":
             report = BillReport(
                 old_xml_path,
                 new_xml_path,
             )
+            # TODO: should probably add the normalised truncated bill title
+            report_file_name = "Comp_Bills.html"
+
+        elif report_type == "amendments":
+            report = Report(
+                old_xml_path,
+                new_xml_path,
+                days_between_papers,
+            )
+            report_file_name = f"Comp_Amdts_{report.old_doc.short_file_name}.html"
+
+        with ProgressModal() as modal:
+
+            modal.update(f"Old XML path: {old_xml_path}", log=True)
+            modal.update(f"New XML path: {new_xml_path}", log=True)
+
+            out_html_path = old_xml_path.parent.joinpath(report_file_name)
+
             report.html_tree.write(
                 str(out_html_path),
                 method="html",
                 encoding="utf-8",
                 doctype="<!DOCTYPE html>"
             )
-            modal.update(f"HTML report created: {out_html_path}")
+
+            modal.update(f"HTML report created: {out_html_path}", log=True)
             modal.update("Attempting to open in browser...")
 
             webbrowser.open(out_html_path.resolve().as_uri())
+
+    def bill_create_html_compare(self):
+        """Create the compare report for bills"""
+
+        self._create_html_compare("bills")
 
     def bill_compare_in_vs_code(self):
 
@@ -397,8 +425,7 @@ class Api:
         if created_files:
             with ProgressModal() as modal:
                 for file in created_files:
-                    modal.update(f"CSV file created: {file}")
-
+                    modal.update(f"CSV file created: {file}", log=True)
 
     def amend_create_html_compare(
         self, days_between_papers=False
@@ -407,58 +434,10 @@ class Api:
         Create the compare report for amendments
         """
 
-        # TODO: add better validation and error handling
-        if not self.com_amend_old_xml:
-            logger.error("No old XML file selected.")
-            return
-
-        if not self.com_amend_new_xml:
-            logger.error("No new XML file selected.")
-            return
-
-        old_xml_path = Path(self.com_amend_old_xml).resolve()
-        new_xml_path = Path(self.com_amend_new_xml).resolve()
-
-        # Check the Old and New XML files can both be parsed as XML
-
-        old_xml = pp_xml_lxml.load_xml(str(old_xml_path))
-        new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
-
-        print()
-
-        # TODO: Improve the below
-        if not old_xml:
-            logger.error(f"Old XML file is not valid XML: {old_xml_path}")
-            return
-
-        if not new_xml:
-            logger.error(f"New XML file is not valid XML: {new_xml_path}")
-            return
-
-        report = Report(
-            old_xml_path,
-            new_xml_path,
-            days_between_papers,
-        )
-
-        report_file_name = f"Comp_Amdts_{report.old_doc.short_file_name}.html"
-        out_html_path = old_xml_path.parent.joinpath(report_file_name)
-
-        report.html_tree.write(
-            str(out_html_path),
-            method="html",
-            encoding="utf-8",
-            doctype="<!DOCTYPE html>"
-        )
-
-        with ProgressModal() as modal:
-            modal.update(f"Opening: {out_html_path}")
-
-        webbrowser.open(out_html_path.resolve().as_uri())
-
+        self._create_html_compare("amendments", days_between_papers)
 
     def set_v_info(self):
-        # print("set_v_info called")
+        logger.info("set_v_info called")
         set_version_info(webview.active_window())
 
     # ! def added_names_report(self):
@@ -469,7 +448,7 @@ def get_entrypoint():
 
     if not APP_FROZEN:  # unfrozen development
         try:
-            # must use the right port here, vite default is 5174.
+            # must use the right port here, we use 5174.
             # Changed in vite.config.ts file
             url = 'http://localhost:5175'
             get = requests.get(url)
@@ -477,7 +456,7 @@ def get_entrypoint():
                 return url
         except requests.exceptions.RequestException:
             print('Vite server not running. Trying static files')
-        return Path('ui_bundle/index.html').resolve().as_uri()   # TODO: fix this
+        return Path('ui_bundle/index.html').resolve().as_uri()  # TODO: fix this
 
     py_2_app_path = Path("../Resources/ui_bundle/index.html")
     if py_2_app_path.exists():  # frozen py2app
@@ -497,15 +476,15 @@ def get_entrypoint():
 
     time.sleep(5)
 
-    raise Exception('No index.html found')
-
+    raise FileNotFoundError('No index.html found')
 
 
 def main():
-    with open("what.txt", "w") as f:
-        for k, v in sys.__dict__.items():
-            f.write(f"{k}: {v}\n")
-    # print(repr(sys.__dict__))
+    logger.info("Starting Lawchecker main")
+    # with open("what.txt", "w") as f:
+    #     for k, v in sys.__dict__.items():
+    #         f.write(f"{k}: {v}\n")
+
     entry = get_entrypoint()
 
     logger.info(f"{entry=}")
@@ -526,8 +505,6 @@ def main():
 
     global window
     window = webview.create_window(
-        # url="file:///Users/mark/projects/pup-app/ui/pup_app_ui.html",  # no server
-        # TODO: more robust solution to find the path to the html file
         url=entry,
         js_api=api,
         title="Lawchecker",
@@ -537,17 +514,16 @@ def main():
         text_select=True,
         zoomable=True,
         # server=False,
-
     )
 
     print("Loaded")
+    logger.info("Main window created")
 
     window = cast(Window, window)
 
-
     # window.events.loaded += on_loaded
 
-    debug = not APP_FROZEN  # dont want to be in build app
+    debug = not APP_FROZEN  # no debug in build app
     # debug = True
 
     # add ui logger
