@@ -9,6 +9,7 @@ from typing import Iterable
 
 from lxml import etree
 from lxml.etree import _Element
+from lxml.html import HtmlElement
 
 from lawchecker.lawchecker_logger import logger
 from lawchecker.templates import Table
@@ -252,6 +253,12 @@ class CompareBillNumbering:
             # Sort bills by published date if available
             if all(bill.published_dt for bill in bills):
                 bills.sort(key=lambda x: x.published_dt)
+                logger.info("")
+                logger.info(f"Sorted bills for {title}:")
+                for bill in bills:
+                    logger.info(f"{bill.version} - {bill.published_dt}")
+            else:
+                logger.warning(f"Published date not found for some files for '{title}'. Output will not be ordered properly.")
 
             # Initialize comparison structure
             headers = ["eid"] + [clean(bill.version, no_space=True) for bill in bills]
@@ -292,6 +299,11 @@ class CompareBillNumbering:
         comparison_tables = []
 
         for title, bills in self.bills_container.items():
+
+            if all(bill.published_dt for bill in bills):
+                bills.sort(key=lambda x: x.published_dt)
+            else:
+                logger.warning(f"Published date not found for some files for '{title}'. Output will not be ordered properly.")
 
             # Initialize comparison structure
             headers = ["guid"] + [clean(bill.version, no_space=True) for bill in bills]
@@ -351,11 +363,11 @@ class CompareBillNumbering:
         return created_csv_files
 
 
-    def to_html_tables(self) -> list[etree._Element]:
+    def to_html_tables(self) -> list[HtmlElement]:
 
         comparison_table_containers = self._create_comparison_table_containers()
 
-        html_list = []
+        html_list: list[HtmlElement] = []
 
         for table in comparison_table_containers:
             table_html = Table(table.headers, table.rows).html
