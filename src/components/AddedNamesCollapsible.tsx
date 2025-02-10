@@ -102,7 +102,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
       stateId="addedNamesCollapsible"
       title="Added names report"
     >
-      <Card step="Step&nbsp;1 Optional" info="Create working folders">
+      <Card step="Step&nbsp;1 (Optional)" info="Create working folders">
         {/* You can put more than one button in here */}
         <p>
           Ideally you should create a dated folder in{" "}
@@ -133,11 +133,11 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
             </a>
           </p>
         )}
-        <p>
-          Note: This button will also create subfolders, Dashboard_Data and
+        <p><small>
+        <strong>Note:</strong> This button will also create subfolders, Dashboard_Data and
           Amendment_Paper_XML. Ideally save data from Sharepoint in
           Dashboard_Data and save Amendment XML in Amendment_Paper_XML (see
-          below).
+          below).</small>
         </p>
       </Card>
       <Card step="Step&nbsp;2" info="Download dashboard data">
@@ -164,7 +164,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
           </p>
         )}
       </Card>
-      <Card step="Step&nbsp;3 (Optional)" info="Add marshalling info">
+      <Card step="Step&nbsp;3 (Recommended)" info="Add marshalling info">
         <p>
           If you want the amendments in the report marshalling: save the
           Lawmaker XML file(s) for the paper(s) into a folder (ideally within
@@ -188,11 +188,10 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
             />
           </>
         )}
-        <p>
-          Note: The marshalling feature works with one or several papers. In
-          either case the XML file(s) need to be saved in a folder and you need
-          to select that folder. Do not try to select a single XML file. Both LM
-          and FM XML files can be used for marshalling.
+        <p><small>
+        <strong>Note:</strong> The marshalling feature works with one or several papers. In
+          either case the <strong>XML file(s) need to be saved in a folder and you need
+          to select that folder.</strong> Do not try to select a single XML file.</small>
         </p>
       </Card>
 
