@@ -3,6 +3,8 @@ import logging
 import webview
 from webview import Window
 
+from lawchecker.lawchecker_logger import logger
+
 
 class ProgressModal:
 
@@ -23,7 +25,14 @@ class ProgressModal:
 
         return self
 
-    def update(self, text: str) -> None:
+    def update(self, text: str, log=False, log_level="INFO") -> None:
+
+        if log:
+            try:
+                getattr(logger, log_level.lower())(text)
+            except AttributeError:
+                logger.error(f"Invalid log level: {log_level}")
+                logger.info(text)
 
         if isinstance(self.window, Window):
 
