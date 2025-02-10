@@ -425,7 +425,7 @@ class Api:
         if created_files:
             with ProgressModal() as modal:
                 for file in created_files:
-                    modal.update(f"CSV file created: {file}", log=True)
+                    modal.update(f"CSV file created: {file}")
 
     def amend_create_html_compare(
         self, days_between_papers=False

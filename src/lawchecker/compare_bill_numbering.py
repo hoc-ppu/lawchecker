@@ -60,8 +60,6 @@ def try_parse_date(
     date_formats: list[str] = LIKELY_DATE_FORMATS
 ) -> datetime | None:
 
-    date_formats = LIKELY_DATE_FORMATS
-
     date_str = date_str.strip()
 
     # sometimes dates follow the ISO 8601 standard so try that first
@@ -88,7 +86,7 @@ class Bill:
         self.title = self.get_bill_title()
         self.published_dt = self.get_published_date()
 
-    def get_published_date(self) -> str | None:
+    def get_published_date(self) -> str:
         xpath = '//xmlns:FRBRManifestation/xmlns:FRBRdate[@name != "akn_xml"]/@date[not(.="")]'
 
         try:
@@ -99,17 +97,9 @@ class Bill:
 
         except Exception:
             logger.warning(f"Date not found in {self.file_name}")
-            return None
+            return ""
         else:
             return dt.strftime("%Y-%m-%d-%H-%M-%S")
-
-        # try:
-        #     date_time: str = self.root.xpath(xpath, namespaces=NSMAP)[0]
-        #     dt = date_parser.parse(date_time)
-        #     return dt.strftime("%Y-%m-%d-%H-%M-%S")
-        # except Exception:
-        #     logger.warning(f"Date not found in {self.file_name}")
-        #     return None
 
     def get_version(self) -> str:
         xpath_temp = '//xmlns:references/*[@eId="{}"]/@showAs'
@@ -196,7 +186,7 @@ class CompareBillNumbering:
         The value is a list of Bill objects. So different versions of the same
         bill are grouped together."""
 
-        self.bills_container = {}
+        self.bills_container: dict[str, list[Bill]] = {}
         logger.info("CompareBillNumbering initialized")
 
         # parse each bill and store in dictionary
@@ -204,12 +194,29 @@ class CompareBillNumbering:
             try:
                 bill = Bill(*xml_file)
                 self.bills_container.setdefault(bill.title, []).append(bill)
-                print(f"Bill added: {bill.title}")
+                logger.info(f"Bill added: {bill.title}")
             except IndexError as e:
                 logger.error(f"Error parsing {xml_file[1]}: {repr(e)}")
 
     @classmethod
     def from_folder(cls, in_folder: Path | None):
+        """
+        Create an instance of CompareBillNumbering by parsing all XML files in the specified folder.
+
+        This method scans the specified folder for XML files, parses each file,
+        and initializes a CompareBillNumbering instance with the parsed XML data.
+
+        Parameters:
+        in_folder (Path | None): The folder containing the XML files to be parsed.
+                                 If None, the current directory is used.
+
+        Returns:
+        CompareBillNumbering: An instance of CompareBillNumbering.
+
+        Raises:
+        etree.XMLSyntaxError: If an XML file cannot be parsed due to syntax errors.
+        """
+
         logger.info(f"from_folder called with in_folder: {in_folder}")
         in_folder = Path(in_folder or ".")
         xml_files = []
@@ -242,8 +249,11 @@ class CompareBillNumbering:
                 - values are dictionaries with "headers" (list of column headers)
                   and "rows" (list of row data)
         """
-        bill_comparison_dict = {}
+
         logger.info("Creating comparison data")
+
+        bill_comparison_dict: dict[str, dict[str, list[str]]] = {}
+
         for title, bills in self.bills_container.items():
             # If there are fewer than 2 bills, skip comparison
             if len(bills) < 2:
@@ -258,7 +268,10 @@ class CompareBillNumbering:
                 for bill in bills:
                     logger.info(f"{bill.version} - {bill.published_dt}")
             else:
-                logger.warning(f"Published date not found for some files for '{title}'. Output will not be ordered properly.")
+                logger.warning(
+                    f"Published date not found for some files for '{title}'."
+                    " Output will not be ordered properly."
+                )
 
             # Initialize comparison structure
             headers = ["eid"] + [clean(bill.version, no_space=True) for bill in bills]
@@ -303,7 +316,10 @@ class CompareBillNumbering:
             if all(bill.published_dt for bill in bills):
                 bills.sort(key=lambda x: x.published_dt)
             else:
-                logger.warning(f"Published date not found for some files for '{title}'. Output will not be ordered properly.")
+                logger.warning(
+                    f"Published date not found for some files for '{title}'."
+                    " Output will not be ordered properly."
+                )
 
             # Initialize comparison structure
             headers = ["guid"] + [clean(bill.version, no_space=True) for bill in bills]
@@ -356,9 +372,9 @@ class CompareBillNumbering:
                 for row in comparison_table_container.rows:
                     writer.writerow(row)
 
-            created_csv_files.append(csv_path)
+                logger.info(f"Saved CSV: {csv_path}")
 
-        logger.info(f"Saved CSV: {csv_path}")
+            created_csv_files.append(csv_path)
 
         return created_csv_files
 
@@ -403,29 +419,8 @@ def cli():
 
     input_folder = Path(args.input_folder or ".")
     output_folder = Path(args.output_folder or ".")
-    compile = CompareBillNumbering.from_folder(input_folder)
-    compile.save_csv(output_folder)
-
-# CLI
-# @click.command()
-# @click.option(
-#     '--input-folder',
-#     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-#     help="Specify a different folder for finding bill XML. Defaults to current directory.",
-# )
-# @click.option(
-#     "--output-folder",
-#     type=click.Path(exists=True, file_okay=False, dir_okay=True, writable=True),
-#     help="Specify a different folder for saving the output files. Defaults to current directory.",
-# )
-# def cli_old(input_folder, output_folder):
-#     """
-#     Takes in UK bill XML files and generates CSV and HTML comparison reports.
-#     """
-#     input_folder = Path(input_folder or ".")
-#     output_folder = Path(output_folder or ".")
-#     compare = CompareBillNumbering.from_folder(input_folder)
-#     compare.save_csv(output_folder)
+    compile_ = CompareBillNumbering.from_folder(input_folder)
+    compile_.save_csv(output_folder)
 
 
 if __name__ == "__main__":
