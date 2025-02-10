@@ -10,6 +10,7 @@ from typing import NamedTuple
 
 from lxml import etree, html
 from lxml.etree import QName, _Element
+from lxml.html import HtmlElement
 
 from lawchecker import templates
 from lawchecker import xpath_helpers as xp
@@ -265,7 +266,7 @@ class Report:
         Build up HTML document with various automated checks on amendments
         """
         xp = './/div[@id="content-goes-here"]'
-        insert_point: _Element = self.html_root.find(xp)  # type: ignore
+        insert_point: HtmlElement = self.html_root.find(xp)  # type: ignore
         # print(etr)
         insert_point.extend(
             (
@@ -277,7 +278,7 @@ class Report:
             )
         )
 
-    def render_intro(self) -> _Element:
+    def render_intro(self) -> HtmlElement:
         # ------------------------- intro section ------------------------ #
         into = (
             "This report summarises changes between two LawMaker"
@@ -316,7 +317,7 @@ class Report:
 
         return section
 
-    def render_added_and_removed_amdts(self) -> _Element:
+    def render_added_and_removed_amdts(self) -> HtmlElement:
         # ----------- Removed and added amendments section ----------- #
         # build up text content
         removed_content = "Removed content: <strong>None</strong>"
@@ -339,7 +340,7 @@ class Report:
         ])
         return card.html
 
-    def added_and_removed_names_table(self) -> _Element:
+    def added_and_removed_names_table(self) -> HtmlElement:
 
         if not self.name_changes:
             return html.fromstring(
@@ -359,7 +360,7 @@ class Report:
                         f'<span class="col-12 col-lg-6  mb-2">{name}</span>'
                     )
                 )
-            p_names_added = etree.fromstring('<p class="row"></p>')
+            p_names_added = html.fromstring('<p class="row"></p>')
             p_names_added.extend(names_added)
 
             total_added = len(item.added)
@@ -376,7 +377,7 @@ class Report:
 
         return name_changes.html
 
-    def render_added_and_removed_names(self) -> _Element:
+    def render_added_and_removed_names(self) -> HtmlElement:
 
         """Added and removed names section"""
 
@@ -436,7 +437,7 @@ class Report:
         return card.html
 
 
-    def render_stars(self) -> _Element:
+    def render_stars(self) -> HtmlElement:
         # -------------------- Star check section -------------------- #
         # build up text content
         correct_stars = html.fromstring(
@@ -467,7 +468,7 @@ class Report:
         # self.add_element_to_output_html(card.html)
         return card.html
 
-    def render_changed_amdts(self) -> _Element:
+    def render_changed_amdts(self) -> HtmlElement:
         # -------------------- Changed Amendments -------------------- #
         # build up text content
         changed_amdts = (
@@ -482,7 +483,9 @@ class Report:
                 changed_amdts += f"<p class='h5'>{item.num}:</p>\n{item.html_diff}\n"
 
         card = templates.Card("Changed amendments")
-        card.secondary_info.extend(html.fragments_fromstring(changed_amdts))
+        card.secondary_info.extend(
+            html.fragments_fromstring(changed_amdts, no_leading_text=True)
+        )
 
         return card.html
 
@@ -493,13 +496,16 @@ class Report:
         old_amdt: Amendment | None,
     ):
 
-        """New amendments should have a black star.
+        """
+        New amendments should have a black star.
 
         if there are no sitting or printing days between the two documents:
         * Amendments which previously had a black star should now have a white star.
         * Amendments which previously had a white star should now have no star.
+
         If there are sitting or printing days between the two documents:
-        * Amendments which previously a star of any colour should now have no star."""
+        * Amendments which previously a star of any colour should now have no star.
+        """
 
         if old_amdt is None:
             if new_amdt.star == BLACK_STAR:
@@ -620,8 +626,6 @@ class Report:
             self.changed_amdts.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
 
-
-
 def main():
 
     parser = argparse.ArgumentParser(
@@ -670,6 +674,13 @@ def main():
 
 
 def find_duplicates(lst: list[str]) -> list[str]:
+    """
+    Find and return a list of duplicate items in the given list.
+
+    This function takes a list of strings and returns a list of items that
+    appear more than once in the original list. The returned list contains
+    the duplicate items sorted in ascending order.
+    """
 
     # Convert the list to a set to remove duplicates
     unique_items = set(lst)
@@ -694,7 +705,6 @@ def find_duplicates(lst: list[str]) -> list[str]:
         return [item for item in sorted_items if item_counts[item] > 1]
 
     return list()
-
 
 
 if __name__ == "__main__":

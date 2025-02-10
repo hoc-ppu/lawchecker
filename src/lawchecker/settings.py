@@ -22,7 +22,6 @@ elif hasattr(sys, "frozen") and Path("../Resources").exists():
     RUNTIME_ENV = RtEnv.APP
 
 
-
 try:
     # on the bundled app we expect the /env file to be in the temp folder
     bundled_env = Path(sys._MEIPASS).joinpath(".env")  # type: ignore
@@ -100,7 +99,6 @@ if not COMPARE_REPORT_TEMPLATE.exists():
 
 class GLOBAL_VARS:
     anr_working_folder: Path | None = None
-
 
 
 # ------------------------- default xml stuff ------------------------ #

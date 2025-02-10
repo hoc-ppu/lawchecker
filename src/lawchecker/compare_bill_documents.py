@@ -14,6 +14,7 @@ from typing import NamedTuple
 
 from lxml import etree, html
 from lxml.etree import _Element
+from lxml.html import HtmlElement
 
 from lawchecker import templates
 from lawchecker import xpath_helpers as xp
@@ -247,7 +248,7 @@ class Report:
         except Exception:
             pass
 
-        insert_point: _Element = self.html_root.find('.//div[@id="content-goes-here"]')  # type: ignore
+        insert_point: HtmlElement = self.html_root.find('.//div[@id="content-goes-here"]')  # type: ignore
         insert_point.extend(
             (
                 self.render_intro(),
@@ -257,7 +258,7 @@ class Report:
             )
         )
 
-    def render_intro(self) -> _Element:
+    def render_intro(self) -> HtmlElement:
         # ------------------------- intro section ------------------------ #
         into = (
             "This report summarises changes between the XML of two LawMaker"
@@ -293,7 +294,7 @@ class Report:
 
         return section
 
-    def render_added_and_removed_sect(self) -> _Element:
+    def render_added_and_removed_sect(self) -> HtmlElement:
         # ----------- Removed and added amendments section ----------- #
 
         # create spans with section number add guid as tooltip.
@@ -330,13 +331,16 @@ class Report:
         return card.html
 
 
-    def render_changed_sects(self) -> _Element:
+    def render_changed_sects(self) -> HtmlElement:
         # -------------------- Changed Sections -------------------- #
         # build up text content
 
         changed_sects = (
             "<p><strong>Zero</strong> clauses or schedule paragraphs have changed content.</p>"
         )
+
+        logger.info(f"Number of changed sections: {len(self.changed_sects)}")
+        logger.info(f"Number of changed sections (no refs): {len(self.changed_sects_no_refs)}")
 
         inner_changed_sects = (
             _render_changed_sects_inner(self.changed_sects)
@@ -354,11 +358,13 @@ class Report:
                 " cross referenced numbering has changed.<br/><small>Note: cross reference changes"
                 " will still be shown if there are other changes.</small></p>"
                 '<button class="btn btn-primary" id="toggle-refs">Hide x ref only changes</button>')
-        card.secondary_info.extend(html.fragments_fromstring(info + changed_sects))
+        card.secondary_info.extend(
+            html.fragments_fromstring(info + changed_sects, no_leading_text=True)
+        )
 
         return card.html
 
-    def render_numbering_changes(self) -> _Element:
+    def render_numbering_changes(self) -> HtmlElement:
 
         _bill_renumbering = CompareBillNumbering(
             [
@@ -396,8 +402,6 @@ class Report:
         )
 
         return card.html
-
-
 
     def added_and_removed_sects(self, old_doc: "Bill", new_doc: "Bill"):
 
@@ -452,7 +456,6 @@ class Report:
             self.changed_sects_no_refs.append(
                 ChangedSect(new_sect.guid, old_sect.num, new_sect.num, dif_html_str_no_refs)
             )
-
 
 
 def main():
@@ -588,6 +591,7 @@ def _render_changed_sects_inner(changed_sects, include_refs=True) -> str:
     changed_sects_html += html.tostring(grid_element, encoding=str) + html_diffs + "</div>"
 
     return changed_sects_html
+
 
 def clean_bill_xml(bill_xml: _Element):
     # get the body
