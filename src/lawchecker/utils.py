@@ -1,5 +1,6 @@
 import difflib
 import re
+from copy import deepcopy
 
 from lxml.etree import Element, QName, _Element
 
@@ -44,10 +45,19 @@ nbsp = re.compile(r"(?<!&nbsp;)&nbsp;(?!</span>)(?!&nbsp;)")
 def remove_refs(parent_element: _Element) -> _Element:
     """
     Remove ref elements from parent_element and all its descendant elements.
-    Note: parent_element is modified in place.
     """
 
-    for element in parent_element.iter(Element):
+    # Create a copy of the parent element
+    # we will remove references only from the copy
+    # so that the original parent element is not modified
+    # this is because sometimes the cross references are taken out
+    # but the text that was within in the ref element is left behind
+    # if we don't do this, and remove the ref element from the original
+    # when comparing the text content of the two elements, we will get
+    # a difference where there is none
+    parent_copy = deepcopy(parent_element)
+
+    for element in parent_copy.iter(Element):
         tag = QName(element).localname
         if tag == "ref":
             try:
@@ -55,16 +65,12 @@ def remove_refs(parent_element: _Element) -> _Element:
             except Exception as e:
                 logger.warning(f"Error removing ref element: {e}")
 
-    return parent_element
+    return parent_copy
 
 
-
-def clean_whitespace(parent_element: _Element) -> _Element:
-
+def is_inline_element(tag: str) -> bool:
     """
-    Remove unwanted whitespace from parent_element and all its descendant
-    elements. Note: parent_element is modified in place.
-    Add a newline after parent_elements (which represent paragraphs)
+    Return True if element is an inline element, False otherwise.
     """
 
     # these are inline elements, we should leave them well alone
@@ -77,17 +83,28 @@ def clean_whitespace(parent_element: _Element) -> _Element:
         "ref", "rref", "mref", "def"
     )
 
+    return tag in inlines
+
+
+def clean_whitespace(parent_element: _Element) -> _Element:
+
+    """
+    Remove unwanted whitespace from parent_element and all its descendant
+    elements. Add a newline after parent_elements (which represent paragraphs)
+    """
+
+    parent_copy = deepcopy(parent_element)
+
     # paragraph elements. Add new line after.
     paragraphs = ("p", "docIntroducer", "docProponent", "heading",)  # "mod"?
 
-
-    for element in parent_element.iter(Element):
+    for element in parent_copy.iter(Element):
         tag = QName(element).localname
 
         if tag == "inline" and element.get("name") == "AppendText" and element.text:
             element.text = f"{element.text} "
 
-        if tag in inlines:
+        if is_inline_element(tag):
             continue
 
         # remove whitespace
@@ -106,21 +123,17 @@ def clean_whitespace(parent_element: _Element) -> _Element:
                 last_child = None
 
             if last_child is not None:
-                # print(f"{tag=}, {last_child=}")
                 # add test for this.
-                if last_child.tail:
+                if last_child.tail and not last_child.tail.endswith("\n"):
                     last_child.tail = f"{last_child.tail}\n"
                 else:
                     last_child.tail = "\n"
-                # print(f"{last_child.tail=}")
             elif element.text:
                 element.text = f"{element.text.rstrip()}\n"
-            if element.tail and not element.tail.isspace():
+            if element.tail and not element.tail.isspace() and not element.tail.endswith("\n"):
                 # occasionally paragraph elements have tail text. for instance in tables
                 # e.g. see Leasehold and Freehold Reform Bill from about January 2024
                 element.tail = f"{element.tail}\n"
-
-            # print(f"{etree.tostring(element).decode()}\n")
 
         if tag == "mod" and element.text:
             # TODO: improve this. See Terrorism (Protection of Premises)  2R & AAC. Session 2024-25
@@ -137,7 +150,7 @@ def clean_whitespace(parent_element: _Element) -> _Element:
             # Add in space after num element
             element.text = f"{element.text} "
 
-    return parent_element
+    return parent_copy
 
 
 def diff_xml_content(
