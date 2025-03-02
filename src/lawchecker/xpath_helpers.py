@@ -36,6 +36,11 @@ get_amendments = XPath(
     expected_type=list[_Element],
 )
 
+get_amendments_bodies = XPath(
+    "//xmlns:component/xmlns:amendment/xmlns:amendmentBody",
+    expected_type=list[_Element],
+)
+
 # here sections will include clauses and schedule paragraphs
 get_sections = XPath(
     "//xmlns:section[not(ancestor::xmlns:mod)]",
@@ -63,6 +68,15 @@ get_name_elements = XPath(
     expected_type=list[_Element],
 )
 
+get_name_elements_2 = XPath(
+    # TODO: we should make sure that both check bills api and compare amends use the same element for amendments
+    (
+        "xmlns:amendment/xmlns:amendmentBody/xmlns:amendmentHeading/xmlns:block[@name='proposer' or"
+        " @name='supporters']/*[@refersTo]"
+    ),
+    expected_type=list[_Element],
+)
+
 get_amdt_heading = XPath(
     "xmlns:amendmentHeading[1]",
     expected_type=list[_Element],
@@ -70,5 +84,11 @@ get_amdt_heading = XPath(
 
 get_amdt_content = XPath(
     "xmlns:amendmentContent[1]",
+    expected_type=list[_Element],
+)
+
+get_amdt_content_2 = XPath(
+    # check vs API the active element is element
+    "xmlns:amendment/xmlns:amendmentBody/xmlns:amendmentContent[1]",
     expected_type=list[_Element],
 )

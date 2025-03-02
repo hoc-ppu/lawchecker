@@ -1,6 +1,7 @@
 import difflib
 import re
 from copy import deepcopy
+from typing import Sequence
 
 from lxml.etree import Element, QName, _Element
 
@@ -202,13 +203,53 @@ def diff_xml_content(
     # fromlines = [line.strip() for line in fromlines if line.strip()]
     # tolines = [line.strip() for line in tolines if line.strip()]
 
+    dif_html_str = html_diff_lines(
+        fromlines,
+        tolines,
+        fromdesc=fromdesc,
+        todesc=todesc,
+    )
+
+    # dif_html_str = html_diff.make_table(
+    #     fromlines,
+    #     tolines,
+    #     fromdesc=fromdesc,
+    #     todesc=todesc,
+    #     context=True,
+    #     numlines=3,
+    # )
+    # dif_html_str = dif_html_str.replace('nowrap="nowrap"', "")
+
+    # # remove nbsp but only when not in a span (as spans are used for changes
+    # # e.g. <span class="diff_sub">) and not if this nbsp is folowed by
+    # # another nbsp (as this is used for indentation)
+    # dif_html_str = nbsp.sub(" ", dif_html_str)
+
+    return dif_html_str
+
+
+def html_diff_lines(
+    fromlines: Sequence[str],
+    tolines: Sequence[str],
+    fromdesc: str = "",
+    todesc: str = "",
+    context=True,
+    numlines=3,
+) -> str | None:
+
+    fromlines = [normalise_text(line) for line in fromlines if line.strip()]
+    tolines = [normalise_text(line) for line in tolines if line.strip()]
+
+    if fromlines == tolines:
+        return None
+
     dif_html_str = html_diff.make_table(
         fromlines,
         tolines,
         fromdesc=fromdesc,
         todesc=todesc,
-        context=True,
-        numlines=3,
+        context=context,
+        numlines=numlines,
     )
     dif_html_str = dif_html_str.replace('nowrap="nowrap"', "")
 
@@ -218,3 +259,17 @@ def diff_xml_content(
     dif_html_str = nbsp.sub(" ", dif_html_str)
 
     return dif_html_str
+
+
+def normalise_text(text):
+
+    text = text.replace("\n”", "”")  # should this go here?
+    text = text.replace(" ”", "”")  # should this go here?
+    text = text.replace("“ ", "“")  # should this go here?
+
+    text = re.sub(r"\n\n+", "\n", text)
+    text = re.sub(r"\s\s+", " ", text)
+
+    text = text.strip()
+
+    return text
