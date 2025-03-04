@@ -17,6 +17,7 @@ from lawchecker import xpath_helpers as xp
 from lawchecker.compare_amendment_documents import ChangedAmdt, ChangedNames
 from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, UKL
+from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 
 JSON = int | str | float | bool | None | list["JSON"] | dict[str, "JSON"]
 JSONObject = dict[str, JSON]
@@ -103,6 +104,8 @@ class Sponsor:
     @classmethod
     def from_json(cls, sponsor: dict[str, Any]) -> "Sponsor":
 
+        # TODO: make this more similar to the XML version
+
         name: str | None = sponsor.get("name", None)
         member_id: int | None = sponsor.get("memberId", None)
         is_lead: bool | None = sponsor.get("isLead", None)
@@ -159,6 +162,7 @@ class Amendment:
         decision: str,
         sponsors: list[Sponsor],
         parent: "AmdtContainer | None" = None,
+        star: Star = NO_STAR,
     ):
 
         self.amendment_text = amendment_text
@@ -167,6 +171,7 @@ class Amendment:
         self.decision: str = decision
         self.sponsors: list[Sponsor] = sponsors
         self.parent: "AmdtContainer | None" = parent
+        self.star = star
 
         # we might need to come up with an amendment id that is the same for both
         # the API and the XML... in particular a problem with amendments to amendments
@@ -216,8 +221,14 @@ class Amendment:
             Sponsor.from_json(item) for item in amendment_json.get("sponsors", [])
         ]
 
+        _star: str | None = amendment_json.get("statusIndicator", None)
+        if _star is None:
+            star: Star = Star.none()
+        else:
+            star = Star(_star)
+
         return cls(
-            amendment_text, explanatory_text, amendmet_number, decision, sponsors, parent
+            amendment_text, explanatory_text, amendmet_number, decision, sponsors, parent, star
         )
 
     @classmethod
@@ -269,20 +280,23 @@ class Amendment:
                 f"Can't remove amendment number from amendment content {repr(e)}"
             )
 
-        add_quotes_to_quoted_structures(amendment_content)
+        add_quotes_to_quoted_elements(amendment_content)
 
         amendment_text = utils.normalise_text(
             xp.text_content(utils.clean_whitespace(amendment_content))
         )
 
-        return cls(amendment_text, explanatory_text, amdt_no, decision, sponsors, parent)
+        star = Star(amendment_xml.get(QName(UKL, "statusIndicator"), default=""))
+
+
+        return cls(amendment_text, explanatory_text, amdt_no, decision, sponsors, parent, star)
 
 
 def normalise_amendments_xml(amendment_xml: _Element) -> _Element:
     raise NotImplementedError
 
 
-def add_quotes_to_quoted_structures(amendment_element: _Element) -> None:
+def add_quotes_to_quoted_elements(amendment_element: _Element) -> None:
 
     """Element is modified in place"""
 
@@ -517,12 +531,16 @@ class Report:
         # create AmdtContainer object for json amendments
         self.json_amdts = AmdtContainer.from_json(json_amdts)
 
-        self.not_in_api: list[str] = []
-        self.incorrect_in_api: list[str] = []
+        # here we will put all amendments that arn't correctly in the API
+        # including missing amendments, amendments with incorrect content,
+        # amendments with incorrect names, incorrect decisions etc.
+        # do we need this, could we not just add the other lists together?
+        self.problem_amdts: list[ChangedAmdt] = []
+
+        self.incorrect_amdt_in_api: list[ChangedAmdt] = []
         self.incorrect_decision: list[str] = []
 
         self.missing_api_amdts: list[str] = []
-        self.missing_bill_amdts: list[str] = []
 
         self.no_name_changes: list[str] = []
         self.name_changes: list[ChangedNames] = []
@@ -531,8 +549,6 @@ class Report:
 
         self.correct_stars: list[str] = []
         self.incorrect_stars: list[str] = []
-
-        self.changed_amdts: list[ChangedAmdt] = []
 
         # populate above lists of changes
         self.gather_changes()
@@ -584,6 +600,7 @@ class Report:
                 self.render_intro(),
                 self.render_missing_amdts(),
                 self.render_added_and_removed_names(),
+                self.render_stars(),
                 self.render_changed_amdts(),
             )
         )
@@ -631,10 +648,10 @@ class Report:
         # ----------- Removed and added amendments section ----------- #
         # build up text content
         removed_content = "Missing amendments: <strong>None</strong>"
-        if self.removed_amdts:
+        if self.missing_api_amdts:
             removed_content = (
-                f"Missing content: <strong>{len(self.removed_amdts)}</strong><br />"
-                f"{' '.join(self.removed_amdts)}"
+                f"Missing content: <strong>{len(self.missing_api_amdts)}</strong><br />"
+                f"{' '.join(self.missing_api_amdts)}"
             )
 
         info = (
@@ -695,9 +712,7 @@ class Report:
 
         """Added and removed names section"""
 
-        no_name_changes = html.fromstring(
-            "<p><strong>Zero</strong> amendments have no name changes.</p>"
-        )
+        no_name_changes: HtmlElement | None = None
 
         if self.no_name_changes:
 
@@ -720,7 +735,7 @@ class Report:
             changed_amdts.append(
                 html.fromstring(
                     f"<p><strong>{len(self.name_changes_in_context)}</strong> amendments"
-                    " have changed names: </p>\n"
+                    " have different names in the API: </p>\n"
                 )
             )
             for item in self.name_changes_in_context:
@@ -739,29 +754,62 @@ class Report:
             # might as well not output anything if not necessary
             names_change_context_section.clear()
 
-        card = templates.Card("Added and removed names")
+        card = templates.Card("Check Names")
         card.secondary_info.extend(
             (
                 name_changes_table,
                 names_change_context_section.html,
             )
         )
-        card.tertiary_info.append(no_name_changes)
+        if no_name_changes is not None:
+            card.tertiary_info.append(no_name_changes)
 
         return card.html
+
+
+    def render_stars(self) -> HtmlElement:
+        # -------------------- Star check section -------------------- #
+        # build up text content
+        correct_stars: HtmlElement | None = None
+        if self.correct_stars:
+
+            sec = (templates.SmallCollapsableSection(
+                f"<span><strong>{len(self.correct_stars)}</strong>"
+                f" amendments have correct stars: "
+                '<small class="text-muted"> [show]</small></span>'
+            ))
+            sec.collapsible.text = f"{', '.join(self.correct_stars)}"
+            correct_stars = sec.html
+
+        incorrect_stars = (
+            "All amendments have correct stars"
+        )
+        if self.incorrect_stars:
+            incorrect_stars = (
+                f'<strong class="red">{len(self.incorrect_stars)} amendments'
+                f" have incorrect stars:</strong>  {', '.join(self.incorrect_stars)}"
+            )
+
+        card = templates.Card("Star Check")
+        card.secondary_info.append(html.fromstring(f"<p>{incorrect_stars}</p>"))
+        if correct_stars is not None:
+            card.tertiary_info.append(correct_stars)
+
+        return card.html
+
 
     def render_changed_amdts(self) -> HtmlElement:
         # -------------------- Changed Amendments -------------------- #
         # build up text content
         changed_amdts = (
-            "<p><strong>Zero</strong> amendments have changed content.</p>"
+            "<p>Amendments in the API match those in the XML 😀</p>"
         )
-        if self.changed_amdts:
+        if self.incorrect_amdt_in_api:
             changed_amdts = (
-                f'<p><strong class="red">{len(self.changed_amdts)}</strong>'
-                " amendments have changed content: </p>\n"
+                f'<p><strong class="red">{len(self.incorrect_amdt_in_api)}</strong>'
+                " amendments have incorrect content in the API: </p>\n"
             )
-            for item in self.changed_amdts:
+            for item in self.incorrect_amdt_in_api:
                 changed_amdts += f"<p class='h5'>{item.num}:</p>\n{item.html_diff}\n"
 
         card = templates.Card("Changed amendments")
@@ -771,14 +819,40 @@ class Report:
 
         return card.html
 
+    def check_stars_in_api(
+        self,
+        xml_amdts: AmdtContainer,
+        api_amdts: AmdtContainer,
+    ):
+
+        """
+        Check that amendments that apprear in both the XML and the API have the
+        correct star in the API. If the amendment is not in the XML then we
+        don't need to check the star.
+        """
+
+        for key, xml_amdt in xml_amdts.items():
+            if key not in api_amdts:
+                continue
+            api_amdt = api_amdts[key]
+
+            if api_amdt.star == xml_amdt.star:
+                self.correct_stars.append(f"{api_amdt.num} ({api_amdt.star})")
+            else:
+                self.incorrect_stars.append(
+                    f"{api_amdt.num} has {api_amdt.star} ({xml_amdt.star} expected)"
+                )
+
+
+
     def added_and_removed_amdts(self, old_doc: "AmdtContainer", new_doc: "AmdtContainer"):
 
-        """Find the amendment numbers which have been added and removed"""
+        """Find the amendment numbers missing from the API"""
 
-        self.removed_amdts = list(old_doc.amdt_set.difference(new_doc.amdt_set))
-        self.added_amdts = list(new_doc.amdt_set.difference(old_doc.amdt_set))
+        self.missing_api_amdts = list(old_doc.amdt_set.difference(new_doc.amdt_set))
 
-        # return removed_amdts, added_amdts
+        # we don't need amendments in the API but not in the document
+        # self.added_amdts = list(new_doc.amdt_set.difference(old_doc.amdt_set))
 
     def diff_names(self, new_amdt: Amendment, old_amdt: Amendment):
         # look for duplicate names. Only need to do this for the new_amdt.
@@ -843,7 +917,7 @@ class Report:
             todesc=self.json_amdts.resource_identifier,
         )
         if dif_html_str is not None:
-            self.changed_amdts.append(ChangedAmdt(new_amdt.num, dif_html_str))
+            self.incorrect_amdt_in_api.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
 
 
@@ -854,10 +928,10 @@ def main():
     #
 
     # read amended details json into a class structure
-    # amendmtes_json_path = "amendments_details.json"
-    amendmtes_json_path = "amendments_details_Public_Authorities.json"
+    # amendments_json_path = "amendments_details.json"
+    amendments_json_path = "amendments_details_Public_Authorities.json"
 
-    with open(amendmtes_json_path) as f:
+    with open(amendments_json_path) as f:
         amendments_list_json = json.load(f)
 
     api_amendments: dict[str, Amendment] = {}
