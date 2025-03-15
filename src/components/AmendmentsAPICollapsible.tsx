@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import Accordion from "./Accordion";
+import AccordionItem from "./AccordionItem";
 import Collapsible from "./Collapsible";
 import Card from "./Card";
 import Button from "./Button";
@@ -8,16 +10,19 @@ import addWordBreaksToPath from "./AddWordBreaksToPath";
 
 const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   const [lmXml, setLmXml] = useState<string>("");
+  const [prettyLmXml, setPrettyLmXml] = useState<string>("");
   const [lmXmlFileSelected, setlmXmlFileSelected] = useState<boolean>(false);
+  const [stageId, setStageId] = useState<string>("");
+  const [billId, setBillId] = useState<string>("");
 
   const handleLmXml = async () => {
-    let result = await window.pywebview.api.open_file_dialog(
+    const result = await window.pywebview.api.open_file_dialog(
       "com_amend_api_xml"
     );
-    result = addWordBreaksToPath(result);
     setLmXml(result);
+    setPrettyLmXml(addWordBreaksToPath(result));
   };
-  const handleRefreshAPIamendments = async () => {};
+
   const handleCreateCSV = async () => {
     await window.pywebview.api.create_api_csv();
     console.log("create_api_csv called");
@@ -49,10 +54,10 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
           text="Select LM XML File"
           handleClick={handleLmXml}
         />
-        {lmXml && (
+        {prettyLmXml && (
           <small className="mt-3">
             <strong>LM XML:</strong>{" "}
-            <span dangerouslySetInnerHTML={{ __html: lmXml }} />
+            <span dangerouslySetInnerHTML={{ __html: prettyLmXml }} />
           </small>
         )}
         <p className="mt-3">
@@ -60,17 +65,98 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
             <strong>Note:</strong> The file must be a Lawmaker XML file.
           </small>
         </p>
-        {lmXml && (
-          <Button
-            id="refreshAPIamendments"
-            text="Refresh API Amendments"
-            handleClick={handleRefreshAPIamendments}
-            className="btn btn-secondary"
-          />
-        )}
       </Card>
 
-      <Card step="Step&nbsp;2" info="Create the Amendments API Check report">
+      <Card step="Step&nbsp;2" info="Get or select the Amendments from the API">
+        <Accordion>
+          <AccordionItem title="Automatically get the Amendments from the API">
+            <p>
+              Use this option to Automatically query the bills API using
+              information extracted from the XML file.
+            </p>
+            <div className="d-grid gap-2 col-12 mx-auto my-3">
+              <Button
+                id="api_get_amendments_from_xml"
+                text="Get Amendments"
+                handleClick={() => {
+                  console.log("Get Amendments clicked: ", lmXml);
+                  window.pywebview.api.get_api_amendments_using_xml_for_params(
+                    lmXml
+                  );
+                }}
+              />
+            </div>
+          </AccordionItem>
+          <AccordionItem title="Get the Amendments from the API using bill and stage IDs">
+            <p>
+              Use this option if you want to specify the precise bill ID and
+              stage ID, or if the above option does not work. You can find the
+              IDs by navigating to the relevant stage on the parliament website
+              and coping the numbers from the url. E.g. in this URL{" "}
+              <a
+                target="blank"
+                href="https://bills.parliament.uk/bills/3737/stages/19061"
+              >
+                https://bills.parliament.uk/bills/3737/stages/19061
+              </a>{" "}
+              the bill ID is 3737 and the stage ID is 19061
+            </p>
+            <div className="mb-3">
+              <label htmlFor="billIdInput" className="form-label">
+                Bill ID
+              </label>
+              <input
+                type="number"
+                className="form-control"
+                id="billIdInput"
+                placeholder="9999"
+                onChange={(e) => setBillId(e.target.value)}
+              />
+            </div>
+            <div className="mb-3">
+              <label htmlFor="stageIdInput" className="form-label">
+                Stage ID
+              </label>
+              <input
+                type="number"
+                className="form-control"
+                id="stageIdInput"
+                placeholder="9999"
+                onChange={(e) => setStageId(e.target.value)}
+              ></input>
+            </div>
+            <div className="d-grid gap-2 col-12 mx-auto my-3">
+              <Button
+                id="api_get_amendments_from_ids"
+                text="Get Amendments"
+                handleClick={() => {
+                  console.log("Get Amendments clicked");
+                  console.log("billId", typeof billId);
+                  window.pywebview.api.get_api_amendments_with_ids(
+                    billId,
+                    stageId
+                  );
+                }}
+              />
+            </div>
+          </AccordionItem>
+          <AccordionItem title="Select existing API Amendments JSON file">
+            <p>Use this option to select a previously downloaded JSON file.</p>
+            <div className="d-grid gap-2 col-12 mx-auto my-3">
+              <Button
+                id="api_get_amendments_from_file"
+                text="Select JSON file"
+                handleClick={() => {
+                  console.log("Select JSON file clicked");
+                  window.pywebview.api.open_file_dialog("existing_json_amdts");
+                }}
+              />
+            </div>
+          </AccordionItem>
+        </Accordion>
+      </Card>
+
+      <Card step="Step&nbsp;3" info="Create the Amendments API Check report">
         <Button
           id="api_report_in_browser"
           text="Create Report"

@@ -109,6 +109,18 @@ class InvalidDataError(ValueError):
 
 
 def progress_bar(iterable: Iterable, total: int) -> list:
+
+    # also add the progress bar to the webview
+    update_gui = False
+    active_window = None
+    progress_bar_id = ""
+    if "webview" in sys.modules:
+        import webview
+        active_window = webview.active_window()
+    if active_window is not None:
+        progress_bar_id = active_window.evaluate_js("newProgressBar()")
+        logger.info(f"Progress bar id: {progress_bar_id}")
+        update_gui = True
     output = []
     count = 0
     bar_len = 50
@@ -123,6 +135,15 @@ def progress_bar(iterable: Iterable, total: int) -> list:
         bar = "#" * filled_len + "-" * (bar_len - filled_len)
         sys.stdout.write(f"[{bar}] {percents}%\r")
         sys.stdout.flush()
+
+        if update_gui and active_window is not None:
+            try:
+                logger.info(f"updateProgressBar(\"{progress_bar_id}\", {percents})")
+                active_window.evaluate_js(
+                    f"updateProgressBar(\"{progress_bar_id}\", {percents})"
+                )
+            except Exception as e:
+                logger.error(f"Error updating progress bar: {e}")
 
     sys.stdout.write("\n")
 

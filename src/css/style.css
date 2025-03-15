@@ -2,6 +2,7 @@
     --bs-secondary: #6B7280;
     --brand-purple: #403C6D;
     --brand-purple-shade: #302d52;
+    --brand-purple-tint: #534f82;
   }
   body {
     margin: 0;
@@ -231,6 +232,11 @@
     --bs-btn-active-border-color: var(--brand-purple-shade);
     --bs-btn-disabled-bg: var(--brand-purple);
     --bs-btn-disabled-border-color: var(--brand-purple);
+  }
+
+  .bg-primary {
+    --bs-bg-opacity: 1;
+    background-color: var(--brand-purple-tint)!important;
   }
 
 

@@ -1,4 +1,5 @@
 import io
+import json
 import logging
 import os
 import platform
@@ -70,6 +71,7 @@ class Api:
         self.dated_folder_Path: Path | None = None
         self.dash_xml_file: Path | None = None
         self.lm_xml_folder: Path | None = None
+        self.existing_json_amdts_file: Path | None = None
 
         self.com_amend_old_xml: Path | None = None
         self.com_amend_new_xml: Path | None = None
@@ -121,7 +123,9 @@ class Api:
             case "com_amend_new_xml":
                 self.com_amend_new_xml = _file
             case "com_amend_api_xml":
-                self.api_amend_xml = self.also_query_bills_api(_file)
+                self.api_amend_xml = _file
+            case "existing_json_amdts":
+                self.existing_json_amdts_file = _file
             case _:
                 print(f"Error: Unknown file specifier: {file_specifier}")
 
@@ -447,35 +451,83 @@ class Api:
 
         self._create_html_compare("amendments", days_between_papers)
 
-    def also_query_bills_api(self, file: Path | None) -> Path | None:
+    def get_api_amendments_using_xml_for_params(
+        self, file: Path | None
+    ) -> Path | None:
         """
-        Also query the Bills API for the amendment XML file.
+        Query the Bills API for the amendments by first extracting data from the XML file.
         """
         if not file:
             # do we need an error here?
             logger.info("No XML file selected.")
             return
 
+        json_amdts = None
+
         with ProgressModal() as modal:
-            modal.update(f"Querying Bills API for amendments")
+            modal.update("Querying Bills API for amendments")
             try:
                 json_amdts = check_bills_parliament.also_query_bills_api(file)
+                if not json_amdts:
+                    logger.error("No JSON returned from API.")
             except Exception as e:
-                logger.error(f"Error querying API: {e}")
-            if not json_amdts:
-                logger.error("No JSON returned from API.")
+                logger.error(f"Error querying API: {repr(e)}")
+
             modal.update("Query complete.")
 
         self.api_amend_json = json_amdts
 
         return file
 
-    def create_api_csv(self):
+    def get_api_amendments_with_ids(self, bill_id: str, stage_id: str) -> None:
+        """
+        Query the Bills API for the amendments using the bill and stage IDs.
+        """
+        print(f"get_api_amendments_with_ids called with {bill_id=} and {stage_id=}")
+        if not bill_id or not stage_id:
+            logger.error("Bill ID and Stage ID are required.")
+            return
+        try:
+            bill_id_int = int(bill_id)
+            stage_id_int = int(stage_id)
+        except ValueError:
+            logger.error("Bill ID and Stage ID must be integers.")
+            return
+        with ProgressModal() as modal:
+            modal.update(f"Querying Bills API for amendments")
+            try:
+                json_amdts = check_bills_parliament.get_amendments_json(
+                    bill_id_int, stage_id_int
+                )
+                if not json_amdts:
+                    logger.error("No JSON returned from API.")
+            except Exception as e:
+                logger.error(f"Error querying API: {e}")
+
+            modal.update("Query complete.")
+
+        self.api_amend_json = json_amdts
+
+    def data_is_avaliable(self) -> bool:
+        """
+        Check if the API data is available.
+        """
         if not self.api_amend_xml:
             logger.error("No XML file selected.")
-            return
+            return False
         if not self.api_amend_json:
-            logger.error("No JSON data available.")
+            if self.existing_json_amdts_file:
+                with open(self.existing_json_amdts_file, "r") as f:
+                    self.api_amend_json = json.load(f)
+            else:
+                logger.error("No JSON data available.")
+                return False
+
+        return True
+
+
+    def create_api_csv(self):
+        if not self.data_is_avaliable():
             return
         report = check_bills_parliament.Report(self.api_amend_xml, self.api_amend_json)
 
@@ -483,11 +535,7 @@ class Api:
         logger.warning("main.create_api_csv called")
 
     def create_api_report(self):
-        if not self.api_amend_xml:
-            logger.error("No XML file selected.")
-            return
-        if not self.api_amend_json:
-            logger.error("No JSON data available.")
+        if not self.data_is_avaliable():
             return
         report = check_bills_parliament.Report(self.api_amend_xml, self.api_amend_json)
 
