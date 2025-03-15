@@ -9,13 +9,19 @@ import traceback
 import webbrowser
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
 import requests
 import webview
 from webview import Window  # TODO: fix this
 
-from lawchecker import __version__, added_names_report, pp_xml_lxml, settings
+from lawchecker import (
+    __version__,
+    added_names_report,
+    check_bills_parliament,
+    pp_xml_lxml,
+    settings,
+)
 from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
@@ -68,6 +74,9 @@ class Api:
         self.com_amend_old_xml: Path | None = None
         self.com_amend_new_xml: Path | None = None
 
+        self.api_amend_xml: Path | None = None
+        self.api_amend_json: Any = None
+
     def _open_file_dialog(self, file_type="") -> Path | None:
 
         # select a file
@@ -111,6 +120,8 @@ class Api:
                 self.com_amend_old_xml = _file
             case "com_amend_new_xml":
                 self.com_amend_new_xml = _file
+            case "com_amend_api_xml":
+                self.api_amend_xml = self.also_query_bills_api(_file)
             case _:
                 print(f"Error: Unknown file specifier: {file_specifier}")
 
@@ -435,6 +446,61 @@ class Api:
         """
 
         self._create_html_compare("amendments", days_between_papers)
+
+    def also_query_bills_api(self, file: Path | None) -> Path | None:
+        """
+        Also query the Bills API for the amendment XML file.
+        """
+        if not file:
+            # do we need an error here?
+            logger.info("No XML file selected.")
+            return
+
+        with ProgressModal() as modal:
+            modal.update(f"Querying Bills API for amendments")
+            try:
+                json_amdts = check_bills_parliament.also_query_bills_api(file)
+            except Exception as e:
+                logger.error(f"Error querying API: {e}")
+            if not json_amdts:
+                logger.error("No JSON returned from API.")
+            modal.update("Query complete.")
+
+        self.api_amend_json = json_amdts
+
+        return file
+
+    def create_api_csv(self):
+        if not self.api_amend_xml:
+            logger.error("No XML file selected.")
+            return
+        if not self.api_amend_json:
+            logger.error("No JSON data available.")
+            return
+        report = check_bills_parliament.Report(self.api_amend_xml, self.api_amend_json)
+
+        report.create_csv()
+        logger.warning("main.create_api_csv called")
+
+    def create_api_report(self):
+        if not self.api_amend_xml:
+            logger.error("No XML file selected.")
+            return
+        if not self.api_amend_json:
+            logger.error("No JSON data available.")
+            return
+        report = check_bills_parliament.Report(self.api_amend_xml, self.api_amend_json)
+
+        filename = "API_html_diff.html"
+
+        report.html_tree.write(
+            filename,
+            method="html",
+            encoding="utf-8",
+            doctype="<!DOCTYPE html>",
+        )
+
+        webbrowser.open(Path(filename).resolve().as_uri())
 
     def set_v_info(self):
         logger.info("set_v_info called")

@@ -2,6 +2,7 @@ import clerk_logo from "./../assets/clerk_logo.svg";
 import CompareBillsCollapsible from "./CompareBillsCollapsible";
 import BillNumberingCollapsible from "./BillNumberingCollapsible";
 import CompareAmendmentsCollapsible from "./CompareAmendmentsCollapsible";
+import AmendmentsAPICollapsible from "./AmendmentsAPICollapsible";
 import AddedNamesCollapsible from "./AddedNamesCollapsible";
 import { PageActiveState } from "./App";
 
@@ -58,6 +59,7 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
         <BillNumberingCollapsible pageActiveState={pageActiveState} />
         <CompareAmendmentsCollapsible pageActiveState={pageActiveState} />
         <AddedNamesCollapsible pageActiveState={pageActiveState} />
+        <AmendmentsAPICollapsible pageActiveState={pageActiveState} />
       </div>
     </div>
   );

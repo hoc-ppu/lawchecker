@@ -1,7 +1,12 @@
+import argparse
+import csv
 import json
+import re
 import sys
+import urllib.parse
 import webbrowser
 from collections.abc import Mapping
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
@@ -12,7 +17,7 @@ from lxml import etree, html
 from lxml.etree import QName, _Element, iselement
 from lxml.html import HtmlElement
 
-from lawchecker import templates, utils
+from lawchecker import pp_xml_lxml, templates, utils
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_amendment_documents import ChangedAmdt, ChangedNames
 from lawchecker.lawchecker_logger import logger
@@ -27,6 +32,7 @@ JSONType = JSONObject | JSONList
 
 class ContainerType(StrEnum):
     COMMITTEE_DECISIONS = "Committee Stage Decisions"
+    REPORT_DECISIONS = "Report Stage Decisions"
     AMENDMENT_PAPER = "Amendment Paper"
     AMDTS_FROM_API = "Amendments from API"
     UNKNOWN = "Unknown"
@@ -42,6 +48,58 @@ def get_container_type(string: str) -> ContainerType:
     return ContainerType.UNKNOWN
 
 
+class Decision:
+
+    similar_decisions = [
+        ["Agreed", "Agreed To", "Added", "Agreed to on division"],
+        ["Withdrawn", "Withdrawn Before Moved", "Withdrawn After Debate"],
+        ["No Decision", "Not Called"],
+        ["Negatived", "Negatived on division", "Disagreed"],
+    ]
+
+    normed_similar_decisions = [
+        [item.casefold().replace(" ", "") for item in group] for group in similar_decisions
+    ]
+
+    def __init__(self, decision: str):
+
+        self._raw_decision = decision
+        self.normed_dec = decision.strip().casefold().replace(" ", "")
+        self.decision = self.fix_decision(decision.strip())
+
+        # list of lists with each
+
+    def fix_decision(self, decision: str) -> str:
+        """Decisions in the API do not have spaces"""
+        return re.sub(r"([a-z])([A-Z])", r"\1 \2", decision)
+
+    def __eq__(self, other: "Decision") -> bool:
+
+        if not isinstance(other, Decision):
+            return NotImplemented
+
+        if self.normed_dec == other.normed_dec:
+            return True
+
+        # count similar desisions as being equal. This is because the decisions
+        # in the API are not the same as the decisions in the XML/proceedings
+        # paper. This is for unknown reasons.
+        for group in self.normed_similar_decisions:
+            if self.normed_dec in group and other.normed_dec in group:
+                return True
+
+        return False
+
+    def __bool__(self) -> bool:
+        return bool(self.decision)
+
+    def __str__(self):
+        return self.decision
+
+    def __repr__(self):
+        return f"Decision({self.decision}, {self.normed_dec})"
+
+
 class InvalidDataError(ValueError):
     """Exception raised for errors in the input JSON data."""
 
@@ -54,6 +112,9 @@ def progress_bar(iterable: Iterable, total: int) -> list:
     output = []
     count = 0
     bar_len = 50
+
+    sys.stdout.write("\n")
+
     for item in iterable:
         output.append(item)
         count += 1
@@ -62,6 +123,8 @@ def progress_bar(iterable: Iterable, total: int) -> list:
         bar = "#" * filled_len + "-" * (bar_len - filled_len)
         sys.stdout.write(f"[{bar}] {percents}%\r")
         sys.stdout.flush()
+
+    sys.stdout.write("\n")
 
     return output
 
@@ -88,11 +151,14 @@ class Sponsor:
     def __eq__(self, other: "Sponsor") -> bool:
         if not isinstance(other, Sponsor):
             return NotImplemented
+
+        name_match = self.name == other.name
+        member_id_match = self.member_id == other.member_id
+        is_lead_match = self.is_lead == other.is_lead
+        sort_order_match = self.sort_order == other.sort_order
+
         return (
-            self.name == other.name
-            and self.member_id == other.member_id
-            and self.is_lead == other.is_lead
-            and self.sort_order == other.sort_order
+            name_match and member_id_match and is_lead_match and sort_order_match
         )
 
     def __lt__(self, other: "Sponsor") -> bool:
@@ -159,19 +225,21 @@ class Amendment:
         amendment_text: str,
         explanatory_text: str,
         amendment_number: str,
-        decision: str,
+        decision: Decision,
         sponsors: list[Sponsor],
         parent: "AmdtContainer | None" = None,
         star: Star = NO_STAR,
+        id: str = "",
     ):
 
         self.amendment_text = amendment_text
         self.explanatory_text = explanatory_text
         self.num: str = amendment_number
-        self.decision: str = decision
+        self.decision: Decision = decision
         self.sponsors: list[Sponsor] = sponsors
         self.parent: "AmdtContainer | None" = parent
         self.star = star
+        self.id = id
 
         # we might need to come up with an amendment id that is the same for both
         # the API and the XML... in particular a problem with amendments to amendments
@@ -194,28 +262,24 @@ class Amendment:
             f'{t.get("hangingIndentation", "") or ""} {t.get("text", "")}'.strip()
             for t in amendment_json.get("amendmentLines", [])
         )
-        amendment_text = "\n".join(amendment_text_gen)
+        amendment_text = "<div>" + "\n".join(amendment_text_gen) + "</div>"
+        html_element = html.fromstring(amendment_text)
+        # add space after any span with a class of "sub-para-num" this will be important later
+        for span in html_element.xpath(".//span[@class='sub-para-num']"):
+            if span.tail:
+                span.tail = f" {span.tail}"
+            else:
+                span.tail = " "
+        amendment_text = utils.normalise_text(
+            xp.text_content(utils.clean_whitespace(html_element))
+        )
 
         explanatory_text = amendment_json.get("explanatoryText", "")
 
-        # example amendmentNote: "As an Amendment to Kim Leadbeater’s proposed Amendment 186:—"
-        # self.amendment_note: str | None = amendment_json.get(
-        #     "amendmentNote", None
-        # )  # do we need this?
-
-        # self.main_header: str = amendment_json.get("mainHeader", "")
-
-        # self.amendment_id: int | None = amendment_json.get("amendmentId", None)
-
-        # self.amendment_type: str = amendment_json.get("amendmentType", "")
-        # self.clause: int | None = amendment_json.get("clause", None)
-        # self.schedule: int | None = amendment_json.get(
-        #     "clause", None
-        # )  # will this be an int?
         amendmet_number: str = amendment_json.get(
             "marshalledListText", ""
         )  # amendment_no
-        decision: str = amendment_json.get("decision", "")
+        decision: Decision = Decision(amendment_json.get("decision", ""))
         # self.decision_explanation: str = amendment_json.get("decisionExplanation", "")
         sponsors = [
             Sponsor.from_json(item) for item in amendment_json.get("sponsors", [])
@@ -227,8 +291,10 @@ class Amendment:
         else:
             star = Star(_star)
 
+        _id = amendment_json.get("amendmentId", "")
+
         return cls(
-            amendment_text, explanatory_text, amendmet_number, decision, sponsors, parent, star
+            amendment_text, explanatory_text, amendmet_number, decision, sponsors, parent, star, _id
         )
 
     @classmethod
@@ -240,8 +306,9 @@ class Amendment:
             './/xmlns:block[@name="decision"]', namespaces=NSMAP
         )
         decision = ""
-        if not decision_block:
+        if len(decision_block) > 0:
             decision = utils.normalise_text(xp.text_content(decision_block[0]))
+        decision = Decision(decision)
 
         #  get the amendment number
         try:
@@ -288,8 +355,11 @@ class Amendment:
 
         star = Star(amendment_xml.get(QName(UKL, "statusIndicator"), default=""))
 
+        _id = amendment_xml.xpath(".//*/@GUID[1]", namespaces=NSMAP)[0]
+        # print(f"ID: {_id}")
 
-        return cls(amendment_text, explanatory_text, amdt_no, decision, sponsors, parent, star)
+
+        return cls(amendment_text, explanatory_text, amdt_no, decision, sponsors, parent, star, _id)
 
 
 def normalise_amendments_xml(amendment_xml: _Element) -> _Element:
@@ -305,17 +375,17 @@ def add_quotes_to_quoted_elements(amendment_element: _Element) -> None:
     quoted_elements: list[_Element] = amendment_element.xpath(
         ".//xmlns:*[@ukl:endQuote or @ukl:startQuote or @endQuote or @startQuote]", namespaces=NSMAP
     )
-    print(f"Quoted Elements: {len(quoted_elements)}")
+    # print(f"Quoted Elements: {len(quoted_elements)}")
     for qs in quoted_elements:
         tag = QName(qs).localname
         if tag == "def":
             print(f"Def: {qs.text}")
-            print(qs.attrib)
+            # print(qs.attrib)
         if qs.get("startQuote") == "“" or qs.get(f"{{{UKL}}}startQuote") == "“":
 
             if qs.text:
                 qs.text = f'“{qs.text}'
-                print("here 1")
+
             else:
                 qs.text = "“"
         if qs.get("endQuote") == "”" or qs.get(f"{{{UKL}}}endQuote") == "”":
@@ -327,7 +397,6 @@ def add_quotes_to_quoted_elements(amendment_element: _Element) -> None:
             else:
                 if qs.text:
                     qs.text = f'{qs.text}”'
-                    print("here 2")
                 else:
                     qs.text = "”"
 
@@ -349,7 +418,7 @@ class AmdtContainer(Mapping):
         # self.short_file_name = utils.truncate_string(self.file_name).replace(".xml", "")
 
         # defaults for metadata
-        self.meta_container_type: ContainerType = container_type
+        self.container_type: ContainerType = container_type
         self.meta_bill_title: str = bill_title
         self.meta_pub_date: str = pub_date
 
@@ -432,7 +501,7 @@ class AmdtContainer(Mapping):
     def get_meta_data_from_xml(self, root_element: _Element) -> None:
         try:
             list_type_text: str = root_element.findtext(".//block[@name='listType']", namespaces=NSMAP2)  # type: ignore
-            self.meta_container_type = get_container_type(list_type_text)
+            self.container_type = get_container_type(list_type_text)
             # self.meta_list_type = list_type.text  # type: ignore
 
         except Exception as e:
@@ -477,7 +546,7 @@ class AmdtContainer(Mapping):
 
         for amendment in self.amendments:
             if amendment.num in _amdt_map:
-                logger.warning(f"Duplicate amendment number: {amendment.num}")
+                logger.warning(f"{self.container_type}: Duplicate amendment number: {amendment.num}")
             _amdt_map[amendment.num] = amendment
 
         return _amdt_map
@@ -538,7 +607,8 @@ class Report:
         self.problem_amdts: list[ChangedAmdt] = []
 
         self.incorrect_amdt_in_api: list[ChangedAmdt] = []
-        self.incorrect_decision: list[str] = []
+        self.incorrect_decisions: list[str] = []
+        self.correct_decisions: list[str] = []
 
         self.missing_api_amdts: list[str] = []
 
@@ -563,6 +633,7 @@ class Report:
         """
 
         self.added_and_removed_amdts(self.xml_amdts, self.json_amdts)
+        self.check_stars_in_api(self.xml_amdts, self.json_amdts)
 
         # for each amendment in the document
         # populate the star check, name changes and changes to existing amendments
@@ -579,6 +650,8 @@ class Report:
             self.diff_names(xml_amdt, json_amend)
             self.diff_names_in_context(xml_amdt, json_amend)
             self.diff_amdt_content(xml_amdt, json_amend)
+            self.diff_decision(xml_amdt, json_amend)
+
 
     def make_html(self):
         """
@@ -588,7 +661,7 @@ class Report:
         try:
             # change the title
             self.html_root.find('.//title').text = "Check Amendments"  # type: ignore
-            self.html_root.find('.//h1').text = "Check Amendments on Bills.parliament"  # type: ignore
+            self.html_root.find('.//h1').text = "Check Amendments on Bills.parliament.uk"  # type: ignore
         except Exception:
             pass
 
@@ -602,6 +675,7 @@ class Report:
                 self.render_added_and_removed_names(),
                 self.render_stars(),
                 self.render_changed_amdts(),
+                self.render_decisions(),
             )
         )
 
@@ -628,7 +702,7 @@ class Report:
             ("Published date", self.xml_amdts.meta_pub_date)
         )
         meta_data_table.add_row(
-            ("List Type", self.xml_amdts.meta_container_type)
+            ("List Type", self.xml_amdts.container_type)
         )
 
         section = html.fromstring(
@@ -678,7 +752,7 @@ class Report:
                 "<p><strong>Zero</strong> amendments have name changes.</p>"
             )
 
-        name_changes = templates.Table(("Ref", "Names added", "Names removed", "Totals"))
+        name_changes = templates.Table(("Ref", "Names missing from API", "Names in API but not in XML", "Totals"))
 
         # we have a special class for this table
         name_changes.html.classes.add("an-table")  # type: ignore
@@ -766,7 +840,6 @@ class Report:
 
         return card.html
 
-
     def render_stars(self) -> HtmlElement:
         # -------------------- Star check section -------------------- #
         # build up text content
@@ -819,6 +892,64 @@ class Report:
 
         return card.html
 
+    def render_no_decision_check(self) -> HtmlElement:
+
+        card = templates.Card("Decision Check")
+        card.secondary_info.append(
+            html.fromstring(
+                "<p>The XML file does not appear to be a proceedings"
+                " paper so no decisions have been checked.</p>"
+            )
+        )
+        return card.html
+
+
+    def render_decisions(self) -> HtmlElement:
+
+        # -------------------- Decision check section -------------------- #
+
+        is_report_decisions = self.xml_amdts.container_type == ContainerType.REPORT_DECISIONS
+        is_committee_decisions = self.xml_amdts.container_type == ContainerType.COMMITTEE_DECISIONS
+
+        if is_report_decisions or is_committee_decisions:
+            return self.render_no_decision_check()
+
+        # build up text content
+        correct_decisions: HtmlElement | None = None
+
+        if self.correct_decisions:
+            sec = (templates.SmallCollapsableSection(
+                f"<span><strong>{len(self.correct_decisions)}</strong>"
+                f" amendments in the API have decisions which match the"
+                " decision in the provided XML file: "
+                '<small class="text-muted"> [show]</small></span>'
+            ))
+            sec.collapsible.text = f"{', '.join(self.correct_decisions)}"
+            correct_decisions = sec.html
+
+        if self.incorrect_decisions:
+            incorrect_decisions = (
+                f'<p><strong class="red">{len(self.incorrect_decisions)}</strong>'
+                " amendments in the API have decisions which do not match the decision in the provided XML file: </p>\n"
+            )
+            incorrect_decisions += f"<p>{'<br/>'.join(self.incorrect_decisions)}</p>"
+        else:
+            incorrect_decisions = (
+                "<p>Every decision (on all amendments) in the API matches the decision in the XML. 😀</p>"
+            )
+
+        note = '<p class="small"><strong>Note:</strong> For unknown reasons, decisions recorded in a the proceedings paper do not map onto the decisions in the API (and by extension, the amendments section of bills.parliament.uk). For the purposes of this check the following groups of decisions are considered to be the same:</p>'
+        list_items = [f"<li>{', '.join(l)}</li>" for l in Decision.similar_decisions]
+        note += f"<ul class='small'>{''.join(list_items)}</ul>"
+
+        card = templates.Card("Decision Check")
+        card.secondary_info.append(html.fromstring(f"<div>{note + incorrect_decisions}</div>"))
+
+        if correct_decisions is not None:
+            card.tertiary_info.append(correct_decisions)
+
+        return card.html
+
     def check_stars_in_api(
         self,
         xml_amdts: AmdtContainer,
@@ -842,7 +973,6 @@ class Report:
                 self.incorrect_stars.append(
                     f"{api_amdt.num} has {api_amdt.star} ({xml_amdt.star} expected)"
                 )
-
 
 
     def added_and_removed_amdts(self, old_doc: "AmdtContainer", new_doc: "AmdtContainer"):
@@ -910,6 +1040,20 @@ class Report:
             logger.warning(f"{new_amdt.num}: has no content")
             return
 
+        # sometimes the line breaks are different due to ref elements etc.
+        # so first we will compare the text content normalised and with the
+        # line breaks removed
+        new_amdt_content_no_lines = utils.normalise_text(" ".join(new_amdt_content))
+        old_amdt_content_no_lines = utils.normalise_text(" ".join(old_amdt_content))
+
+        # if new_amdt.num == "59":
+        #     print(new_amdt_content_no_lines)
+        #     print(old_amdt_content_no_lines)
+
+        if new_amdt_content_no_lines == old_amdt_content_no_lines:
+            logger.info(f"{new_amdt.num}: content the same when line breaks removed.")
+            return
+
         dif_html_str = utils.html_diff_lines(
             new_amdt_content,
             old_amdt_content,
@@ -919,150 +1063,275 @@ class Report:
         if dif_html_str is not None:
             self.incorrect_amdt_in_api.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
+    def diff_decision(self, xml_amdt: Amendment, api_amdt: Amendment):
+
+        """
+        Check that the decision in the API matches the decision in the XML.
+        """
+
+        xml_decision = xml_amdt.decision
+        api_decision = api_amdt.decision
+
+        if not xml_decision:
+            # no decision in the XML so no point comparing
+            return
+
+        if xml_decision == api_decision:
+            # I don't think we need to strip here
+            self.correct_decisions.append(xml_amdt.num)
+        else:
+            self.incorrect_decisions.append(f"{xml_amdt.num} (API: {api_decision}, XML: {xml_decision})")
+
+    def create_csv(self):
+
+        # build up the text strings
+        bill_title_text = self.xml_amdts.meta_bill_title
+        missing_amendment_text = ""
+        missing_amendment_guids = ""
+
+        if all(
+            [len(i) == 0 for i in (
+                self.missing_api_amdts, self.incorrect_amdt_in_api, self.name_changes, self.incorrect_stars
+            )]
+        ):
+            logger.warning("No problems were found so no CSV file will be created.")
+            return
+
+        logger.warning(
+            f"{len(self.missing_api_amdts)} Missing amendments."
+            f" {len(self.incorrect_amdt_in_api)} incorrect amendments."
+            f" {len(self.name_changes)} amendment have incorrect names."
+            f" {len(self.incorrect_stars)} amendments have incorrect stars."
+        )
+
+        if len(self.missing_api_amdts) > 0:
+            missing_amendment_guids = missing_amendment_text = "Missing Amendments:\n"
+
+        logger.info("here 1")
+
+        for item in self.missing_api_amdts:
+            missing_amendment_text += f"{item}\n"
+            missing_amendment_guids += f"{self.xml_amdts[item].id}\n"
+
+        logger.info("here 2")
+
+        incorrect_amendments_text = ""
+        incorrect_amendment_guids = ""
+        if len(self.incorrect_amdt_in_api) > 0:
+            incorrect_amendments_text = "Amendments with incorrect content:\n"
+            incorrect_amendment_guids = "Amendments with incorrect content:\n"
+        for item in self.incorrect_amdt_in_api:
+            incorrect_amendments_text += f"{item.num}\n"
+            incorrect_amendment_guids += f"{self.xml_amdts[item.num].id}\n"
+
+        logger.info("here 3")
+
+        incorrect_names = ""
+        incorrect_names_guids = ""
+        if len(self.name_changes) > 0:
+            incorrect_names = "Amendments with incorrect names:\n"
+            incorrect_names_guids = "Amendments with incorrect names:\n"
+        for item in self.name_changes:
+            incorrect_names += f"{item.num}\n"
+            incorrect_names_guids += f"{self.xml_amdts[item.num].id}\n"
+
+        logger.info("here 4")
+
+        incorrect_stars = ""
+        incorrect_stars_guids = ""
+        if len(self.incorrect_stars) > 0:
+            incorrect_stars = "Amendments with incorrect stars:\n"
+            incorrect_stars_guids = "Amendments with incorrect stars:\n"
+        for item in self.incorrect_stars:
+            incorrect_stars += f"{item}\n"
+            try:
+                amdt_num = item.split(" has ")[0]
+                incorrect_stars_guids += f"{self.xml_amdts[amdt_num].id}\n"
+            except Exception as e:
+                logger.error(f"Error getting GUID for {item}: {e}")
+
+        logger.info("here 5")
+
+        problem_amendment_numbers = missing_amendment_text + incorrect_amendments_text + incorrect_names + incorrect_stars
+        problem_amendment_guids = missing_amendment_guids + incorrect_amendment_guids + incorrect_names_guids + incorrect_stars_guids
+
+        logger.warning("here")
+
+        file_name = Path("test_test.csv").resolve()
+
+        with open(file_name, 'w', newline='') as file:
+            # Step 3: Create a csv.writer object
+            writer = csv.writer(file)
+
+            # Step 4: Write a header row
+            writer.writerow(['Bill', 'Amendment Numbers', 'GUIDs', 'Description'])
+
+            # Step 4: Write a data row
+            writer.writerow([bill_title_text, problem_amendment_numbers, problem_amendment_guids])
+
+        logger.warning(f"CSV file created: {file_name}")
 
 
-
-def main():
-    # should we get all the amendments from the API...
-    # then try and read the LM XML file
-    #
-
-    # read amended details json into a class structure
-    # amendments_json_path = "amendments_details.json"
-    amendments_json_path = "amendments_details_Public_Authorities.json"
-
-    with open(amendments_json_path) as f:
-        amendments_list_json = json.load(f)
-
-    api_amendments: dict[str, Amendment] = {}
-    for item in amendments_list_json:
-
-        amendment = Amendment.from_json(item)
-        if amendment.num is None:
-            logger.warning(
-                "Amendment has no marshalledListText"
-            )
-            continue
-        if amendment.num in api_amendments:
-            logger.warning("Warning has duplicate marshalledListText")
-            continue
-
-        api_amendments[amendment.num] = amendment
-
-    # file_path = "example_files/terminally_ill_adults_rpro_pbc_0212.xml"
-    file_path = "example_files/public_authority_rpro_pbc_0227.xml"
-    tree = etree.parse(file_path)
-
-    root = tree.getroot()
-
-    xpath = "//xmlns:amendment[@name='hcamnd']/xmlns:amendmentBody[@eId]"
-
-    amendments_xml = root.xpath(xpath, namespaces=NSMAP)
-
-    print(f"No of amendments found in xml: {len(amendments_xml)}")
-
-    # put all the amedments into a structu
-
-    filename = "API_html_diff.html"
-
-    report = Report(root, amendments_list_json)
-
-    report.html_tree.write(
-        filename,
-        method="html",
-        encoding="utf-8",
-        doctype="<!DOCTYPE html>",
-    )
-
-    webbrowser.open(Path(filename).resolve().as_uri())
-
-    # for i, amendment_xml in enumerate(amendments_xml):
-
-    #     amendment_from_xml = Amendment.from_xml(amendment_xml)
-
-    #     amdt_no = amendment_from_xml.num
-
-    #     if amdt_no not in api_amendments:
-    #         print(f"{amdt_no} is missing from the data form the Bills API")
-    #         continue
-
-    #     # get text for xml amendments
-    #     # clean_amendment_xml = utils.clean_whitespace(amendment_xml)
-    #     # xml_amend_text = xp.text_content(clean_amendment_xml)
-    #     xml_amend_text = amendment_from_xml.amendment_text
-
-    #     json_amend_text = api_amendments[amdt_no].amendment_text
-
-    #     json_amend_text = f"<div>{json_amend_text}</div>"
-    #     json_amend_html = html.fromstring(json_amend_text)
-    #     json_amend_text = xp.text_content(json_amend_html)
-
-    #     json_amend_text = normalise_text(json_amend_text)
-
-    #     if xml_amend_text != json_amend_text:
-    #         print(f"Text not the same for {amdt_no}")
-
-    #         # pass
-    #     if amdt_no == "94":
-    #         print(f"{xml_amend_text=}")
-    #         print(f"{json_amend_text=}")
-
-    #     # right, we should compare the amdt_json to the amendment XML element
-    #     # and see if they match
+def also_query_bills_api(amend_xml_path: Path) -> JSONList | None:
     """
-        # for i, amendment_json in enumerate(amendments_json, start=1):
-        #     print(f"Requesting amendment {i} of {len(amendments_json)}")
-
-        #     # get the if for each amendment
-        #     amendment_id = amendment_json["amendmentId"]
-
-        #     # get the full amendment json
-        #     url = f"https://bills-api.parliament.uk/api/v1/Bills/3774/Stages/19346/Amendments/{amendment_id}"
-
-        #     response = requests.get(url)
-        #     amendment_details_json = response.json()
-        #     amendments_details_json.append(amendment_details_json)
-
-        # print(f"Total amendments: {len(amendments_details_json)}")
-        # json.dump(
-        #     amendments_details_json,
-        #     open("amendments_details.json", "w", encoding="utf-8"),
-        #     ensure_ascii=False,
-        #     indent=4,
-        # )
-
-        # dict_of_amendments = {}
-
-        # for amendment_json in amendments_json:
-
-        #     marshalledListText = amendment_json.get("marshalledListText", None)
-        #     if marshalledListText is None:
-        #         continue
-
-        #     if marshalledListText in dict_of_amendments:
-        #         print(f"Duplicate: {marshalledListText}")
-
-        #     dict_of_amendments[marshalledListText] = amendment_json
+    Query the API for the bill XML files related to the amendment XML file.
     """
 
+    if not amend_xml_path:
+        logger.error("No amendment XML file selected.")
+        return
+
+    amend_xml = pp_xml_lxml.load_xml(str(amend_xml_path))
+
+    if not amend_xml:
+        logger.error(f"Amendment XML file is not valid XML: {amend_xml_path}")
+        return
+
+    # find the bill title from the amendment XML
+    amdt_xml_root = amend_xml.getroot()
+    try:
+        bill_title = amdt_xml_root.xpath('//xmlns:TLCConcept[@eId="varBillTitle"]/@showAs', namespaces=NSMAP)[0]
+        logger.info(f"Bill title found in XML: {bill_title}")
+
+    except Exception as e:
+        logger.error("Could not find bill title in amendment XML. Can't query API.")
+        logger.error(repr(e))
+        return
+    # TODO: remember to normalise the bill title
+    try:
+        # url encode the title
+        bill_title = urllib.parse.quote(bill_title)
+        url = f"https://bills-api.parliament.uk/api/v1/Bills?SearchTerm={bill_title}&SortOrder=DateUpdatedDescending"
+        logger.info(f"Querying: {url}")
+        response = requests.get(url)
+    except Exception:
+        logger.error("Error querying the API")
+        return
+    if response.status_code != 200:
+        logger.error("Error querying the API")
+        return
+
+    response_json: JSONObject = response.json()
+
+    file_name = "amendments_details.json"
+    json.dump(response_json, open(file_name, "w"), ensure_ascii=False, indent=2)
+    logger.info(Path(file_name).resolve())
+
+    bills: list = response_json.get("items", [])
+
+    if not bills:
+        logger.error(f"No bills found in the API with the title \"{bill_title}\"")
+        return
+    if len(bills) > 1:
+        logger.warning(
+            f"{len(bills)} bills found in the API with the query \"{bill_title}\"."
+            " Using the first bill found."
+        )
+
+    bill_json = bills[0]
+
+    # try to get the stage from the xml
+    stage: str | None = None
+    try:
+        # block = amdt_xml_root.xpath('//*[local-name()="block"][@name="stage"]')
+        stage = xp.text_content(amdt_xml_root.xpath('//xmlns:block[@name="stage"]/xmlns:docStage', namespaces=NSMAP)[0])
+    except Exception as e:
+        logger.warning("Could not find stage in amendment XML. Can't query API.")
+        logger.warning(repr(e))
+        return
+
+    # TODO: fix this
+    api_stage = bill_json.get("currentStage", {}).get("description", "")
+
+    bill_id: int | None  = bill_json.get("billId", None)
+    stage_id: int | None = bill_json.get("currentStage", {}).get("id", None)
+
+    if stage.casefold().strip() != api_stage.casefold().strip():
+        logger.info(
+            f"Stage in amendment XML ({stage}) does not match current stage in API ({api_stage})."
+        )
+        # look thorugh all other stages to get the correct one
+        try:
+            url = f"https://bills-api.parliament.uk/api/v1/Bills/{bill_json['billId']}/Stages"
+            response = requests.get(url)
+            response_json = response.json()
+            stages = response_json.get("items", [])
+            for item in stages:
+                description = item.get("description", "")
+                if description.casefold().strip() == stage.casefold().strip():
+
+                    api_stage = description
+                    stage_id = item.get("id", None)
+                    logger.info(f"Stage found in API: {api_stage}. Stage ID: {stage_id}")
+                    break
+        except Exception as e:
+            logger.error("Error getting stages from API.")
+            logger.error(repr(e))
 
 
+    logger.warning(f"Bill ID: {bill_id} Stage ID: {stage_id}")
+
+    if not all([bill_id, stage_id]):
+        logger.error("Could not get bill ID or stage ID from the API.")
+        return
+
+    return get_amendments_json(bill_id, stage_id)
 
 
-def get_amendment_details_json():
+def get_amendments_json(bill_id, stage_id: int) -> list[JSONType]:
 
-    with open("amendments.json") as f:
-        amendments_json = json.load(f)
+    json_summary_amendments = get_amendments_summary_json(bill_id, stage_id)
 
-    # convert amendments_json from a list of dicts to a dict of dicts
-    # with marshalledListText as the key
+    amendment_ids = [amendment.get("amendmentId") for amendment in json_summary_amendments]
 
-    urls = [
-        f"https://bills-api.parliament.uk/api/v1/Bills/3774/Stages/19346/Amendments/{amendment_json['amendmentId']}"
-        for amendment_json in amendments_json
-    ]
+    def _request_data(
+        amendment_id: str,
+    ) -> requests.Response:
 
-    return progress_bar(map(request_json, urls), len(amendments_json))
+        """Query the API."""
+
+        url = f"https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}"
+
+        return requests.get(url)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+
+        # create a progress bar and return a list
+        responses = progress_bar(
+            pool.map(
+                lambda amendment_id: _request_data(amendment_id),
+                amendment_ids,
+            ),
+            len(amendment_ids),
+        )
+        print()  # newline after progress bar
+
+    json_list: list[JSONType] = [response.json() for response in responses]
+
+    json.dump(json_list, open("amendments_details.json", "w"), indent=2)
+    logger.info("Amendments details saved to file: amendments_details.json")
+
+    return json_list
+
+
+def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]:
+
+    i = 0
+    json_amendments = []
+    while True:
+        skip = i * 20
+        url = f"https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments?skip={skip}"
+
+        response = requests.get(url)
+        response_json = response.json()
+        items = response_json["items"]
+        if len(items) == 0:
+            break
+        json_amendments += items
+
+        i += 1
+
+    return json_amendments
 
 
 def find_duplicate_sponsors(lst: list[Sponsor]) -> list[Sponsor]:
@@ -1097,6 +1366,53 @@ def find_duplicate_sponsors(lst: list[Sponsor]) -> list[Sponsor]:
         return [item for item in sorted_items if item_counts[item] > 1]
 
     return list()
+
+
+def main():
+
+    parser = argparse.ArgumentParser(
+        description="Compare amendments between an XML file and the API. If no JSON file is provided, the API will be queried automatically."
+    )
+    parser.add_argument("xml_file", type=argparse.FileType('rb'), help="XML amendment or proceedings file path")
+    parser.add_argument(
+        "--json",
+        type=argparse.FileType('r'),
+        metavar="json_file",
+        default=None,
+        help="Existing JSON file with amendments details"
+    )
+    args = parser.parse_args()
+
+    if args.json:
+        amendments_list_json = json.load(args.json)
+    else:
+        amendments_list_json = also_query_bills_api(Path(args.xml_file.name))
+
+    if not amendments_list_json:
+        logger.error("No amendments found from JSON file or API. Exiting.")
+        return 1
+
+    tree = etree.parse(args.xml_file)
+    root = tree.getroot()
+
+    xpath = "//xmlns:amendment[@name='hcamnd']/xmlns:amendmentBody[@eId]"
+
+    amendments_xml = root.xpath(xpath, namespaces=NSMAP)
+
+    logger.info(f"No. of amendments found in xml: {len(amendments_xml)}")
+
+    filename = "API_html_diff.html"
+
+    report = Report(root, amendments_list_json)
+
+    report.html_tree.write(
+        filename,
+        method="html",
+        encoding="utf-8",
+        doctype="<!DOCTYPE html>",
+    )
+
+    webbrowser.open(Path(filename).resolve().as_uri())
 
 
 if __name__ == "__main__":

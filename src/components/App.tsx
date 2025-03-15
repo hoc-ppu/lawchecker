@@ -13,6 +13,7 @@ const App: React.FC = () => {
     compareAmendmentsCollapsible: false,
     billNumberingCollapsible: false,
     addedNamesCollapsible: false,
+    checkAmendmentAPICollapsible: false,
   };
 
   const [pageActiveState, setPageActiveState]: [
