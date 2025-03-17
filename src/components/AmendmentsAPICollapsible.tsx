@@ -11,6 +11,7 @@ import addWordBreaksToPath from "./AddWordBreaksToPath";
 const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   const [lmXml, setLmXml] = useState<string>("");
   const [prettyLmXml, setPrettyLmXml] = useState<string>("");
+  const [prettyApiAmdtsPath, setPrettyApiAmdtsPath] = useState<string>("");
   const [lmXmlFileSelected, setlmXmlFileSelected] = useState<boolean>(false);
   const [stageId, setStageId] = useState<string>("");
   const [billId, setBillId] = useState<string>("");
@@ -26,6 +27,14 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   const handleCreateCSV = async () => {
     await window.pywebview.api.create_api_csv();
     console.log("create_api_csv called");
+  };
+
+  const handleOpenApiAmdtsFile = async () => {
+    console.log("Select JSON file clicked");
+    const path = await window.pywebview.api.open_file_dialog(
+      "existing_json_amdts"
+    );
+    setPrettyApiAmdtsPath(addWordBreaksToPath(path));
   };
 
   return (
@@ -146,12 +155,17 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
               <Button
                 id="api_get_amendments_from_file"
                 text="Select JSON file"
-                handleClick={() => {
-                  console.log("Select JSON file clicked");
-                  window.pywebview.api.open_file_dialog("existing_json_amdts");
-                }}
+                handleClick={handleOpenApiAmdtsFile}
               />
             </div>
+            {prettyApiAmdtsPath && (
+              <small className="mt-3">
+                <strong>JSON file:</strong>{" "}
+                <span
+                  dangerouslySetInnerHTML={{ __html: prettyApiAmdtsPath }}
+                />
+              </small>
+            )}
           </AccordionItem>
         </Accordion>
       </Card>
