@@ -20,7 +20,7 @@ import lawchecker.lawchecker_logger as lawchecker_logger
 from lawchecker import (
     __version__,
     added_names_report,
-    check_bills_parliament,
+    check_amdts_in_api,
     pp_xml_lxml,
     settings,
 )
@@ -468,7 +468,7 @@ class Api:
         with ProgressModal() as modal:
             modal.update("Querying Bills API for amendments. Please wait...")
             try:
-                json_amdts = check_bills_parliament.also_query_bills_api(file)
+                json_amdts = check_amdts_in_api.also_query_bills_api(file)
                 if not json_amdts:
                     logger.error("No JSON returned from API.")
             except Exception as e:
@@ -497,7 +497,7 @@ class Api:
         with ProgressModal() as modal:
             modal.update(f"Querying Bills API for amendments")
             try:
-                json_amdts = check_bills_parliament.get_amendments_json(
+                json_amdts = check_amdts_in_api.get_amendments_json(
                     bill_id_int, stage_id_int
                 )
                 if not json_amdts:
@@ -530,7 +530,7 @@ class Api:
     def create_api_csv(self):
         if not self.data_is_avaliable():
             return
-        report = check_bills_parliament.Report(self.api_amend_xml, self.api_amend_json)
+        report = check_amdts_in_api.Report(self.api_amend_xml, self.api_amend_json)
 
         report.create_csv()
         logger.warning("main.create_api_csv called")
@@ -538,7 +538,7 @@ class Api:
     def create_api_report(self):
         if not self.data_is_avaliable():
             return
-        report = check_bills_parliament.Report(self.api_amend_xml, self.api_amend_json)
+        report = check_amdts_in_api.Report(self.api_amend_xml, self.api_amend_json)
 
         filename = "API_html_diff.html"
 
