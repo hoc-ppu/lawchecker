@@ -20,7 +20,9 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
       <h2 className="accordion-header">
         <Button className={cls} text={title} handleClick={onToggle} />
       </h2>
-      {isActive && <div className="accordion-body">{children}</div>}
+      <div className={`accordion-collapse  ${isActive ? "show" : ""}`}>
+        <div className="accordion-body">{children}</div>
+      </div>
     </div>
   );
 };

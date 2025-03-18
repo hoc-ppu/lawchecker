@@ -97,7 +97,7 @@ class Bill:
 
         except Exception:
             logger.warning(f"Date not found in {self.file_name}")
-            return ""
+            return datetime.max.strftime("%Y-%m-%d-%H-%M-%S")
         else:
             return dt.strftime("%Y-%m-%d-%H-%M-%S")
 
@@ -232,76 +232,10 @@ class CompareBillNumbering:
         logger.info(f"Total XML files parsed: {len(xml_files)}")
         return cls(xml_files)
 
-    def compare_bill(self):
-        """
-        Compare the numbering of bills and return the result.
-        """
-        logger.info("compare_bill called")
-        bill_comparison_dict = self._create_comparison_data()
-        return bill_comparison_dict
-
-    def _create_comparison_data(self) -> dict[str, dict[str, list]]:
-        """
-        Create a comparison dictionary similar to the pandas DataFrame output.
-        Returns:
-            A dictionary where:
-                - keys are bill titles
-                - values are dictionaries with "headers" (list of column headers)
-                  and "rows" (list of row data)
-        """
-
-        logger.info("Creating comparison data")
-
-        bill_comparison_dict: dict[str, dict[str, list[str]]] = {}
-
-        for title, bills in self.bills_container.items():
-            # If there are fewer than 2 bills, skip comparison
-            if len(bills) < 2:
-                logger.warning(f"Only one '{title}' bill found. Cannot compare.")
-                continue
-
-            # Sort bills by published date if available
-            if all(bill.published_dt for bill in bills):
-                bills.sort(key=lambda x: x.published_dt)
-                logger.info("")
-                logger.info(f"Sorted bills for {title}:")
-                for bill in bills:
-                    logger.info(f"{bill.version} - {bill.published_dt}")
-            else:
-                logger.warning(
-                    f"Published date not found for some files for '{title}'."
-                    " Output will not be ordered properly."
-                )
-
-            # Initialize comparison structure
-            headers = ["eid"] + [clean(bill.version, no_space=True) for bill in bills]
-            rows = {}
-
-            # Populate rows with eIds and corresponding data for each version
-            for bill in bills:
-                sections = bill.get_sections()
-                eid_list = sections[clean(bill.version, no_space=True)]
-                guid_list = sections["guid"]
-
-                for guid, eid in zip(guid_list, eid_list):
-                    if eid not in rows:
-                        rows[eid] = ["-"] * (len(headers) - 1)  # Initialize row with placeholders
-                    version_index = headers.index(clean(bill.version, no_space=True)) - 1
-                    rows[eid][version_index] = guid  # Store GUID for this eId
-
-            # Sort rows by eId
-            sorted_rows = sorted(rows.items(), key=lambda x: self._get_sort_number(x[0]))
-
-            # Store data for this bill
-            bill_comparison_dict[title] = {
-                "headers": headers,
-                "rows": [[eid] + data for eid, data in sorted_rows]
-            }
-        logger.info("Comparison data created")
-        return bill_comparison_dict
-
     def _get_sort_number(self, eid: str) -> int:
+
         """Create a number from the digits in the eId for sorting."""
+
         digits = re.findall(r'\d+', eid)  # Extract digits from the eId
         if not digits:
             return 0  # If no digits are found, treat as zero for sorting
@@ -312,6 +246,11 @@ class CompareBillNumbering:
         comparison_tables = []
 
         for title, bills in self.bills_container.items():
+
+            # If there are fewer than 2 bills, skip comparison
+            if len(bills) < 2:
+                logger.warning(f"Only one '{title}' bill found. Cannot compare.")
+                continue
 
             if all(bill.published_dt for bill in bills):
                 bills.sort(key=lambda x: x.published_dt)
@@ -325,7 +264,7 @@ class CompareBillNumbering:
             headers = ["guid"] + [clean(bill.version, no_space=True) for bill in bills]
 
             # Populate rows with eIds and corresponding data for each version
-            rows = {}
+            rows: dict[str, list[str]] = {}
             for bill in bills:
                 sections = bill.get_sections()
                 eid_list = sections[clean(bill.version, no_space=True)]
@@ -338,9 +277,17 @@ class CompareBillNumbering:
                     version_index = headers.index(clean(bill.version, no_space=True)) - 1
                     rows[guid][version_index] = eid
 
+            # sor the rows by eId
+            rows_list = [[guid] + values for guid, values in rows.items()]
+            rows_list.sort(
+                key=lambda row: max(
+                    self._get_sort_number(item) for item in row[1:] if item != '-'
+                )
+            )
+
             comparison_tables.append(
                 ComparisonTableContainer(
-                    title, headers, [[guid] + values for guid, values in rows.items()]
+                    title, headers, rows_list
                 )
             )
 
