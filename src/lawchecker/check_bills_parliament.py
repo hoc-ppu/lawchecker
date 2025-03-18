@@ -138,7 +138,6 @@ def progress_bar(iterable: Iterable, total: int) -> list:
 
         if update_gui and active_window is not None:
             try:
-                logger.info(f"updateProgressBar(\"{progress_bar_id}\", {percents})")
                 active_window.evaluate_js(
                     f"updateProgressBar(\"{progress_bar_id}\", {percents})"
                 )
@@ -1264,7 +1263,7 @@ def also_query_bills_api(amend_xml_path: Path) -> JSONList | None:
     # TODO: fix this
     api_stage = bill_json.get("currentStage", {}).get("description", "")
 
-    bill_id: int | None  = bill_json.get("billId", None)
+    bill_id: int | None = bill_json.get("billId", None)
     stage_id: int | None = bill_json.get("currentStage", {}).get("id", None)
 
     if stage.casefold().strip() != api_stage.casefold().strip():
@@ -1290,7 +1289,7 @@ def also_query_bills_api(amend_xml_path: Path) -> JSONList | None:
             logger.error(repr(e))
 
 
-    logger.warning(f"Bill ID: {bill_id} Stage ID: {stage_id}")
+    logger.notice(f"Bill ID: {bill_id} Stage ID: {stage_id}")
 
     if not all([bill_id, stage_id]):
         logger.error("Could not get bill ID or stage ID from the API.")

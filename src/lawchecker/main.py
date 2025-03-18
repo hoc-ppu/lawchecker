@@ -16,6 +16,7 @@ import requests
 import webview
 from webview import Window  # TODO: fix this
 
+import lawchecker.lawchecker_logger as lawchecker_logger
 from lawchecker import (
     __version__,
     added_names_report,
@@ -465,7 +466,7 @@ class Api:
         json_amdts = None
 
         with ProgressModal() as modal:
-            modal.update("Querying Bills API for amendments")
+            modal.update("Querying Bills API for amendments. Please wait...")
             try:
                 json_amdts = check_bills_parliament.also_query_bills_api(file)
                 if not json_amdts:
@@ -561,15 +562,19 @@ class Api:
 def get_entrypoint():
 
     if not APP_FROZEN:  # unfrozen development
-        try:
-            # must use the right port here, we use 5174.
-            # Changed in vite.config.ts file
-            url = 'http://localhost:5175'
-            get = requests.get(url)
-            if get.status_code == 200:
-                return url
-        except requests.exceptions.RequestException:
-            print('Vite server not running. Trying static files')
+        logger.info("App is not frozen")
+        for _ in range(8):
+            try:
+                # must use the right port here, we use 5174.
+                # Changed in vite.config.ts file
+                url = 'http://localhost:5175'
+                get = requests.get(url, timeout=0.1)
+                if get.status_code == 200:
+                    return url
+            except Exception:
+                time.sleep(0.1)
+
+        logger.info('Vite server not running. Trying static files')
         return Path('ui_bundle/index.html').resolve().as_uri()  # TODO: fix this
 
     py_2_app_path = Path("../Resources/ui_bundle/index.html")
@@ -643,7 +648,7 @@ def main():
     # add ui logger
     gh_stream = io.StringIO("")
     gh = UILogHandler(gh_stream, window)
-    gh.setLevel(level=logging.WARNING)
+    gh.setLevel(level=lawchecker_logger.NOTICE_LEVEL)
     logger.addHandler(gh)
 
     webview.start(
