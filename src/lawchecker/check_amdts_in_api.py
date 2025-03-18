@@ -630,6 +630,8 @@ class Report:
         self.incorrect_decisions: list[str] = []
         self.correct_decisions: list[str] = []
 
+        self.incorrect_ex_statements: list[str] = []
+
         self.missing_api_amdts: list[str] = []
 
         self.no_name_changes: list[str] = []
@@ -671,6 +673,7 @@ class Report:
             self.diff_names_in_context(xml_amdt, json_amend)
             self.diff_amdt_content(xml_amdt, json_amend)
             self.diff_decision(xml_amdt, json_amend)
+            self.diff_ex_statements(xml_amdt, json_amend)
 
 
     def make_html(self):
@@ -696,6 +699,7 @@ class Report:
                 self.render_stars(),
                 self.render_changed_amdts(),
                 self.render_decisions(),
+                self.render_ex_statements(),
             )
         )
 
@@ -970,6 +974,28 @@ class Report:
 
         return card.html
 
+    def render_ex_statements(self) -> HtmlElement:
+
+        # -------------------- Explanatory Statements -------------------- #
+        # build up text content
+        incorrect_ex_statements = (
+            "<p>All explanatory statements in the API match those in the XML 😀</p>"
+        )
+        if self.incorrect_ex_statements:
+            incorrect_ex_statements = (
+                f'<p><strong class="red">{len(self.incorrect_ex_statements)}</strong>'
+                " amendments have incorrect explanatory statements in the API: </p>\n"
+            )
+
+            incorrect_ex_statements += f"<p>{'<br/>'.join(self.incorrect_ex_statements)}</p>"
+
+        card = templates.Card("Explanatory Statements")
+        card.secondary_info.extend(
+            html.fragments_fromstring(incorrect_ex_statements, no_leading_text=True)
+        )
+
+        return card.html
+
     def check_stars_in_api(
         self,
         xml_amdts: AmdtContainer,
@@ -1101,6 +1127,23 @@ class Report:
             self.correct_decisions.append(xml_amdt.num)
         else:
             self.incorrect_decisions.append(f"{xml_amdt.num} (API: {api_decision}, XML: {xml_decision})")
+
+    def diff_ex_statements(self, xml_amdt: Amendment, api_amdt: Amendment):
+
+        """
+        Check that the explanatory text in the API matches the explanatory text in the XML.
+        """
+
+        xml_ex = xml_amdt.explanatory_text
+        api_ex = api_amdt.explanatory_text
+
+        if not xml_ex:
+            # no explanatory text in the XML so no point comparing
+            return
+
+        if utils.normalise_text(xml_ex) != utils.normalise_text(api_ex):
+            self.incorrect_ex_statements.append(f"{xml_amdt.num} (API: {api_ex}, XML: {xml_ex})")
+
 
     def create_csv(self):
 
