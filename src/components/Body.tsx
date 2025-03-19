@@ -2,6 +2,7 @@ import clerk_logo from "./../assets/clerk_logo.svg";
 import CompareBillsCollapsible from "./CompareBillsCollapsible";
 import BillNumberingCollapsible from "./BillNumberingCollapsible";
 import CompareAmendmentsCollapsible from "./CompareAmendmentsCollapsible";
+import AmendmentsAPICollapsible from "./AmendmentsAPICollapsible";
 import AddedNamesCollapsible from "./AddedNamesCollapsible";
 import { PageActiveState } from "./App";
 
@@ -50,7 +51,14 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
             <a href="https://github.com/hoc-ppu/lawchecker" target="_blank">
               Github
             </a>
-            .
+            . See the{" "}
+            <a
+              href="https://github.com/hoc-ppu/lawchecker/blob/main/CHANGELOG.md"
+              target="_blank"
+            >
+              Changelog
+            </a>{" "}
+            for what's new.
           </div>
         </div>
 
@@ -58,6 +66,7 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
         <BillNumberingCollapsible pageActiveState={pageActiveState} />
         <CompareAmendmentsCollapsible pageActiveState={pageActiveState} />
         <AddedNamesCollapsible pageActiveState={pageActiveState} />
+        <AmendmentsAPICollapsible pageActiveState={pageActiveState} />
       </div>
     </div>
   );

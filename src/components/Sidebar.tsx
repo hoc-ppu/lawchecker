@@ -78,6 +78,14 @@ const Sidebar: React.FC<SidebarProps> = ({
             // toggleCollapsible={toggleCollapsible}
             setPageActiveState={setPageActiveState}
           />
+
+          <SidebarSubItem
+            title="Check Amendment API"
+            collapsibleId="checkAmendmentAPICollapsible"
+            pageActiveState={pageActiveState}
+            // toggleCollapsible={toggleCollapsible}
+            setPageActiveState={setPageActiveState}
+          />
         </div>
       </div>
 

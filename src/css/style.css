@@ -2,6 +2,8 @@
     --bs-secondary: #6B7280;
     --brand-purple: #403C6D;
     --brand-purple-shade: #302d52;
+    --brand-purple-tint: #534f82;
+    --bs-primary-bg-subtle: #D9FFF0;
   }
   body {
     margin: 0;
@@ -233,6 +235,11 @@
     --bs-btn-disabled-border-color: var(--brand-purple);
   }
 
+  .bg-primary {
+    --bs-bg-opacity: 1;
+    background-color: var(--brand-purple-tint)!important;
+  }
+
 
   /* new styles for react project */
 
@@ -288,6 +295,9 @@
 .progress_error {
   color: #DE2E32;
 }
+.progress_warning {
+  color: #E0B507;
+}
 
 .sr-only {
   position: absolute;
@@ -298,4 +308,18 @@
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
   border: 0;
+}
+
+.accordion-button:not(.collapsed){
+  color: black;
+}
+
+.accordion-collapse{
+  transition: max-height .35s ease-in-out;
+  max-height: 0;
+  overflow: hidden;
+}
+
+.accordion-collapse.show{
+  max-height: 100vh;
 }

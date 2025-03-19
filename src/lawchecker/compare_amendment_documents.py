@@ -10,13 +10,14 @@ from typing import NamedTuple
 
 from lxml import etree, html
 from lxml.etree import QName, _Element
+from lxml.html import HtmlElement
 
-from lawchecker.lawchecker_logger import logger
 from lawchecker import templates
 from lawchecker import xpath_helpers as xp
+from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
-from lawchecker.utils import diff_xml_content
+from lawchecker.utils import diff_xml_content, truncate_string
 
 # TODO: [x] put all sections in HTML document
 # Add messages for Nil return
@@ -39,9 +40,6 @@ from lawchecker.utils import diff_xml_content
 # check_amendments.py LM_XML/digital_rm_rep_0825.xml LM_XML/digital_rm_rep_0906.xml
 
 
-
-
-
 class ChangedNames(NamedTuple):
     num: str
     added: list[str]
@@ -54,22 +52,22 @@ class ChangedAmdt(NamedTuple):
 
 
 class Amendment:
-    def __init__(self, amdt: _Element, parent_doc: "SupDocument"):
+    def __init__(self, amdt: _Element, parent_doc: 'SupDocument'):
         self.parent_doc = parent_doc
         _num = amdt.find(
-            "amendment/amendmentBody/amendmentContent/tblock/num", namespaces=NSMAP2
+            'amendment/amendmentBody/amendmentContent/tblock/num', namespaces=NSMAP2
         )
-        _xml = amdt.find("amendment/amendmentBody", namespaces=NSMAP2)
+        _xml = amdt.find('amendment/amendmentBody', namespaces=NSMAP2)
         self._names: list[str] | None = None
-        self.star = Star(amdt.get(QName(UKL, "statusIndicator"), default=""))
+        self.star = Star(amdt.get(QName(UKL, 'statusIndicator'), default=''))
 
         if _num is not None and _num.text and _xml is not None:
             self.num: str = _num.text
             self.xml: _Element = _xml
         else:
-            logger.warning(f"{_num=}, {_xml=}")
+            logger.warning(f'{_num=}, {_xml=}')
             raise ValueError(
-                "amendmentBody or amendmentBody/amendmentContent/tblock/num is None"
+                'amendmentBody or amendmentBody/amendmentContent/tblock/num is None'
             )
 
     @property
@@ -98,11 +96,12 @@ class SupDocument(Mapping):
             tree = etree.parse(self.file_path)
             self.root = tree.getroot()
         else:
-            self.file_name = "Test"
-            self.file_path = "test/Test"
+            self.file_name = 'Test'
+            self.file_path = 'test/Test'
             tree = etree.ElementTree(xml)
             self.root = xml
 
+        self.short_file_name = truncate_string(self.file_name).replace('.xml', '')
 
         # build up metadata
         self.meta_list_type: str
@@ -132,19 +131,19 @@ class SupDocument(Mapping):
         except Exception as e:
             warning_msg = f"Can't find List Type meta data. Check {self.file_name}"
             self.meta_list_type = warning_msg
-            logger.warning(f"Problem parsing XML. {warning_msg}: {repr(e)}")
+            logger.warning(f'Problem parsing XML. {warning_msg}: {repr(e)}')
 
         try:
             bill_title = self.root.find(
                 ".//TLCConcept[@eId='varBillTitle']", namespaces=NSMAP2
             )
             # don't use .get here  as that defaults to None
-            self.meta_bill_title = bill_title.attrib["showAs"]  # type: ignore
+            self.meta_bill_title = bill_title.attrib['showAs']  # type: ignore
             # [x] test
         except Exception as e:
             warning_msg = f"Can't find Bill Title meta data. Check {self.file_name}"
             self.meta_bill_title = warning_msg
-            logger.warning(f"Problem parsing XML. {warning_msg}: {repr(e)}")
+            logger.warning(f'Problem parsing XML. {warning_msg}: {repr(e)}')
 
         try:
             # add a test for this
@@ -152,19 +151,23 @@ class SupDocument(Mapping):
                 ".//FRBRManifestation/FRBRdate[@name='published']", namespaces=NSMAP2
             )
             self.meta_pub_date = datetime.strptime(
-                published_date.get("date", default=""), "%Y-%m-%d"  # type: ignore
-            ).strftime("%A %d %B %Y")
+                published_date.get('date', default=''),  # type: ignore
+                '%Y-%m-%d',
+            ).strftime('%A %d %B %Y')
+
         except Exception as e:
             warning_msg = f"Can't find Published Date meta data. Check {self.file_name}"
             self.meta_pub_date = warning_msg
-            logger.warning(f"Problem parsing XML. {warning_msg}: {repr(e)}")
+            if not isinstance(e, AttributeError):
+                warning_msg += f': {repr(e)}'
+            logger.info(f'Problem parsing XML. {warning_msg}')
 
     def _create_amdt_map(self) -> dict[str, Amendment]:
         _amdt_map: dict[str, Amendment] = {}
 
         for amendment in self.amendments:
             if amendment.num in _amdt_map:
-                logger.warning(f"Duplicate amendment number: {amendment.num}")
+                logger.warning(f'Duplicate amendment number: {amendment.num}')
             _amdt_map[amendment.num] = amendment
 
         return _amdt_map
@@ -185,9 +188,7 @@ class SupDocument(Mapping):
         return self._dict.items()
 
 
-
 class Report:
-
     """
     Container for Amendment Report.
     The report summarises changes changes between two LM XML official list documents.
@@ -199,13 +200,13 @@ class Report:
         self,
         old_file: Path | _Element,
         new_file: Path | _Element,
-        days_between_papers: bool = False
+        days_between_papers: bool = False,
     ):
         try:
             self.html_tree = html.parse(COMPARE_REPORT_TEMPLATE)
             self.html_root = self.html_tree.getroot()
         except Exception as e:
-            logger.error(f"Error parsing HTML template file: {e}")
+            logger.error(f'Error parsing HTML template file: {e}')
             raise
 
         self.days_between_papers = days_between_papers
@@ -261,7 +262,7 @@ class Report:
         Build up HTML document with various automated checks on amendments
         """
         xp = './/div[@id="content-goes-here"]'
-        insert_point: _Element = self.html_root.find(xp)  # type: ignore
+        insert_point: HtmlElement = self.html_root.find(xp)  # type: ignore
         # print(etr)
         insert_point.extend(
             (
@@ -273,79 +274,82 @@ class Report:
             )
         )
 
-    def render_intro(self) -> _Element:
+    def render_intro(self) -> HtmlElement:
         # ------------------------- intro section ------------------------ #
         into = (
-            "This report summarises changes between two LawMaker"
-            " XML official list documents. The documents are:"
-            f"<br><strong>{self.old_doc.file_name}</strong> and "
-            f"<strong>{self.new_doc.file_name}</strong>"
+            'This report summarises changes between two LawMaker'
+            ' XML official list documents. The documents are:'
+            f'<br><strong>{self.old_doc.file_name}</strong> and '
+            f'<strong>{self.new_doc.file_name}</strong>'
         )
 
         meta_data_table = templates.Table(
-            ("", self.old_doc.file_name, self.new_doc.file_name)
+            ('', self.old_doc.file_name, self.new_doc.file_name)
         )
 
         meta_data_table.add_row(
-            ("File path", self.old_doc.file_path, self.new_doc.file_path)
+            ('File path', self.old_doc.file_path, self.new_doc.file_path)
         )
         meta_data_table.add_row(
-            ("Bill Title", self.old_doc.meta_bill_title, self.new_doc.meta_bill_title)
+            ('Bill Title', self.old_doc.meta_bill_title, self.new_doc.meta_bill_title)
         )
         meta_data_table.add_row(
-            ("Published date", self.old_doc.meta_pub_date, self.new_doc.meta_pub_date)
+            ('Published date', self.old_doc.meta_pub_date, self.new_doc.meta_pub_date)
         )
         meta_data_table.add_row(
-            ("List Type", self.old_doc.meta_list_type, self.new_doc.meta_list_type)
+            ('List Type', self.old_doc.meta_list_type, self.new_doc.meta_list_type)
         )
 
         section = html.fromstring(
             '<div class="wrap">'
             '<section id="intro">'
-            "<h2>Introduction</h2>"
-            f"<p>{into}</p>"
-            "</section>"
-            "</div>"
+            '<h2>Introduction</h2>'
+            f'<p>{into}</p>'
+            '</section>'
+            '</div>'
         )
 
         section.append(meta_data_table.html)
 
         return section
 
-    def render_added_and_removed_amdts(self) -> _Element:
+    def render_added_and_removed_amdts(self) -> HtmlElement:
         # ----------- Removed and added amendments section ----------- #
         # build up text content
-        removed_content = "Removed content: <strong>None</strong>"
+        removed_content = 'Removed content: <strong>None</strong>'
         if self.removed_amdts:
             removed_content = (
-                f"Removed content: <strong>{len(self.removed_amdts)}</strong><br />"
-                f"{' '.join(self.removed_amdts)}"
+                f'Removed content: <strong>{len(self.removed_amdts)}</strong><br />'
+                f'{" ".join(self.removed_amdts)}'
             )
-        added_content = "Added content: <strong>None</strong>"
+        added_content = 'Added content: <strong>None</strong>'
         if self.added_amdts:
             added_content = (
-                f"Added content: <strong>{len(self.added_amdts)}</strong><br />"
-                f"{' '.join(self.added_amdts)}"
+                f'Added content: <strong>{len(self.added_amdts)}</strong><br />'
+                f'{" ".join(self.added_amdts)}'
             )
 
-        card = templates.Card("Added and removed amendments")
-        card.secondary_info.extend([
-            html.fromstring(f"<p>{added_content}</p>"),
-            html.fromstring(f"<p>{removed_content}</p>")
-        ])
+        card = templates.Card('Added and removed amendments')
+        card.secondary_info.extend(
+            [
+                html.fromstring(f'<p>{added_content}</p>'),
+                html.fromstring(f'<p>{removed_content}</p>'),
+            ]
+        )
         return card.html
 
-    def added_and_removed_names_table(self) -> _Element:
-
+    def added_and_removed_names_table(self) -> HtmlElement:
         if not self.name_changes:
             return html.fromstring(
-                "<p><strong>Zero</strong> amendments have name changes.</p>"
+                '<p><strong>Zero</strong> amendments have name changes.</p>'
             )
 
-        name_changes = templates.Table(("Ref", "Names added", "Names removed", "Totals"))
+        name_changes = templates.Table(
+            ('Ref', 'Names added', 'Names removed', 'Totals')
+        )
 
         # we have a special class for this table
-        name_changes.html.classes.add("an-table")  # type: ignore
+        name_changes.html.classes.add('an-table')  # type: ignore
 
         for item in self.name_changes:
             names_added = []
@@ -355,39 +359,37 @@ class Report:
                         f'<span class="col-12 col-lg-6  mb-2">{name}</span>'
                     )
                 )
-            p_names_added = etree.fromstring('<p class="row"></p>')
+            p_names_added = html.fromstring('<p class="row"></p>')
             p_names_added.extend(names_added)
 
             total_added = len(item.added)
             total_removed = len(item.removed)
             totals = []
             if total_added:
-                totals.append(f"Added: {total_added}")
+                totals.append(f'Added: {total_added}')
             if total_removed:
-                totals.append(f"Removed: {total_removed}")
+                totals.append(f'Removed: {total_removed}')
 
             name_changes.add_row(
-                (item.num, p_names_added, ", ".join(item.removed), ", ".join(totals))
+                (item.num, p_names_added, ', '.join(item.removed), ', '.join(totals))
             )
 
         return name_changes.html
 
-    def render_added_and_removed_names(self) -> _Element:
-
+    def render_added_and_removed_names(self) -> HtmlElement:
         """Added and removed names section"""
 
         no_name_changes = html.fromstring(
-            "<p><strong>Zero</strong> amendments have no name changes.</p>"
+            '<p><strong>Zero</strong> amendments have no name changes.</p>'
         )
 
         if self.no_name_changes:
-
-            sec = (templates.SmallCollapsableSection(
-                f"<span><strong>{len(self.no_name_changes)}</strong>"
-                f" amendments have no name changes: "
+            sec = templates.SmallCollapsableSection(
+                f'<span><strong>{len(self.no_name_changes)}</strong>'
+                f' amendments have no name changes: '
                 '<small class="text-muted"> [show]</small></span>'
-            ))
-            sec.collapsible.text = f"{', '.join(self.no_name_changes)}"
+            )
+            sec.collapsible.text = f'{", ".join(self.no_name_changes)}'
             no_name_changes = sec.html
 
         name_changes_table = self.added_and_removed_names_table()
@@ -400,8 +402,8 @@ class Report:
         if self.name_changes_in_context:
             changed_amdts.append(
                 html.fromstring(
-                    f"<p><strong>{len(self.name_changes_in_context)}</strong> amendments"
-                    " have changed names: </p>\n"
+                    f'<p><strong>{len(self.name_changes_in_context)}</strong> amendments'
+                    ' have changed names: </p>\n'
                 )
             )
             for item in self.name_changes_in_context:
@@ -412,7 +414,7 @@ class Report:
                     )
                 )
         else:
-            logger.info("No name changes in context")
+            logger.info('No name changes in context')
 
         names_change_context_section.add_content(changed_amdts)
 
@@ -420,7 +422,7 @@ class Report:
             # might as well not output anything if not necessary
             names_change_context_section.clear()
 
-        card = templates.Card("Added and removed names")
+        card = templates.Card('Added and removed names')
         card.secondary_info.extend(
             (
                 name_changes_table,
@@ -431,85 +433,85 @@ class Report:
 
         return card.html
 
-
-    def render_stars(self) -> _Element:
+    def render_stars(self) -> HtmlElement:
         # -------------------- Star check section -------------------- #
         # build up text content
         correct_stars = html.fromstring(
-            "<p><strong>Zero</strong> amendments have correct stars.</p>"
+            '<p><strong>Zero</strong> amendments have correct stars.</p>'
         )
         if self.correct_stars:
-
-            sec = (templates.SmallCollapsableSection(
-                f"<span><strong>{len(self.correct_stars)}</strong>"
-                f" amendments have correct stars: "
+            sec = templates.SmallCollapsableSection(
+                f'<span><strong>{len(self.correct_stars)}</strong>'
+                f' amendments have correct stars: '
                 '<small class="text-muted"> [show]</small></span>'
-            ))
-            sec.collapsible.text = f"{', '.join(self.correct_stars)}"
+            )
+            sec.collapsible.text = f'{", ".join(self.correct_stars)}'
             correct_stars = sec.html
 
-        incorrect_stars = (
-            "<strong>Zero</strong> amendments have incorrect stars"
-        )
+        incorrect_stars = '<strong>Zero</strong> amendments have incorrect stars'
         if self.incorrect_stars:
             incorrect_stars = (
                 f'<strong class="red">{len(self.incorrect_stars)} amendments'
-                f" have incorrect stars:</strong>  {', '.join(self.incorrect_stars)}"
+                f' have incorrect stars:</strong>  {", ".join(self.incorrect_stars)}'
             )
 
-        card = templates.Card("Star Check")
-        card.secondary_info.append(html.fromstring(f"<p>{incorrect_stars}</p>"))
+        card = templates.Card('Star Check')
+        card.secondary_info.append(html.fromstring(f'<p>{incorrect_stars}</p>'))
         card.tertiary_info.append(correct_stars)
         # self.add_element_to_output_html(card.html)
         return card.html
 
-    def render_changed_amdts(self) -> _Element:
+    def render_changed_amdts(self) -> HtmlElement:
         # -------------------- Changed Amendments -------------------- #
         # build up text content
-        changed_amdts = (
-            "<p><strong>Zero</strong> amendments have changed content.</p>"
-        )
+        changed_amdts = '<p><strong>Zero</strong> amendments have changed content.</p>'
         if self.changed_amdts:
             changed_amdts = (
                 f'<p><strong class="red">{len(self.changed_amdts)}</strong>'
-                " amendments have changed content: </p>\n"
+                ' amendments have changed content: </p>\n'
             )
             for item in self.changed_amdts:
                 changed_amdts += f"<p class='h5'>{item.num}:</p>\n{item.html_diff}\n"
 
-        card = templates.Card("Changed amendments")
-        card.secondary_info.extend(html.fragments_fromstring(changed_amdts))
+        card = templates.Card('Changed amendments')
+        card.secondary_info.extend(
+            html.fragments_fromstring(changed_amdts, no_leading_text=True)
+        )
 
         return card.html
-
 
     def star_check(
         self,
         new_amdt: Amendment,
         old_amdt: Amendment | None,
     ):
-
-        """New amendments should have a black star.
+        """
+        New amendments should have a black star.
 
         if there are no sitting or printing days between the two documents:
         * Amendments which previously had a black star should now have a white star.
         * Amendments which previously had a white star should now have no star.
+
         If there are sitting or printing days between the two documents:
-        * Amendments which previously a star of any colour should now have no star."""
+        * Amendments which previously a star of any colour should now have no star.
+        """
 
         if old_amdt is None:
             if new_amdt.star == BLACK_STAR:
-                self.correct_stars.append(f"{new_amdt.num} ({new_amdt.star})")
+                self.correct_stars.append(f'{new_amdt.num} ({new_amdt.star})')
             else:
-                self.incorrect_stars.append(f"{new_amdt.num} has {new_amdt.star} ({BLACK_STAR} expected)")
+                self.incorrect_stars.append(
+                    f'{new_amdt.num} has {new_amdt.star} ({BLACK_STAR} expected)'
+                )
 
         elif old_amdt.star in (BLACK_STAR, WHITE_STAR):
-
             expected_star = old_amdt.star.next_star(self.days_between_papers)
             if new_amdt.star == expected_star:
-                self.correct_stars.append(f"{new_amdt.num} ({new_amdt.star})")
+                self.correct_stars.append(f'{new_amdt.num} ({new_amdt.star})')
             else:
-                self.incorrect_stars.append(f"{new_amdt.num} has {new_amdt.star} ({expected_star} expected)")
+                self.incorrect_stars.append(
+                    f'{new_amdt.num} has {new_amdt.star} ({expected_star} expected)'
+                )
 
         elif old_amdt.star == NO_STAR:
             # do nothing
@@ -518,13 +520,11 @@ class Report:
         else:
             # there is an error with the star in the input XML
             self.incorrect_stars.append(
-                f"Error with star in {old_amdt.parent_doc.file_name},"
-                f" {old_amdt.num} check manually."
+                f'Error with star in {old_amdt.parent_doc.file_name},'
+                f' {old_amdt.num} check manually.'
             )
 
-
-    def added_and_removed_amdts(self, old_doc: "SupDocument", new_doc: "SupDocument"):
-
+    def added_and_removed_amdts(self, old_doc: 'SupDocument', new_doc: 'SupDocument'):
         """Find the amendment numbers which have been added and removed"""
 
         self.removed_amdts = list(old_doc.amdt_set.difference(new_doc.amdt_set))
@@ -538,7 +538,7 @@ class Report:
 
         if self.duplicate_names:
             # warn in UI
-            logger.warning(f"Duplicate names found in {new_amdt.num}")
+            logger.warning(f'Duplicate names found in {new_amdt.num}')
 
         added_names = [item for item in new_amdt.names if item not in old_amdt.names]
         removed_names = [item for item in old_amdt.names if item not in new_amdt.names]
@@ -552,7 +552,6 @@ class Report:
             )
 
     def diff_names_in_context(self, new_amdt: Amendment, old_amdt: Amendment):
-
         """
         Create an HTML string containing a tables showing the differences
         between old_amdt//amendmentHeading and new_amdt//amendmentHeading.
@@ -574,7 +573,7 @@ class Report:
             assert len(old_amdt_heading) > 0
 
         except (IndexError, AssertionError):
-            logger.warning(f"{new_amdt.num}: no sponsors found")
+            logger.warning(f'{new_amdt.num}: no sponsors found')
             return
 
         dif_html_str = diff_xml_content(
@@ -587,7 +586,6 @@ class Report:
             self.name_changes_in_context.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
     def diff_amdt_content(self, new_amdt: Amendment, old_amdt: Amendment):
-
         """
         Create an HTML string containing a tables showing the differences
         between old_amdt//amendmentContent and new_amdt//amendmentContent.
@@ -600,7 +598,7 @@ class Report:
         old_amdt_content = xp.get_amdt_content(old_amdt.xml)
 
         if len(new_amdt_content) == 0 or len(old_amdt_content) == 0:
-            logger.warning(f"{new_amdt.num}: has no content")
+            logger.warning(f'{new_amdt.num}: has no content')
             return
         else:
             new_amdt_content = new_amdt_content[0]
@@ -616,56 +614,56 @@ class Report:
             self.changed_amdts.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
 
-
-
 def main():
-
     parser = argparse.ArgumentParser(
         description=(
-            "Create an HTML document with various automated checks on amendments."
+            'Create an HTML document with various automated checks on amendments.'
         )
     )
 
     parser.add_argument(
-        "old_doc",
+        'old_doc',
         type=Path,
-        help="The amendment paper from a previous day",
+        help='The amendment paper from a previous day',
     )
 
     parser.add_argument(
-        "new_doc",
+        'new_doc',
         type=Path,
-        help="The amendment paper you wish to check",
+        help='The amendment paper you wish to check',
     )
 
     parser.add_argument(
-        "-d",
-        "--days-between",
-        action="store_true",
-        help="Use this flag if there are sitting days between the documents compared"
+        '-d',
+        '--days-between',
+        action='store_true',
+        help='Use this flag if there are sitting days between the documents compared',
     )
 
     args = parser.parse_args(sys.argv[1:])
 
-    filename = "html_diff.html"
+    filename = 'html_diff.html'
 
-    report = Report(
-        args.old_doc,
-        args.new_doc,
-        days_between_papers=args.days_between
-    )
+    report = Report(args.old_doc, args.new_doc, days_between_papers=args.days_between)
 
     report.html_tree.write(
         filename,
-        method="html",
-        encoding="utf-8",
-        doctype="<!DOCTYPE html>",
+        method='html',
+        encoding='utf-8',
+        doctype='<!DOCTYPE html>',
     )
 
     webbrowser.open(Path(filename).resolve().as_uri())
 
 
 def find_duplicates(lst: list[str]) -> list[str]:
+    """
+    Find and return a list of duplicate items in the given list.
+
+    This function takes a list of strings and returns a list of items that
+    appear more than once in the original list. The returned list contains
+    the duplicate items sorted in ascending order.
+    """
 
     # Convert the list to a set to remove duplicates
     unique_items = set(lst)
@@ -673,7 +671,6 @@ def find_duplicates(lst: list[str]) -> list[str]:
     # If the length of the set is less than the length of the list,
     # then there are duplicates
     if len(unique_items) < len(lst):
-
         sorted_items = sorted(list(unique_items))
 
         # Create a dictionary to store the count of each item
@@ -692,6 +689,5 @@ def find_duplicates(lst: list[str]) -> list[str]:
     return list()
 
 
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

@@ -10,9 +10,6 @@ from lxml.etree import iselement
 
 from lawchecker.lawchecker_logger import logger
 
-# TODO: Add logging
-# Run Black on this file
-
 
 def get_marshal_xml(folder_path):
     """Load additional XML files for checking amendments."""
@@ -54,7 +51,7 @@ def fetch_eligible_members():
             if member.find("DisplayAs") is not None
         }
     else:
-        print("Failed to fetch data from MNIS API.")
+        logger.info("Failed to fetch data from MNIS API.")
         return set()
 
 def check_amendment_in_files(amendment_num, bill_title, marshal_files):
@@ -99,11 +96,15 @@ def reorder_amendments(marshal_files, bill_title, amendment_groups):
             logger.debug(f"No bill-title found in {checking_file.docinfo.URL}")
             continue
 
-        if bill_title_match[0] != bill_title:
-            logger.debug(f"Bill title '{bill_title}' does not match '{bill_title_match[0]}' in {checking_file.docinfo.URL}")
+        # Normalize apostrophes for comparison
+        normalized_bill_title = bill_title.replace("’", "'")
+        normalized_bill_title_match = bill_title_match[0].replace("’", "'")
+
+        if normalized_bill_title != normalized_bill_title_match:
+            logger.debug(f"Bill title '{normalized_bill_title}' does not match '{normalized_bill_title_match}' in {checking_file.docinfo.URL}")
             continue
 
-        logger.debug(f"Matched Bill Title: {bill_title_match[0]} in {checking_file.docinfo.URL}")
+        logger.debug(f"Matched Bill Title: {normalized_bill_title_match} in {checking_file.docinfo.URL}")
 
         all_nums = root.xpath(".//akn:num[@ukl:dnum]", namespaces={
         "akn": "http://docs.oasis-open.org/legaldocml/ns/akn/3.0",
@@ -414,7 +415,7 @@ def inject_html_template(template_path, output_path, summary_content, dynamic_co
     with open(output_path, "w", encoding="utf-8") as output_file:
         output_file.write(template_html)
 
-    print(f"HTML file successfully generated: {output_path}")
+    logger.info(f"HTML file successfully generated: {output_path}")
 
 # Add ticks and crosses to the HTML file according to the marshalling XML
 def ticks_and_crosses(output_html_file_path, marshal_file_dir):
@@ -538,9 +539,10 @@ def main(template_path, xml_file_path, marshal_file_dir, output_html_file_path):
         ticks_and_crosses(output_html_file_path, marshal_file_dir)
 
     except Exception as e:
-        print(f"Error: {e}")
+        logger.error(f"{e}")
         traceback.print_exc()
         sys.exit(1)
+
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:

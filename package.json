@@ -4,13 +4,22 @@
   "description": "Automated checks/compares for UK Parliament legislative papers.",
   "type": "module",
   "scripts": {
-    "dev": "concurrently --kill-others --names vite,python \"vite --config vite.config.ts\"  \"sleep 0.2 & python src/lawchecker/main.py\"",
+    "dev": "concurrently --kill-others --names vite,python \"vite --config vite.config.ts\"  \"python src/lawchecker/main.py\"",
     "bundle": "vite build",
-    "build": "npm run clean && npm run frontend:prod && run-script-os",
+    "build": "npm run clean && npm run bundle && run-script-os",
     "build:macos": "python build-macos.py py2app",
+    "clean": "run-script-os",
+    "clean:default": "rm ui_bundle/index.html 2>/dev/null; rm -rf dist 2>/dev/null; rm -rf build 2>/dev/null; ",
+    "clean:windows": "if exist ui_bundle/index.html del ui_bundle/index.html & if exist dist rd /S /Q dist & if exist build rd /S /Q build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
+  "keywords": [
+    "pywebview",
+    "react",
+    "python",
+    "javascript"
+  ],
   "dependencies": {
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
@@ -27,9 +36,9 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.12",
     "globals": "^15.9.0",
+    "run-script-os": "^1.1.6",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.7.0",
-    "run-script-os": "^1.1.6",
     "vite": "^5.4.11",
     "vite-plugin-singlefile": "^2.1.0",
     "vite-plugin-svgr": "^4.2.0"

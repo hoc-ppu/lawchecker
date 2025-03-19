@@ -1,16 +1,15 @@
 class Star:
-
-    no_star = "No Star"
-    black_star = "★"
-    white_star = "☆"
+    no_star = 'No Star'
+    black_star = '★'
+    white_star = '☆'
 
     def __init__(self, star_text: str):
-        if star_text in (Star.black_star, Star.white_star, ' ', "", Star.no_star):
-            if star_text in (" ", ""):
+        if star_text in (Star.black_star, Star.white_star, ' ', '', Star.no_star):
+            if star_text in (' ', ''):
                 star_text = Star.no_star
             self.star_text = star_text
         else:
-            self.star_text = "Error with star"
+            self.star_text = 'Error with star'
 
     @classmethod
     def white(cls):

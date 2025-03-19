@@ -6,7 +6,7 @@ from lxml.etree import _Element
 
 from .settings import NSMAP
 
-T = TypeVar("T")
+T = TypeVar('T')
 
 
 class XPath(etree.XPath, Generic[T]):
@@ -32,13 +32,18 @@ class XPath(etree.XPath, Generic[T]):
 
 
 get_amendments = XPath(
-    "//xmlns:component[xmlns:amendment]",
+    '//xmlns:component[xmlns:amendment]',
+    expected_type=list[_Element],
+)
+
+get_amendments_bodies = XPath(
+    '//xmlns:component/xmlns:amendment/xmlns:amendmentBody',
     expected_type=list[_Element],
 )
 
 # here sections will include clauses and schedule paragraphs
 get_sections = XPath(
-    "//xmlns:section[not(ancestor::xmlns:mod)]",
+    '//xmlns:section[not(ancestor::xmlns:mod)]',
     expected_type=list[_Element],
 )
 
@@ -48,11 +53,11 @@ get_schedules = XPath(
 )
 
 get_sched_paras = XPath(
-    ".//xmlns:paragraph[not(ancestor::xmlns:mod)]",
+    './/xmlns:paragraph[not(ancestor::xmlns:mod)]',
     expected_type=list[_Element],
 )
 
-text_content = XPath("string()", expected_type=type(str()))
+text_content = XPath('string()', expected_type=type(str()))
 
 # get MP name elements. These are proposer and supporters elements
 get_name_elements = XPath(
@@ -63,12 +68,27 @@ get_name_elements = XPath(
     expected_type=list[_Element],
 )
 
+get_name_elements_2 = XPath(
+    # TODO: we should make sure that both check bills api and compare amends use the same element for amendments
+    (
+        "xmlns:amendment/xmlns:amendmentBody/xmlns:amendmentHeading/xmlns:block[@name='proposer' or"
+        " @name='supporters']/*[@refersTo]"
+    ),
+    expected_type=list[_Element],
+)
+
 get_amdt_heading = XPath(
-    "xmlns:amendmentHeading[1]",
+    'xmlns:amendmentHeading[1]',
     expected_type=list[_Element],
 )
 
 get_amdt_content = XPath(
-    "xmlns:amendmentContent[1]",
+    'xmlns:amendmentContent[1]',
+    expected_type=list[_Element],
+)
+
+get_amdt_content_2 = XPath(
+    # check vs API the active element is element
+    'xmlns:amendment/xmlns:amendmentBody/xmlns:amendmentContent[1]',
     expected_type=list[_Element],
 )
