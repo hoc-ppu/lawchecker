@@ -88,6 +88,8 @@ function progress_modal_update(text) {
     // show the modal if it is not already visible
     if (!progress_modal._isShown) {
         progress_modal.show();
+        // if it was now already shown, we should disable the spinner
+        progress_modal_spinner_element.style.display = 'none';
     }
 
     // Replace both backslashes and forward slashes with the

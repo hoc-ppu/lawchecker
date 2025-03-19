@@ -15,6 +15,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   const [lmXmlFileSelected, setlmXmlFileSelected] = useState<boolean>(false);
   const [stageId, setStageId] = useState<string>("");
   const [billId, setBillId] = useState<string>("");
+  const [saveJsonIsChecked, setSaveJsonIsChecked] = useState(true);
 
   const handleLmXml = async () => {
     const result = await window.pywebview.api.open_file_dialog(
@@ -24,8 +25,12 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
     setPrettyLmXml(addWordBreaksToPath(result));
   };
 
-  const handleCreateCSV = async () => {
-    await window.pywebview.api.create_api_csv();
+  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSaveJsonIsChecked(event.target.checked);
+  };
+
+  const handleCreateCSV = () => {
+    window.pywebview.api.create_api_csv();
     console.log("create_api_csv called");
   };
 
@@ -83,6 +88,19 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
               Use this option to Automatically query the bills API using
               information extracted from the XML file.
             </p>
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                checked={saveJsonIsChecked}
+                onChange={handleCheckboxChange}
+                // value=""
+                // id="flexCheckChecked"
+              />
+              <label className="form-check-label" htmlFor="flexCheckChecked">
+                Save the JSON from the API
+              </label>
+            </div>
             <div className="d-grid gap-2 col-12 mx-auto my-3">
               <Button
                 id="api_get_amendments_from_xml"
@@ -90,7 +108,8 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
                 handleClick={() => {
                   console.log("Get Amendments clicked: ", lmXml);
                   window.pywebview.api.get_api_amendments_using_xml_for_params(
-                    lmXml
+                    lmXml,
+                    Boolean(saveJsonIsChecked)
                   );
                 }}
               />
@@ -134,6 +153,19 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
                 onChange={(e) => setStageId(e.target.value)}
               ></input>
             </div>
+            <div className="form-check">
+              <input
+                className="form-check-input"
+                type="checkbox"
+                checked={saveJsonIsChecked}
+                onChange={handleCheckboxChange}
+                // value=""
+                // id="flexCheckChecked"
+              />
+              <label className="form-check-label" htmlFor="flexCheckChecked">
+                Save the JSON from the API
+              </label>
+            </div>
             <div className="d-grid gap-2 col-12 mx-auto my-3">
               <Button
                 id="api_get_amendments_from_ids"
@@ -170,7 +202,13 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
         </Accordion>
       </Card>
 
-      <Card step="Step&nbsp;3" info="Create the Amendments API Check report">
+      <Card step="Step&nbsp;3" info="Check the amendments API">
+        <p>
+          Create a report dealing all the differences between amendments in the
+          XML file and amendments on Bill.parliament.uk. Alternatively create a
+          table with a row summarising the differences. This can be coppied to
+          SharePoint.
+        </p>
         <Button
           id="api_report_in_browser"
           text="Create Report"
@@ -182,7 +220,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
 
         <Button
           id="api_report_CSV"
-          text="Create CSV"
+          text="Create data for SharePoint"
           handleClick={handleCreateCSV}
         />
       </Card>

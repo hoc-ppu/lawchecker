@@ -453,8 +453,10 @@ class Api:
         self._create_html_compare("amendments", days_between_papers)
 
     def get_api_amendments_using_xml_for_params(
-        self, file: Path | None
-    ) -> Path | None:
+        self,
+        file: Path | str | None,
+        save_json: bool = True,
+    ) -> None:
         """
         Query the Bills API for the amendments by first extracting data from the XML file.
         """
@@ -463,12 +465,15 @@ class Api:
             logger.info("No XML file selected.")
             return
 
+        if not isinstance(file, Path):
+            file = Path(file)
+
         json_amdts = None
 
         with ProgressModal() as modal:
             modal.update("Querying Bills API for amendments. Please wait...")
             try:
-                json_amdts = check_amdts_in_api.also_query_bills_api(file)
+                json_amdts = check_amdts_in_api.also_query_bills_api(file, save_json)
                 if not json_amdts:
                     logger.error("No JSON returned from API.")
             except Exception as e:
@@ -478,9 +483,10 @@ class Api:
 
         self.api_amend_json = json_amdts
 
-        return file
 
-    def get_api_amendments_with_ids(self, bill_id: str, stage_id: str) -> None:
+    def get_api_amendments_with_ids(
+            self, bill_id: str, stage_id: str, save_json: bool = True
+        ) -> None:
         """
         Query the Bills API for the amendments using the bill and stage IDs.
         """
@@ -494,8 +500,15 @@ class Api:
         except ValueError:
             logger.error("Bill ID and Stage ID must be integers.")
             return
+
+        if save_json:
+            # we must have an xml file as the JSON file will be saved next to it
+            if not self.api_amend_xml:
+                logger.error("No XML file selected.")
+                return
+
         with ProgressModal() as modal:
-            modal.update(f"Querying Bills API for amendments")
+            modal.update("Querying Bills API for amendments. Please wait...")
             try:
                 json_amdts = check_amdts_in_api.get_amendments_json(
                     bill_id_int, stage_id_int
@@ -506,6 +519,10 @@ class Api:
                 logger.error(f"Error querying API: {e}")
 
             modal.update("Query complete.")
+
+        if save_json:
+            file_path = Path(self.api_amend_xml).parent / f"{bill_id}_{stage_id}_amdts.json"
+            check_amdts_in_api.save_json_to_file(json_amdts, file_path)
 
         self.api_amend_json = json_amdts
 
@@ -532,24 +549,47 @@ class Api:
             return
         report = check_amdts_in_api.Report(self.api_amend_xml, self.api_amend_json)
 
-        report.create_csv()
-        logger.warning("main.create_api_csv called")
+        # logger.info([key for key in report.json_amdts.keys()])
+        logger.notice(f"stage_id: {report.json_amdts.stage_id}")
+        logger.notice(f"bill_id: {report.json_amdts.bill_id}")
+
+        report.create_table_for_sharepoint()
+        # logger.warning("main.create_api_csv called")
 
     def create_api_report(self):
         if not self.data_is_avaliable():
             return
         report = check_amdts_in_api.Report(self.api_amend_xml, self.api_amend_json)
 
-        filename = "API_html_diff.html"
+        # filename = "API_html_diff.html"
+
+        bill_title = report.json_amdts.meta_bill_title
+        bill_stage = report.json_amdts.stage_name
+        xml_file_path = report.xml_file_path
+        if xml_file_path:
+            parent_path = xml_file_path.resolve().parent
+        else:
+            parent_path = Path.cwd()
+
+        if bill_stage is not None:
+            file_name = f"{bill_title}_{bill_stage}_amdt_table.html"
+        else:
+            file_name = f"{bill_title}_amdt_report.html"
+
+        file_path = parent_path / file_name
+
+        logger.info(f"Attempting to write report to {file_path}")
 
         report.html_tree.write(
-            filename,
+            str(file_path),
             method="html",
             encoding="utf-8",
             doctype="<!DOCTYPE html>",
         )
 
-        webbrowser.open(Path(filename).resolve().as_uri())
+        logger.info("Report written")
+
+        webbrowser.open(Path(file_path).resolve().as_uri())
 
     def set_v_info(self):
         logger.info("set_v_info called")

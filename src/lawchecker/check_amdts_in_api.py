@@ -20,6 +20,7 @@ from lxml.html import HtmlElement
 from lawchecker import pp_xml_lxml, templates, utils
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_amendment_documents import ChangedAmdt, ChangedNames
+from lawchecker.compare_bill_numbering import clean as clean_filename
 from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, UKL
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
@@ -445,6 +446,10 @@ class AmdtContainer(Mapping):
         self.amendments = amendments
         self.resource_identifier = resource_identifier
 
+        self.bill_id = bill_id
+        self.stage_id = stage_id
+        self.stage_name = stage_name
+
         self._dict = self._create_amdt_map()
         self.amdt_set = set(amdt.num for amdt in self.amendments)
 
@@ -455,14 +460,17 @@ class AmdtContainer(Mapping):
     @classmethod
     def from_json(
         cls,
-        json_data: list[JSONType],
+        json_data: dict[str, JSON],
         container_type: ContainerType = ContainerType.AMDTS_FROM_API,
-        resource_identifier: str = "Api Amendments",
-    ) -> "AmdtContainer":
+        resource_identifier: str = 'Api Amendments',
+    ) -> 'AmdtContainer':
+        bill_id: int | None = json_data.get('billId', None)  # type: ignore
+        stage_id: int | None = json_data.get('stageId', None)  # type: ignore
+        stage_name: str | None = json_data.get('stageDescription', None)  # type: ignore
 
         amendments: list[Amendment] = []
 
-        for amendment in json_data:
+        for amendment in json_data.get('items', []):
             try:
                 amendment = Amendment.from_json(amendment)
                 amendments.append(amendment)
@@ -473,6 +481,9 @@ class AmdtContainer(Mapping):
             amendments,
             container_type=container_type,
             resource_identifier=resource_identifier,
+            bill_id=bill_id,
+            stage_id=stage_id,
+            stage_name=stage_name,
         )
 
     @classmethod
@@ -588,7 +599,6 @@ class AmdtContainer(Mapping):
 
 
 class Report:
-
     """
     Container for Amendments API Report.
 
@@ -600,8 +610,13 @@ class Report:
     def __init__(
         self,
         xml: Path | _Element,
-        json_amdts: list[JSONType],
+        json_amdts: dict[str, JSON],
     ):
+        if isinstance(xml, Path):
+            self.xml_file_path: Path | None = xml
+        else:
+            self.xml_file_path = None
+
         try:
             self.html_tree = html.parse(COMPARE_REPORT_TEMPLATE)
             self.html_root = self.html_tree.getroot()
@@ -660,7 +675,6 @@ class Report:
         # for each amendment in the document
         # populate the star check, name changes and changes to existing amendments
         for key, xml_amdt in self.xml_amdts.items():
-
             if key not in self.json_amdts:
                 # the star check only happens when there is no coresponding
                 # amendment in previous document
@@ -674,7 +688,6 @@ class Report:
             self.diff_amdt_content(xml_amdt, json_amend)
             self.diff_decision(xml_amdt, json_amend)
             self.diff_ex_statements(xml_amdt, json_amend)
-
 
     def make_html(self):
         """
@@ -837,10 +850,10 @@ class Report:
                 )
             )
             for item in self.name_changes_in_context:
+                num_a = link_from_num_or_num(item.num, self.xml_amdts)
                 changed_amdts.append(
                     html.fromstring(
-                        "<div><p class='h5"
-                        f" mt-4'>{item.num}:</p>\n{item.html_diff}\n</div>"
+                        f"<div><p class='h5 mt-4'>{num_a}:</p>\n{item.html_diff}\n</div>"
                     )
                 )
         else:
@@ -907,7 +920,12 @@ class Report:
                 " amendments have incorrect content in the API: </p>\n"
             )
             for item in self.incorrect_amdt_in_api:
-                changed_amdts += f"<p class='h5'>{item.num}:</p>\n{item.html_diff}\n"
+                num_a = link_from_num_or_num(
+                    # TODO: change this to self.link_from_num_or_num
+                    item.num,
+                    self.json_amdts,
+                )
+                changed_amdts += f"<p class='h5'>{num_a}:</p>\n{item.html_diff}\n"
 
         card = templates.Card("Changed amendments")
         card.secondary_info.extend(
@@ -929,13 +947,17 @@ class Report:
 
 
     def render_decisions(self) -> HtmlElement:
-
         # -------------------- Decision check section -------------------- #
 
-        is_report_decisions = self.xml_amdts.container_type == ContainerType.REPORT_DECISIONS
-        is_committee_decisions = self.xml_amdts.container_type == ContainerType.COMMITTEE_DECISIONS
+        is_report_decisions = (
+            self.xml_amdts.container_type == ContainerType.REPORT_DECISIONS
+        )
+        is_committee_decisions = (
+            self.xml_amdts.container_type == ContainerType.COMMITTEE_DECISIONS
+        )
 
-        if is_report_decisions or is_committee_decisions:
+        if not (is_report_decisions or is_committee_decisions):
+            # logger.debug(f"{repr(self.xml_amdts.container_type)=}")
             return self.render_no_decision_check()
 
         # build up text content
@@ -1001,7 +1023,6 @@ class Report:
         xml_amdts: AmdtContainer,
         api_amdts: AmdtContainer,
     ):
-
         """
         Check that amendments that apprear in both the XML and the API have the
         correct star in the API. If the amendment is not in the XML then we
@@ -1142,119 +1163,258 @@ class Report:
             return
 
         if utils.normalise_text(xml_ex) != utils.normalise_text(api_ex):
-            self.incorrect_ex_statements.append(f"{xml_amdt.num} (API: {api_ex}, XML: {xml_ex})")
+            self.incorrect_ex_statements.append(
+                f'{xml_amdt.num} (API: {api_ex}, XML: {xml_ex})'
+            )
 
-
-    def create_csv(self):
+    def create_table_for_sharepoint(self):
+        """
+        Output a HTML table row suitable for coping into an existing sharepoint list
+        """
 
         # build up the text strings
         bill_title_text = self.xml_amdts.meta_bill_title
-        missing_amendment_text = ""
-        missing_amendment_guids = ""
+        missing_amendment_text = ''
+        missing_amendment_guids = ''
 
         if all(
-            [len(i) == 0 for i in (
-                self.missing_api_amdts, self.incorrect_amdt_in_api, self.name_changes, self.incorrect_stars
-            )]
+            [
+                len(i) == 0
+                for i in (
+                    self.missing_api_amdts,
+                    self.incorrect_amdt_in_api,
+                    self.name_changes,
+                    self.incorrect_stars,
+                    self.incorrect_decisions,
+                    self.incorrect_ex_statements,
+                )
+            ]
         ):
-            logger.warning("No problems were found so no CSV file will be created.")
+            logger.warning('No problems were found so no table will be created.')
             return
 
-        logger.warning(
-            f"{len(self.missing_api_amdts)} Missing amendments."
-            f" {len(self.incorrect_amdt_in_api)} incorrect amendments."
-            f" {len(self.name_changes)} amendment have incorrect names."
-            f" {len(self.incorrect_stars)} amendments have incorrect stars."
+        logger.notice(
+            f'{len(self.missing_api_amdts)} Missing amendments.'
+            f' {len(self.incorrect_amdt_in_api)} incorrect amendments.'
+            f' {len(self.name_changes)} amendment have incorrect names.'
+            f' {len(self.incorrect_stars)} amendments have incorrect stars.'
+            f' {len(self.incorrect_decisions)} amendments have incorrect decisions.'
+            f' {len(self.incorrect_ex_statements)} amendments have incorrect explanatory statements.'
         )
 
         if len(self.missing_api_amdts) > 0:
-            missing_amendment_guids = missing_amendment_text = "Missing Amendments:\n"
-
-        logger.info("here 1")
+            missing_amendment_guids = missing_amendment_text = (
+                'Missing Amendments:<br/>'
+            )
 
         for item in self.missing_api_amdts:
-            missing_amendment_text += f"{item}\n"
-            missing_amendment_guids += f"{self.xml_amdts[item].id}\n"
+            missing_amendment_text += f'<p>{item}<p/>'
+            missing_amendment_guids += f'<p>{self.xml_amdts[item].id}<p/>'
 
-        logger.info("here 2")
+        logger.debug('Created missing amendments text')
 
-        incorrect_amendments_text = ""
-        incorrect_amendment_guids = ""
+        incorrect_amendments_text = ''
+        incorrect_amendment_guids = ''
         if len(self.incorrect_amdt_in_api) > 0:
-            incorrect_amendments_text = "Amendments with incorrect content:\n"
-            incorrect_amendment_guids = "Amendments with incorrect content:\n"
+            incorrect_amendments_text = '<p><br/>Amendments with incorrect content:<p/>'
+            incorrect_amendment_guids = incorrect_amendments_text
         for item in self.incorrect_amdt_in_api:
-            incorrect_amendments_text += f"{item.num}\n"
-            incorrect_amendment_guids += f"{self.xml_amdts[item.num].id}\n"
+            num_a = link_from_num_or_num(item.num, self.json_amdts)
+            incorrect_amendments_text += f'<p>{num_a}<p/>'
+            incorrect_amendment_guids += f'<p>{self.xml_amdts[item.num].id}<p/>'
 
-        logger.info("here 3")
+        logger.debug('Created incorrect amendments text')
 
-        incorrect_names = ""
-        incorrect_names_guids = ""
+        incorrect_names = ''
+        incorrect_names_guids = ''
         if len(self.name_changes) > 0:
-            incorrect_names = "Amendments with incorrect names:\n"
-            incorrect_names_guids = "Amendments with incorrect names:\n"
+            incorrect_names = '<p><br/>Amendments with incorrect names:<p/>'
+            incorrect_names_guids = incorrect_names
         for item in self.name_changes:
-            incorrect_names += f"{item.num}\n"
-            incorrect_names_guids += f"{self.xml_amdts[item.num].id}\n"
+            num_a = link_from_num_or_num(item.num, self.json_amdts)
+            incorrect_names += f'<p>{num_a}<p/>'
+            incorrect_names_guids += f'<p>{self.xml_amdts[item.num].id}<p/>'
 
-        logger.info("here 4")
+        logger.debug('Created incorrect names text')
 
-        incorrect_stars = ""
-        incorrect_stars_guids = ""
+        incorrect_stars = ''
+        incorrect_stars_guids = ''
         if len(self.incorrect_stars) > 0:
-            incorrect_stars = "Amendments with incorrect stars:\n"
-            incorrect_stars_guids = "Amendments with incorrect stars:\n"
+            incorrect_stars = '<p><br/>Amendments with incorrect stars:<p/>'
+            incorrect_stars_guids = incorrect_stars
         for item in self.incorrect_stars:
-            incorrect_stars += f"{item}\n"
+            incorrect_stars += f'<p>{item}<p/>'
             try:
-                amdt_num = item.split(" has ")[0]
-                incorrect_stars_guids += f"{self.xml_amdts[amdt_num].id}\n"
+                amdt_num = item.split(' has ')[0]
+                incorrect_stars_guids += f'<p>{self.xml_amdts[amdt_num].id}<p/>'
             except Exception as e:
-                logger.error(f"Error getting GUID for {item}: {e}")
+                logger.error(f'Error getting GUID for {item}: {e}')
 
-        logger.info("here 5")
+        logger.debug('Created incorrect stars text')
 
-        problem_amendment_numbers = missing_amendment_text + incorrect_amendments_text + incorrect_names + incorrect_stars
-        problem_amendment_guids = missing_amendment_guids + incorrect_amendment_guids + incorrect_names_guids + incorrect_stars_guids
+        incorrect_decisions = ''
+        incorrect_decisions_guids = ''
+        if len(self.incorrect_decisions) > 0:
+            incorrect_decisions = '<p><br/>Amendments with incorrect decisions:<p/>'
+            incorrect_decisions_guids = incorrect_decisions
+        for item in self.incorrect_decisions:
+            try:
+                amdt_num = item.split(' (API: ')[0]
+                num_a = link_from_num_or_num(amdt_num, self.json_amdts)
+                i_text = item.replace(amdt_num, num_a)
+                # logger.info(f"num_a: {num_a} amdt_num: {amdt_num} i_text: {i_text}")
+                incorrect_decisions += f'<p>{i_text}<p/>'
+                incorrect_decisions_guids += f'<p>{self.xml_amdts[amdt_num].id}<p/>'
+            except Exception as e:
+                logger.error(f'Error getting GUID for {item}: {e}')
 
-        logger.warning("here")
+        logger.debug('Created incorrect decisions text')
 
-        file_name = Path("test_test.csv").resolve()
+        incorrect_ex_statements = ''
+        incorrect_ex_statements_guids = ''
+        if len(self.incorrect_ex_statements) > 0:
+            incorrect_ex_statements = (
+                '<p><br/>Amendments with incorrect explanatory statements:<p/>'
+            )
+            incorrect_ex_statements_guids = incorrect_ex_statements
+        for item in self.incorrect_ex_statements:
+            num_a = link_from_num_or_num(item, self.json_amdts)
+            incorrect_ex_statements += f'<p>{num_a}<p/>'
+            try:
+                incorrect_ex_statements_guids += f'<p>{self.xml_amdts[item].id}<p/>'
+            except Exception as e:
+                logger.error(f'Error getting GUID for {item}: {e}')
 
-        with open(file_name, 'w', newline='') as file:
-            # Step 3: Create a csv.writer object
-            writer = csv.writer(file)
+        problem_amendment_numbers = (
+            missing_amendment_text
+            + incorrect_amendments_text
+            + incorrect_names
+            + incorrect_stars
+            + incorrect_decisions
+            + incorrect_ex_statements
+        )
+        problem_amendment_guids = (
+            missing_amendment_guids
+            + incorrect_amendment_guids
+            + incorrect_names_guids
+            + incorrect_stars_guids
+            + incorrect_decisions_guids
+            + incorrect_ex_statements_guids
+        )
 
-            # Step 4: Write a header row
-            writer.writerow(['Bill', 'Amendment Numbers', 'GUIDs', 'Description'])
+        basic_html_doc = templates.basic_document
+        try:
+            main_element = basic_html_doc.xpath("//*[@id='main-content']")[0]
+            if not isinstance(main_element, HtmlElement):
+                raise ValueError('Main element not found.')
+        except Exception as e:
+            logger.error(f'Error getting main element: {e}')
+            return
 
-            # Step 4: Write a data row
-            writer.writerow([bill_title_text, problem_amendment_numbers, problem_amendment_guids])
+        # create an HTML table
+        # table = templates.Table(
+        #     table_headings=['Date and Time of issue', 'Bill', 'House', 'Stage', 'Amendment Numbers', 'GUIDs'],
+        #     table_rows=[[
+        #         datetime.now().strftime("%d/%m/%Y %H:%M"),
+        #         bill_title_text,
+        #         # TODO: add house and stage
+        #         "",
+        #         "",
+        #         problem_amendment_numbers,
+        #         problem_amendment_guids
+        #     ]],
+        # )
 
-        logger.warning(f"CSV file created: {file_name}")
+        # main_element.append(table.html)
+
+        bill_title_e = html.fromstring('<h2>Bill</h2>')
+        bill_text_e = templates.EditableTextDiv(bill_title_text)
+        amdt_no_title_e = html.fromstring('<h2>Amendment numbers</h2>')
+        amdt_no_text_e = templates.EditableTextDiv(
+            children=html.fragments_fromstring(problem_amendment_numbers)
+        )
+        guids_title_e = html.fromstring('<h2>Amendments GUIDs</h2>')
+        guids_text_e = templates.EditableTextDiv(
+            children=html.fragments_fromstring(problem_amendment_guids)
+        )
+
+        date_title_e = html.fromstring('<h2>Date and time of issue</h2>')
+        date_text_e = templates.EditableTextDiv(
+            datetime.now().strftime('%d/%m/%Y %H:%M')
+        )
+
+        stage_title_e = html.fromstring('<h2>Stage</h2>')
+        stage_text_e = templates.EditableTextDiv(f'{self.json_amdts.stage_name}')
+
+        main_element.extend(
+            [
+                item if isinstance(item, HtmlElement) else item.html
+                for item in (
+                    bill_title_e,
+                    bill_text_e,
+                    amdt_no_title_e,
+                    amdt_no_text_e,
+                    guids_title_e,
+                    guids_text_e,
+                    date_title_e,
+                    date_text_e,
+                    stage_title_e,
+                    stage_text_e,
+                )
+            ]
+        )
+
+        tree = etree.ElementTree(basic_html_doc)
+
+        bill_stage = self.json_amdts.stage_name
+        xml_file_path = self.xml_file_path
+        if xml_file_path:
+            parent_path = xml_file_path.resolve().parent
+        else:
+            parent_path = Path.cwd()
+
+        if bill_stage is not None:
+            file_name = f'{bill_title_text}_{bill_stage}_amdt_table.html'
+        else:
+            file_name = f'{bill_title_text}_amdt_table.html'
+
+        file_path = parent_path / file_name
+
+        tree.write(
+            str(file_path),
+            pretty_print=True,
+            method='html',
+            doctype='<!DOCTYPE html>',
+            encoding='utf-8',
+        )
+
+        webbrowser.open(file_path.resolve().as_uri())
 
 
-def also_query_bills_api(amend_xml_path: Path) -> JSONList | None:
+def also_query_bills_api(
+    amend_xml_path: Path, save_json: bool = True
+) -> dict[str, JSON] | None:
     """
     Query the API for the bill XML files related to the amendment XML file.
     """
 
     if not amend_xml_path:
-        logger.error("No amendment XML file selected.")
+        logger.error('No amendment XML file selected.')
         return
 
     amend_xml = pp_xml_lxml.load_xml(str(amend_xml_path))
 
     if not amend_xml:
-        logger.error(f"Amendment XML file is not valid XML: {amend_xml_path}")
+        logger.error(f'Amendment XML file is not valid XML: {amend_xml_path}')
         return
 
     # find the bill title from the amendment XML
     amdt_xml_root = amend_xml.getroot()
     try:
-        bill_title = amdt_xml_root.xpath('//xmlns:TLCConcept[@eId="varBillTitle"]/@showAs', namespaces=NSMAP)[0]
-        logger.info(f"Bill title found in XML: {bill_title}")
+        bill_title = amdt_xml_root.xpath(
+            '//xmlns:TLCConcept[@eId="varBillTitle"]/@showAs', namespaces=NSMAP
+        )[0]
+        logger.info(f'Bill title found in XML: {bill_title}')
 
     except Exception as e:
         logger.error("Could not find bill title in amendment XML. Can't query API.")
@@ -1264,31 +1424,31 @@ def also_query_bills_api(amend_xml_path: Path) -> JSONList | None:
     try:
         # url encode the title
         bill_title = urllib.parse.quote(bill_title)
-        url = f"https://bills-api.parliament.uk/api/v1/Bills?SearchTerm={bill_title}&SortOrder=DateUpdatedDescending"
-        logger.info(f"Querying: {url}")
+        url = f'https://bills-api.parliament.uk/api/v1/Bills?SearchTerm={bill_title}&SortOrder=DateUpdatedDescending'
+        logger.info(f'Querying: {url}')
         response = requests.get(url)
     except Exception:
-        logger.error("Error querying the API")
+        logger.error('Error querying the API')
         return
     if response.status_code != 200:
-        logger.error("Error querying the API")
+        logger.error('Error querying the API')
         return
 
     response_json: JSONObject = response.json()
 
-    file_name = "amendments_details.json"
-    json.dump(response_json, open(file_name, "w"), ensure_ascii=False, indent=2)
-    logger.info(Path(file_name).resolve())
+    # file_name = "amendments_details.json"
+    # json.dump(response_json, open(file_name, "w"), ensure_ascii=False, indent=2)
+    # logger.info(Path(file_name).resolve())
 
-    bills: list = response_json.get("items", [])
+    bills: list = response_json.get('items', [])
 
     if not bills:
-        logger.error(f"No bills found in the API with the title \"{bill_title}\"")
+        logger.error(f'No bills found in the API with the title "{bill_title}"')
         return
     if len(bills) > 1:
         logger.warning(
-            f"{len(bills)} bills found in the API with the query \"{bill_title}\"."
-            " Using the first bill found."
+            f'{len(bills)} bills found in the API with the query "{bill_title}".'
+            ' Using the first bill found.'
         )
 
     bill_json = bills[0]
@@ -1297,68 +1457,109 @@ def also_query_bills_api(amend_xml_path: Path) -> JSONList | None:
     stage: str | None = None
     try:
         # block = amdt_xml_root.xpath('//*[local-name()="block"][@name="stage"]')
-        stage = xp.text_content(amdt_xml_root.xpath('//xmlns:block[@name="stage"]/xmlns:docStage', namespaces=NSMAP)[0])
+        stage = xp.text_content(
+            amdt_xml_root.xpath(
+                '//xmlns:block[@name="stage"]/xmlns:docStage', namespaces=NSMAP
+            )[0]
+        )
     except Exception as e:
         logger.warning("Could not find stage in amendment XML. Can't query API.")
         logger.warning(repr(e))
         return
 
     # TODO: fix this
-    api_stage = bill_json.get("currentStage", {}).get("description", "")
+    api_stage_description = bill_json.get('currentStage', {}).get('description', '')
+    api_bill_short_title = bill_json.get('shortTitle', '')
 
-    bill_id: int | None = bill_json.get("billId", None)
-    stage_id: int | None = bill_json.get("currentStage", {}).get("id", None)
+    bill_id: int | None = bill_json.get('billId', None)
+    stage_id: int | None = bill_json.get('currentStage', {}).get('id', None)
 
-    if stage.casefold().strip() != api_stage.casefold().strip():
+    if stage.casefold().strip() != api_stage_description.casefold().strip():
         logger.info(
-            f"Stage in amendment XML ({stage}) does not match current stage in API ({api_stage})."
+            f'Stage in amendment XML ({stage}) does not match current stage in API ({api_stage_description}).'
         )
         # look thorugh all other stages to get the correct one
         try:
-            url = f"https://bills-api.parliament.uk/api/v1/Bills/{bill_json['billId']}/Stages"
+            url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_json["billId"]}/Stages'
             response = requests.get(url)
             response_json = response.json()
-            stages = response_json.get("items", [])
+            stages = response_json.get('items', [])
             for item in stages:
-                description = item.get("description", "")
+                description = item.get('description', '')
                 if description.casefold().strip() == stage.casefold().strip():
-
-                    api_stage = description
-                    stage_id = item.get("id", None)
-                    logger.info(f"Stage found in API: {api_stage}. Stage ID: {stage_id}")
+                    api_stage_description = description
+                    stage_id = item.get('id', None)
+                    logger.info(
+                        f'Stage found in API: {api_stage_description}. Stage ID: {stage_id}'
+                    )
                     break
         except Exception as e:
-            logger.error("Error getting stages from API.")
+            logger.error('Error getting stages from API.')
             logger.error(repr(e))
 
-
-    logger.notice(f"Bill ID: {bill_id} Stage ID: {stage_id}")
+    logger.notice(f'Bill ID: {bill_id} Stage ID: {stage_id}')
 
     if not all([bill_id, stage_id]):
-        logger.error("Could not get bill ID or stage ID from the API.")
+        logger.error('Could not get bill ID or stage ID from the API.')
         return
 
-    return get_amendments_json(bill_id, stage_id)
+    amdts_json = get_amendments_json(
+        bill_id, stage_id, api_stage_description, api_bill_short_title
+    )
+
+    if save_json:
+        _short_title = clean_filename(api_bill_short_title)
+        _stage = clean_filename(api_stage_description)
+        file_name = f'{_short_title}_{_stage}_amdts.json'
+        xml_file_parent = amend_xml_path.parent
+        file_path = xml_file_parent / file_name
+
+        try:
+            with open(file_path, 'w') as f:
+                json.dump(amdts_json, f, indent=2)
+            logger.notice(f'Amendments details saved to file: {file_path}')
+        except Exception as e:
+            logger.error(f'Could not save amendments JSON to file: {file_path}')
+            logger.error(repr(e))
+
+    return amdts_json
 
 
-def get_amendments_json(bill_id, stage_id: int) -> list[JSONType]:
+def save_json_to_file(json_data: dict[str, JSON], file_path: Path) -> None:
+    """
+    Save the JSON data to a file.
+    """
+    try:
+        with open(file_path, 'w') as f:
+            json.dump(json_data, f, indent=2)
+        logger.notice(f'Amendments details saved to file: {file_path}')
+    except Exception as e:
+        logger.error(f'Could not save amendments JSON to file: {file_path}')
+        logger.error(repr(e))
 
+
+def get_amendments_json(
+    bill_id: int,
+    stage_id: int,
+    stage_description: str = '',
+    api_bill_short_title: str = '',
+) -> dict[str, JSON]:
     json_summary_amendments = get_amendments_summary_json(bill_id, stage_id)
 
-    amendment_ids = [amendment.get("amendmentId") for amendment in json_summary_amendments]
+    amendment_ids = [
+        amendment.get('amendmentId') for amendment in json_summary_amendments
+    ]
 
     def _request_data(
         amendment_id: str,
     ) -> requests.Response:
-
         """Query the API."""
 
-        url = f"https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}"
+        url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
 
         return requests.get(url)
 
     with ThreadPoolExecutor(max_workers=8) as pool:
-
         # create a progress bar and return a list
         responses = progress_bar(
             pool.map(
@@ -1369,25 +1570,29 @@ def get_amendments_json(bill_id, stage_id: int) -> list[JSONType]:
         )
         print()  # newline after progress bar
 
-    json_list: list[JSONType] = [response.json() for response in responses]
+    json_amendments_list: list[JSONType] = [response.json() for response in responses]
 
-    json.dump(json_list, open("amendments_details.json", "w"), indent=2)
-    logger.info("Amendments details saved to file: amendments_details.json")
+    json_output = {
+        'shortTitle': api_bill_short_title,
+        'billId': bill_id,
+        'stageId': stage_id,
+        'stageDescription': stage_description,
+        'items': json_amendments_list,
+    }
 
-    return json_list
+    return json_output
 
 
 def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]:
-
     i = 0
     json_amendments = []
     while True:
         skip = i * 20
-        url = f"https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments?skip={skip}"
+        url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments?skip={skip}'
 
         response = requests.get(url)
         response_json = response.json()
-        items = response_json["items"]
+        items = response_json['items']
         if len(items) == 0:
             break
         json_amendments += items
@@ -1395,6 +1600,51 @@ def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]
         i += 1
 
     return json_amendments
+
+
+def link_from_num_or_num(
+    amendment_no: str, api_amendment_container: AmdtContainer
+) -> str:
+    """
+    Create a hyperlink to the amendment on the bills.parliament.uk website.
+    """
+
+    url = get_url_for_amendment(amendment_no, api_amendment_container)
+
+    if not url:
+        return amendment_no
+
+    return create_hyperlink_str(url, amendment_no)
+
+
+def create_hyperlink_str(url: str, text: str) -> str:
+    return f'<a href="{url}">{text}</a>'
+
+
+def get_url_for_amendment(
+    amendment_no: str, api_amendment_container: AmdtContainer
+) -> str | None:
+    bill_id = api_amendment_container.bill_id
+    stage_id = api_amendment_container.stage_id
+
+    if not bill_id or not stage_id:
+        # logger.info(f"{bill_id=} {stage_id=}")
+        return
+
+    try:
+        amdt_object = api_amendment_container[amendment_no.strip()]
+    except KeyError:
+        logger.info(f'{amendment_no.strip()} not in {api_amendment_container}')
+        return
+
+    amendment_id = amdt_object.id
+    if not amendment_id:
+        logger.info(f'{repr(amendment_id)} not there')
+        return
+
+    url = f'https://bills.parliament.uk/bills/{bill_id}/stages/{stage_id}/amendments/{amendment_id}'
+
+    return url
 
 
 def find_duplicate_sponsors(lst: list[Sponsor]) -> list[Sponsor]:
