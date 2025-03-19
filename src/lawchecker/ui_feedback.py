@@ -7,10 +7,9 @@ from lawchecker.lawchecker_logger import logger
 
 
 class ProgressModal:
-
     @classmethod
     def static_update(
-        cls, window: Window | None, text: str, log=False, log_level="INFO"
+        cls, window: Window | None, text: str, log=False, log_level='INFO'
     ) -> None:
         """
         Method for updating progress modal from outside of context manager.
@@ -20,19 +19,18 @@ class ProgressModal:
         if window is None and webview.active_window() is not None:
             window = webview.active_window()
         elif window is None:
-            logger.error("No active window found")
+            logger.error('No active window found')
             return
 
         if log:
             try:
                 getattr(logger, log_level.lower())(text)
             except AttributeError:
-                logger.error(f"Invalid log level: {log_level}")
+                logger.error(f'Invalid log level: {log_level}')
                 logger.info(text)
 
         if isinstance(window, Window):
-            window.evaluate_js(f"progress_modal_update({repr(text)})")
-
+            window.evaluate_js(f'progress_modal_update({repr(text)})')
 
     def __init__(self, window: Window | None = None) -> None:
         if window is not None:
@@ -40,19 +38,16 @@ class ProgressModal:
         elif webview.active_window() is not None:
             self.window = webview.active_window()
         else:
-            raise ValueError("No active window found")
+            raise ValueError('No active window found')
 
     def __enter__(self):
-
         if isinstance(self.window, Window):
-
-            self.window.evaluate_js("progress_modal_show()")
-            self.window.evaluate_js("disable_progress_modal_ok_button_element()")
+            self.window.evaluate_js('progress_modal_show()')
+            self.window.evaluate_js('disable_progress_modal_ok_button_element()')
 
         return self
 
-    def update(self, text: str, log=False, log_level="INFO") -> None:
-
+    def update(self, text: str, log=False, log_level='INFO') -> None:
         self.static_update(self.window, text, log, log_level)
         # if log:
         #     try:
@@ -66,10 +61,8 @@ class ProgressModal:
         #     self.window.evaluate_js(f"progress_modal_update({repr(text)})")
 
     def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
-
         if isinstance(self.window, Window):
-
-            self.window.evaluate_js("enable_progress_modal_ok_button_element()")
+            self.window.evaluate_js('enable_progress_modal_ok_button_element()')
 
 
 class UILogHandler(logging.StreamHandler):
@@ -103,11 +96,11 @@ class UILogHandler(logging.StreamHandler):
 
         message = message.encode('unicode-escape').decode()
 
-        if record.levelname == "NOTICE":
+        if record.levelname == 'NOTICE':
             # Do not emit notice level to the ui.
-            message = f"{message}"
+            message = f'{message}'
         else:
-            message = f"{record.levelname}: {message}"
+            message = f'{record.levelname}: {message}'
 
         # Pass `record.levelname` and `message` to modal
         ProgressModal.static_update(self.window, message)

@@ -34,34 +34,34 @@ class ChangedSect(NamedTuple):
 class Section:
     # section includes clauses (aka sections) and schedules
     def __init__(
-        self, item: _Element,
-        parent_doc: "Bill",
-        schedule_number: str = "",
+        self,
+        item: _Element,
+        parent_doc: 'Bill',
+        schedule_number: str = '',
     ):
-
         self.parent_doc = parent_doc
 
         self.xml = item
 
-        self.guid = item.get("GUID", default="")
+        self.guid = item.get('GUID', default='')
         if not self.guid:
-            raise ValueError("GUID is None")
+            raise ValueError('GUID is None')
 
-        self.num = item.findtext("./xmlns:num", namespaces=NSMAP, default="No number")
+        self.num = item.findtext('./xmlns:num', namespaces=NSMAP, default='No number')
 
         if schedule_number:
             # get the schedule number
-            self.num = f"{schedule_number} p {self.num}"
+            self.num = f'{schedule_number} p {self.num}'
         else:
-            self.num = f"C {self.num}"
+            self.num = f'C {self.num}'
 
         # for sorting
         self._sort_list: list[str] = []
-        for x in self.num.split(" "):
+        for x in self.num.split(' '):
             try:
-                self._sort_list.append(f"{int(x):05}")
+                self._sort_list.append(f'{int(x):05}')
             except ValueError:
-                self._sort_list.append(f"{str(x):0>5}")
+                self._sort_list.append(f'{str(x):0>5}')
 
     def __lt__(self, other):
         return self._sort_list < other._sort_list
@@ -79,10 +79,10 @@ class Bill(Mapping):
             self.file_path = str(xml.resolve())
             tree = etree.parse(self.file_path, parser=PARSER)
             self.root = tree.getroot()
-            logger.info(f"Loaded {self.file_name}")
+            logger.info(f'Loaded {self.file_name}')
         else:
-            self.file_name = "Test"
-            self.file_path = "test/Test"
+            self.file_name = 'Test'
+            self.file_path = 'test/Test'
             tree = etree.ElementTree(xml)
             self.root = xml
 
@@ -106,12 +106,11 @@ class Bill(Mapping):
                 self.problem_sections += 1
 
         for schedules_xml in xp.get_schedules(self.root):
-
-            schedule_number = schedules_xml.findtext("xmlns:num", namespaces=NSMAP)
+            schedule_number = schedules_xml.findtext('xmlns:num', namespaces=NSMAP)
             if not schedule_number:
-                schedule_number = "No number"
+                schedule_number = 'No number'
             else:
-                schedule_number = schedule_number.replace("Schedule", "S")
+                schedule_number = schedule_number.replace('Schedule', 'S')
 
             for schedule_paragraphs in xp.get_sched_paras(schedules_xml):
                 try:
@@ -125,28 +124,28 @@ class Bill(Mapping):
         self.amdt_set = set(self._dict.keys())
 
     def get_meta_data(self):
-
         try:
             bill_title = self.root.find(
                 ".//TLCConcept[@eId='varBillTitle']", namespaces=NSMAP2
             )
             # don't use .get here  as that defaults to None
-            self.meta_bill_title = bill_title.attrib["showAs"]  # type: ignore
+            self.meta_bill_title = bill_title.attrib['showAs']  # type: ignore
             # [x] test
         except Exception as e:
             warning_msg = f"Can't find Bill Title meta data. Check {self.file_name}"
             self.meta_bill_title = warning_msg
-            logger.warning(f"Problem parsing XML. {warning_msg}: {repr(e)}")
+            logger.warning(f'Problem parsing XML. {warning_msg}: {repr(e)}')
 
         try:
             # add a test for this
             published_xp = ".//FRBRManifestation/FRBRdate[@name='published']"
             published: _Element = self.root.find(published_xp, namespaces=NSMAP2)  # type: ignore
 
-            published_date = published.get("date", default="").split("T")[0]
+            published_date = published.get('date', default='').split('T')[0]
             self.meta_pub_date = datetime.strptime(
-                published_date, "%Y-%m-%d"  # type: ignore
-            ).strftime("%A %d %B %Y")
+                published_date,
+                '%Y-%m-%d',  # type: ignore
+            ).strftime('%A %d %B %Y')
         except Exception:
             warning_msg = f"Can't find Published Date meta data. Check {self.file_name}"
             self.meta_pub_date = warning_msg
@@ -157,7 +156,7 @@ class Bill(Mapping):
 
         for section in self.sections:
             if section.guid in _sect_map:
-                logger.warning(f"Duplicate guid: {section.guid}")
+                logger.warning(f'Duplicate guid: {section.guid}')
             _sect_map[section.guid] = section
 
         return _sect_map
@@ -179,7 +178,6 @@ class Bill(Mapping):
 
 
 class Report:
-
     """
     Container for Amendment Report.
     The report summarises changes changes between two LM XML official list
@@ -191,14 +189,13 @@ class Report:
         self,
         old_file: Path | _Element,
         new_file: Path | _Element,
-        days_between_papers: bool = False
+        days_between_papers: bool = False,
     ):
-
         try:
             self.html_tree = html.parse(COMPARE_REPORT_TEMPLATE.resolve())
             self.html_root = self.html_tree.getroot()
         except Exception as e:
-            logger.error(f"Error parsing HTML template file: {e}")
+            logger.error(f'Error parsing HTML template file: {e}')
             raise
 
         self.days_between_papers = days_between_papers
@@ -243,12 +240,14 @@ class Report:
 
         try:
             # change the title
-            self.html_root.find('.//title').text = "Compare Bills"  # type: ignore
-            self.html_root.find('.//h1').text = "Compare Bills"  # type: ignore
+            self.html_root.find('.//title').text = 'Compare Bills'  # type: ignore
+            self.html_root.find('.//h1').text = 'Compare Bills'  # type: ignore
         except Exception:
             pass
 
-        insert_point: HtmlElement = self.html_root.find('.//div[@id="content-goes-here"]')  # type: ignore
+        insert_point: HtmlElement = self.html_root.find(
+            './/div[@id="content-goes-here"]'
+        )  # type: ignore
         insert_point.extend(
             (
                 self.render_intro(),
@@ -261,33 +260,33 @@ class Report:
     def render_intro(self) -> HtmlElement:
         # ------------------------- intro section ------------------------ #
         into = (
-            "This report summarises changes between the XML of two LawMaker"
-            " Bill versions. The bill documents are:"
-            f"<br><strong>{self.old_doc.file_name}</strong> and "
-            f"<strong>{self.new_doc.file_name}</strong>"
+            'This report summarises changes between the XML of two LawMaker'
+            ' Bill versions. The bill documents are:'
+            f'<br><strong>{self.old_doc.file_name}</strong> and '
+            f'<strong>{self.new_doc.file_name}</strong>'
         )
 
         meta_data_table = templates.Table(
-            ("", self.old_doc.file_name, self.new_doc.file_name)
+            ('', self.old_doc.file_name, self.new_doc.file_name)
         )
 
         meta_data_table.add_row(
-            ("File path", self.old_doc.file_path, self.new_doc.file_path)
+            ('File path', self.old_doc.file_path, self.new_doc.file_path)
         )
         meta_data_table.add_row(
-            ("Bill Title", self.old_doc.meta_bill_title, self.new_doc.meta_bill_title)
+            ('Bill Title', self.old_doc.meta_bill_title, self.new_doc.meta_bill_title)
         )
         meta_data_table.add_row(
-            ("Published date", self.old_doc.meta_pub_date, self.new_doc.meta_pub_date)
+            ('Published date', self.old_doc.meta_pub_date, self.new_doc.meta_pub_date)
         )
 
         section = html.fromstring(
             '<div class="wrap">'
             '<section id="intro">'
             '<h2 id="intro-heading">Introduction</h2>'
-            f"<p>{into}</p>"
-            "</section>"
-            "</div>"
+            f'<p>{into}</p>'
+            '</section>'
+            '</div>'
         )
 
         section.append(meta_data_table.html)
@@ -298,9 +297,7 @@ class Report:
         # ----------- Removed and added amendments section ----------- #
 
         # create spans with section number add guid as tooltip.
-        span_template = (
-            '<span class="col-12 col-sm-6 col-md-4 col-lg-3" data-toggle="tooltip" title="{guid}">{num}</span> '
-        )
+        span_template = '<span class="col-12 col-sm-6 col-md-4 col-lg-3" data-toggle="tooltip" title="{guid}">{num}</span> '
         removed_spans = [
             span_template.format(guid=x.guid, num=x.num) for x in self.removed_sects
         ]
@@ -309,55 +306,56 @@ class Report:
         ]
 
         # build up text content
-        removed_content = "Removed content: <strong>None</strong>"
+        removed_content = 'Removed content: <strong>None</strong>'
         if self.removed_sects:
-
             removed_content = (
                 f"<p class='h5'>Removed content: <span class='red'>{len(self.removed_sects)}</span><br />"
                 f"<div class='row'>{''.join(removed_spans)}</div><br />"
             )
-        added_content = "Added content: <strong>None</strong>"
+        added_content = 'Added content: <strong>None</strong>'
         if self.added_sects:
             added_content = (
                 f"<p class='h5'>Added content: <span class='red'>{len(self.added_sects)}</span><br /></p>"
                 f"<div class='row'>{''.join(added_spans)}</div><br />"
             )
 
-        card = templates.Card("Added and removed clauses and schedule paragraphs")
-        card.secondary_info.extend([
-            html.fromstring(f"<div>{added_content}</div>"),
-            html.fromstring(f"<div>{removed_content}</div>")
-        ])
+        card = templates.Card('Added and removed clauses and schedule paragraphs')
+        card.secondary_info.extend(
+            [
+                html.fromstring(f'<div>{added_content}</div>'),
+                html.fromstring(f'<div>{removed_content}</div>'),
+            ]
+        )
         return card.html
-
 
     def render_changed_sects(self) -> HtmlElement:
         # -------------------- Changed Sections -------------------- #
         # build up text content
 
-        changed_sects = (
-            "<p><strong>Zero</strong> clauses or schedule paragraphs have changed content.</p>"
+        changed_sects = '<p><strong>Zero</strong> clauses or schedule paragraphs have changed content.</p>'
+
+        logger.info(f'Number of changed sections: {len(self.changed_sects)}')
+        logger.info(
+            f'Number of changed sections (no refs): {len(self.changed_sects_no_refs)}'
         )
 
-        logger.info(f"Number of changed sections: {len(self.changed_sects)}")
-        logger.info(f"Number of changed sections (no refs): {len(self.changed_sects_no_refs)}")
-
-        inner_changed_sects = (
-            _render_changed_sects_inner(self.changed_sects)
-            + _render_changed_sects_inner(self.changed_sects_no_refs, include_refs=False)
-        )
+        inner_changed_sects = _render_changed_sects_inner(
+            self.changed_sects
+        ) + _render_changed_sects_inner(self.changed_sects_no_refs, include_refs=False)
 
         changed_sects = inner_changed_sects or changed_sects
 
-        card = templates.Card("Changed clauses  or schedule paragraphs")
-        info = ("<p>Listed below are any Clauses or Schedule paragraphs with changed content."
-                " The items are listed with their number from the old bill and if changed, the"
-                " number from the new bill in square brackets. Clicking on each item will take"
-                " you to a table showing the changes in context.</p>"
-                "<p>Use the following button to hide or show changes where only"
-                " cross referenced numbering has changed.<br/><small>Note: cross reference changes"
-                " will still be shown if there are other changes.</small></p>"
-                '<button class="btn btn-primary" id="toggle-refs">Hide x ref only changes</button>')
+        card = templates.Card('Changed clauses  or schedule paragraphs')
+        info = (
+            '<p>Listed below are any Clauses or Schedule paragraphs with changed content.'
+            ' The items are listed with their number from the old bill and if changed, the'
+            ' number from the new bill in square brackets. Clicking on each item will take'
+            ' you to a table showing the changes in context.</p>'
+            '<p>Use the following button to hide or show changes where only'
+            ' cross referenced numbering has changed.<br/><small>Note: cross reference changes'
+            ' will still be shown if there are other changes.</small></p>'
+            '<button class="btn btn-primary" id="toggle-refs">Hide x ref only changes</button>'
+        )
         card.secondary_info.extend(
             html.fragments_fromstring(info + changed_sects, no_leading_text=True)
         )
@@ -365,7 +363,6 @@ class Report:
         return card.html
 
     def render_numbering_changes(self) -> HtmlElement:
-
         _bill_renumbering = CompareBillNumbering(
             [
                 (self.old_doc.root, self.old_doc.file_name),
@@ -379,21 +376,23 @@ class Report:
         elements = _bill_renumbering.to_html_tables()
 
         find_and_replaces = (
-            (r"sec_(\d+)", r"C \1"),
-            (r"sched_", "S "),
-            (r"__para_?", " p "),
-            (r"([a-z])_([a-z])", r"\1 \2"),
+            (r'sec_(\d+)', r'C \1'),
+            (r'sched_', 'S '),
+            (r'__para_?', ' p '),
+            (r'([a-z])_([a-z])', r'\1 \2'),
         )
 
         for element in elements:
             for find, replace in find_and_replaces:
                 recursive_replace(element, find, replace)
 
-        card = templates.Card("Clauses or schedule paragraphs numbering changes")
-        info = ("<p>Each clause and schedule paragraph has a GUID (or global unique identifier)"
-                " which should stay the same even as a bill is renumbered. The table below "
-                "shows any changes in the numbering (of each clause or schedule paragraph) "
-                "between the two bills.</p>")
+        card = templates.Card('Clauses or schedule paragraphs numbering changes')
+        info = (
+            '<p>Each clause and schedule paragraph has a GUID (or global unique identifier)'
+            ' which should stay the same even as a bill is renumbered. The table below '
+            'shows any changes in the numbering (of each clause or schedule paragraph) '
+            'between the two bills.</p>'
+        )
 
         card.secondary_info.extend(
             # html.fromstring('<div>' + '\n'.join(_bill_renumbering.to_html()) + '</div>')
@@ -403,8 +402,7 @@ class Report:
 
         return card.html
 
-    def added_and_removed_sects(self, old_doc: "Bill", new_doc: "Bill"):
-
+    def added_and_removed_sects(self, old_doc: 'Bill', new_doc: 'Bill'):
         """Find the amendment numbers which have been added and removed"""
 
         removed_guids = list(old_doc.amdt_set.difference(new_doc.amdt_set))
@@ -417,9 +415,7 @@ class Report:
 
         # return removed_sects, added_sects
 
-
     def diff_sect_content(self, new_sect: Section, old_sect: Section):
-
         """
         Create an HTML string containing a tables showing the differences
         between old_sect//amendmentContent and new_sect//amendmentContent.
@@ -428,14 +424,13 @@ class Report:
         amendment. It does not contain the sponsor information.
         """
 
-
         dif_html_str = diff_xml_content(
             new_sect.xml,
             old_sect.xml,
             # fromdesc=old_sect.parent_doc.file_name,
             # todesc=new_sect.parent_doc.file_name,
-            fromdesc=f"Old bill: {old_sect.num}",
-            todesc=f"New bill: {new_sect.num}",
+            fromdesc=f'Old bill: {old_sect.num}',
+            todesc=f'New bill: {new_sect.num}',
         )
         if dif_html_str is not None:
             self.changed_sects.append(
@@ -448,46 +443,45 @@ class Report:
             old_sect.xml,
             # fromdesc=old_sect.parent_doc.file_name,
             # todesc=new_sect.parent_doc.file_name,
-            fromdesc=f"Old bill: {old_sect.num}",
-            todesc=f"New bill: {new_sect.num}",
+            fromdesc=f'Old bill: {old_sect.num}',
+            todesc=f'New bill: {new_sect.num}',
             ignore_refs=True,
         )
         if dif_html_str_no_refs is not None:
             self.changed_sects_no_refs.append(
-                ChangedSect(new_sect.guid, old_sect.num, new_sect.num, dif_html_str_no_refs)
+                ChangedSect(
+                    new_sect.guid, old_sect.num, new_sect.num, dif_html_str_no_refs
+                )
             )
 
 
 def main():
-
     parser = argparse.ArgumentParser(
-        description=(
-            "Create an HTML report comparing LawMaker bill versions."
-        )
+        description=('Create an HTML report comparing LawMaker bill versions.')
     )
 
     parser.add_argument(
-        "old_bill",
+        'old_bill',
         type=Path,
-        help="A LawMaker bill XML document you wish to compare from",
+        help='A LawMaker bill XML document you wish to compare from',
     )
 
     parser.add_argument(
-        "new_bill",
+        'new_bill',
         type=Path,
-        help="A LawMaker bill XML document you wish to compare to",
+        help='A LawMaker bill XML document you wish to compare to',
     )
 
     parser.add_argument(
-        "-c",
-        "--vscode-diff",
-        action="store_true",
-        help="Also diff a plain text version of the XML files in vscode",
+        '-c',
+        '--vscode-diff',
+        action='store_true',
+        help='Also diff a plain text version of the XML files in vscode',
     )
 
     args = parser.parse_args(sys.argv[1:])
 
-    filename = "html_diff.html"
+    filename = 'html_diff.html'
 
     report = Report(
         args.old_bill,
@@ -496,25 +490,23 @@ def main():
 
     report.html_tree.write(
         filename,
-        method="html",
-        encoding="utf-8",
-        doctype="<!DOCTYPE html>",
+        method='html',
+        encoding='utf-8',
+        doctype='<!DOCTYPE html>',
     )
 
     webbrowser.open(Path(filename).resolve().as_uri())
 
     if args.vscode_diff:
-
         diff_in_vscode(report.old_doc.root, report.new_doc.root)
 
 
 def diff_in_vscode(old_doc: _Element, new_doc: _Element):
-
     cleaned_bill_1 = clean_bill_xml(old_doc)
     cleaned_bill_2 = clean_bill_xml(new_doc)
 
-    _, _temp_1_path = mkstemp(suffix=".txt", prefix="Bill1_", text=True)
-    _, _temp_2_path = mkstemp(suffix=".txt", prefix="Bill2_", text=True)
+    _, _temp_1_path = mkstemp(suffix='.txt', prefix='Bill1_', text=True)
+    _, _temp_2_path = mkstemp(suffix='.txt', prefix='Bill2_', text=True)
 
     temp_1_Path = Path(_temp_1_path).resolve()
     temp_2_Path = Path(_temp_2_path).resolve()
@@ -526,8 +518,12 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
     with open(temp_2_Path, 'w', encoding='utf-8') as f:
         f.write(cleaned_bill_2)
 
-
-    subprocess_args = ["code", "--diff", str(temp_1_Path.resolve()), str(temp_2_Path.resolve())]
+    subprocess_args = [
+        'code',
+        '--diff',
+        str(temp_1_Path.resolve()),
+        str(temp_2_Path.resolve()),
+    ]
     # print(subprocess_args)
 
     # subprocess_cmd = f'code --diff "{temp_1_Path.resolve()}" "{temp_2_Path.resolve()}"'
@@ -536,48 +532,47 @@ def diff_in_vscode(old_doc: _Element, new_doc: _Element):
         # for some reason shell=True is needed on Windows
         subprocess.run(subprocess_args, shell=True)
     elif sys.platform == 'darwin':
-        if shutil.which("code") is not None:
+        if shutil.which('code') is not None:
             subprocess.run(subprocess_args, shell=False)
         else:
-            _args2 = ["/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"] + subprocess_args[1:]
+            _args2 = [
+                '/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code'
+            ] + subprocess_args[1:]
             subprocess.run(_args2, shell=False)
     else:
         subprocess.run(subprocess_args, shell=False)
 
 
 def _render_changed_sects_inner(changed_sects, include_refs=True) -> str:
-
-    including_or_excluding = "Excluding"
-    hidden_attrib = "hidden"
+    including_or_excluding = 'Excluding'
+    hidden_attrib = 'hidden'
     if include_refs:
-        including_or_excluding = "Including"
-        hidden_attrib = ""
-
+        including_or_excluding = 'Including'
+        hidden_attrib = ''
 
     changed_sects_html = (
         f'<div class="show-or-hide-refs" {hidden_attrib}>'
-        f"<p>{including_or_excluding} changes where only cross"
+        f'<p>{including_or_excluding} changes where only cross'
         '  reference numbering has changed,<br/><strong class="red">'
         f'{len(changed_sects)}</strong>'
-        " clauses or schedule paragraphs have changed content: </p>\n"
+        ' clauses or schedule paragraphs have changed content: </p>\n'
     )
 
-    html_diffs: str = ""
+    html_diffs: str = ''
     grid_element = html.Element('div')
     grid_element.classes.add('row')
     for i, item in enumerate(changed_sects):
         num_span = etree.SubElement(grid_element, 'span')
-        num_span.classes.update(('col-12', "col-sm-6", "col-md-4", "col-lg-3"))
+        num_span.classes.update(('col-12', 'col-sm-6', 'col-md-4', 'col-lg-3'))
 
         anchor = etree.SubElement(
-            num_span, 'a',
-            attrib={"href": f"#diff-{including_or_excluding}-{i}"}
+            num_span, 'a', attrib={'href': f'#diff-{including_or_excluding}-{i}'}
         )
         anchor.classes.add('hidden-until-hover')
         if item.old_num == item.new_num:
             section_num_text = item.old_num
         else:
-            section_num_text = f"{item.old_num} [{item.new_num}]"
+            section_num_text = f'{item.old_num} [{item.new_num}]'
 
         anchor.text = section_num_text
         # changed_nums += f"{item.num}<br/>\n"
@@ -588,7 +583,9 @@ def _render_changed_sects_inner(changed_sects, include_refs=True) -> str:
         )
 
     # last closing div is closing div from changed_sects_html above
-    changed_sects_html += html.tostring(grid_element, encoding=str) + html_diffs + "</div>"
+    changed_sects_html += (
+        html.tostring(grid_element, encoding=str) + html_diffs + '</div>'
+    )
 
     return changed_sects_html
 
@@ -624,9 +621,7 @@ def clean_text(body_text: str) -> str:
     return t
 
 
-def recursive_replace(
-    element: _Element, pattern: str, replacement: str
-):
+def recursive_replace(element: _Element, pattern: str, replacement: str):
     if element.text:
         element.text = re.sub(pattern, replacement, element.text)
     if element.tail:

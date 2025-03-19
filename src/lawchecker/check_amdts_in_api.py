@@ -25,18 +25,18 @@ from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, UKL
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 
-JSON = int | str | float | bool | None | list["JSON"] | dict[str, "JSON"]
+JSON = int | str | float | bool | None | list['JSON'] | dict[str, 'JSON']
 JSONObject = dict[str, JSON]
 JSONList = list[JSON]
 JSONType = JSONObject | JSONList
 
 
 class ContainerType(StrEnum):
-    COMMITTEE_DECISIONS = "Committee Stage Decisions"
-    REPORT_DECISIONS = "Report Stage Decisions"
-    AMENDMENT_PAPER = "Amendment Paper"
-    AMDTS_FROM_API = "Amendments from API"
-    UNKNOWN = "Unknown"
+    COMMITTEE_DECISIONS = 'Committee Stage Decisions'
+    REPORT_DECISIONS = 'Report Stage Decisions'
+    AMENDMENT_PAPER = 'Amendment Paper'
+    AMDTS_FROM_API = 'Amendments from API'
+    UNKNOWN = 'Unknown'
 
 
 def get_container_type(string: str) -> ContainerType:
@@ -50,32 +50,30 @@ def get_container_type(string: str) -> ContainerType:
 
 
 class Decision:
-
     similar_decisions = [
-        ["Agreed", "Agreed To", "Added", "Agreed to on division"],
-        ["Withdrawn", "Withdrawn Before Moved", "Withdrawn After Debate"],
-        ["No Decision", "Not Called"],
-        ["Negatived", "Negatived on division", "Disagreed"],
+        ['Agreed', 'Agreed To', 'Added', 'Agreed to on division'],
+        ['Withdrawn', 'Withdrawn Before Moved', 'Withdrawn After Debate'],
+        ['No Decision', 'Not Called'],
+        ['Negatived', 'Negatived on division', 'Disagreed'],
     ]
 
     normed_similar_decisions = [
-        [item.casefold().replace(" ", "") for item in group] for group in similar_decisions
+        [item.casefold().replace(' ', '') for item in group]
+        for group in similar_decisions
     ]
 
     def __init__(self, decision: str):
-
         self._raw_decision = decision
-        self.normed_dec = decision.strip().casefold().replace(" ", "")
+        self.normed_dec = decision.strip().casefold().replace(' ', '')
         self.decision = self.fix_decision(decision.strip())
 
         # list of lists with each
 
     def fix_decision(self, decision: str) -> str:
         """Decisions in the API do not have spaces"""
-        return re.sub(r"([a-z])([A-Z])", r"\1 \2", decision)
+        return re.sub(r'([a-z])([A-Z])', r'\1 \2', decision)
 
-    def __eq__(self, other: "Decision") -> bool:
-
+    def __eq__(self, other: 'Decision') -> bool:
         if not isinstance(other, Decision):
             return NotImplemented
 
@@ -98,7 +96,7 @@ class Decision:
         return self.decision
 
     def __repr__(self):
-        return f"Decision({self.decision}, {self.normed_dec})"
+        return f'Decision({self.decision}, {self.normed_dec})'
 
 
 class InvalidDataError(ValueError):
@@ -110,42 +108,46 @@ class InvalidDataError(ValueError):
 
 
 def progress_bar(iterable: Iterable, total: int) -> list:
-
     # also add the progress bar to the webview
     update_gui = False
     active_window = None
-    progress_bar_id = ""
-    if "webview" in sys.modules:
+    progress_bar_id = ''
+    if 'webview' in sys.modules:
+        # TODO: do something better than this
         import webview
+
         active_window = webview.active_window()
     if active_window is not None:
-        progress_bar_id = active_window.evaluate_js("newProgressBar()")
-        logger.info(f"Progress bar id: {progress_bar_id}")
+        progress_bar_id = active_window.evaluate_js('newProgressBar()')
+        logger.info(f'Progress bar id: {progress_bar_id}')
         update_gui = True
     output = []
     count = 0
     bar_len = 50
 
-    sys.stdout.write("\n")
+    sys.stdout.write('\n')
 
+    last_percent = 0
     for item in iterable:
         output.append(item)
         count += 1
         filled_len = int(round(bar_len * count / total))
-        percents = round(100.0 * count / total, 1)
-        bar = "#" * filled_len + "-" * (bar_len - filled_len)
-        sys.stdout.write(f"[{bar}] {percents}%\r")
+        percents = round(100.0 * count / total)
+        bar = '#' * filled_len + '-' * (bar_len - filled_len)
+        sys.stdout.write(f'[{bar}] {percents}%\r')
         sys.stdout.flush()
 
-        if update_gui and active_window is not None:
+        if update_gui and active_window is not None and percents != last_percent:
             try:
                 active_window.evaluate_js(
-                    f"updateProgressBar(\"{progress_bar_id}\", {percents})"
+                    f'updateProgressBar("{progress_bar_id}", {percents})'
                 )
             except Exception as e:
-                logger.error(f"Error updating progress bar: {e}")
+                logger.error(f'Error updating progress bar: {e}')
 
-    sys.stdout.write("\n")
+        last_percent = percents
+
+    sys.stdout.write('\n')
 
     return output
 
@@ -163,13 +165,12 @@ class Sponsor:
         is_lead: bool,
         sort_order: int,
     ):
-
         self.name = name
         self.is_lead = is_lead
         self.sort_order = sort_order
         self.member_id = member_id
 
-    def __eq__(self, other: "Sponsor") -> bool:
+    def __eq__(self, other: 'Sponsor') -> bool:
         if not isinstance(other, Sponsor):
             return NotImplemented
 
@@ -178,60 +179,57 @@ class Sponsor:
         is_lead_match = self.is_lead == other.is_lead
         sort_order_match = self.sort_order == other.sort_order
 
-        return (
-            name_match and member_id_match and is_lead_match and sort_order_match
-        )
+        return name_match and member_id_match and is_lead_match and sort_order_match
 
-    def __lt__(self, other: "Sponsor") -> bool:
+    def __lt__(self, other: 'Sponsor') -> bool:
         return self.name < other.name
 
     def __hash__(self) -> int:
         return hash(self.name)
 
     @classmethod
-    def from_json(cls, sponsor: dict[str, Any]) -> "Sponsor":
-
+    def from_json(cls, sponsor: dict[str, Any]) -> 'Sponsor':
         # TODO: make this more similar to the XML version
 
-        name: str | None = sponsor.get("name", None)
-        member_id: int | None = sponsor.get("memberId", None)
-        is_lead: bool | None = sponsor.get("isLead", None)
-        sort_order: int | None = sponsor.get("sortOrder", None)
+        name: str | None = sponsor.get('name', None)
+        member_id: int | None = sponsor.get('memberId', None)
+        is_lead: bool | None = sponsor.get('isLead', None)
+        sort_order: int | None = sponsor.get('sortOrder', None)
 
         if any((i is None for i in (name, member_id, is_lead, sort_order))):
             raise InvalidDataError(
-                "Error: Sponsor JSON data is invalid or missing required fields"
+                'Error: Sponsor JSON data is invalid or missing required fields'
             )
 
         return cls(name, member_id, is_lead, sort_order)  # type: ignore
 
     @classmethod
-    def from_supporters_xml(cls, supporters: list[_Element]) -> list["Sponsor"]:
+    def from_supporters_xml(cls, supporters: list[_Element]) -> list['Sponsor']:
         # from <block name="supporters">
         sponsors: list[Sponsor] = []
 
         for i, element in enumerate(supporters, start=1):
             # is_lead = i == 1
             tag = QName(element).localname
-            if tag not in ("docProponent", "docIntroducer"):
-                logger.info(f"Unexpected tag {tag} in supporters block")
+            if tag not in ('docProponent', 'docIntroducer'):
+                logger.info(f'Unexpected tag {tag} in supporters block')
                 continue
 
-            is_lead = tag == "docIntroducer"
+            is_lead = tag == 'docIntroducer'
 
-            refers_to = element.get("refersTo")
+            refers_to = element.get('refersTo')
             if not refers_to:
-                logger.error("docProponent element has no refersTo attribute")
+                logger.error('docProponent element has no refersTo attribute')
                 continue
             try:
-                mnis_id = int(refers_to.split("-")[-1])
+                mnis_id = int(refers_to.split('-')[-1])
             except (IndexError, ValueError):
                 logger.error(
-                    "docProponent refersTo attribute is not in the expected format"
+                    'docProponent refersTo attribute is not in the expected format'
                 )
                 continue
             if not element.text:
-                logger.error("docProponent element has no text")
+                logger.error('docProponent element has no text')
                 continue
             member_from = element.text.strip()
 
@@ -248,24 +246,23 @@ class Amendment:
         amendment_number: str,
         decision: Decision,
         sponsors: list[Sponsor],
-        parent: "AmdtContainer | None" = None,
+        parent: 'AmdtContainer | None' = None,
         star: Star = NO_STAR,
-        id: str = "",
+        id: str = '',
     ):
-
         self.amendment_text = amendment_text
         self.explanatory_text = explanatory_text
         self.num: str = amendment_number
         self.decision: Decision = decision
         self.sponsors: list[Sponsor] = sponsors
-        self.parent: "AmdtContainer | None" = parent
+        self.parent: 'AmdtContainer | None' = parent
         self.star = star
         self.id = id
 
         # we might need to come up with an amendment id that is the same for both
         # the API and the XML... in particular a problem with amendments to amendments
 
-    def __eq__(self, other: "Amendment") -> bool:
+    def __eq__(self, other: 'Amendment') -> bool:
         if not isinstance(other, Amendment):
             return NotImplemented
         return (
@@ -277,67 +274,79 @@ class Amendment:
         )
 
     @classmethod
-    def from_json(cls, amendment_json: dict, parent: "AmdtContainer | None" = None) -> "Amendment":
-
+    def from_json(
+        cls, amendment_json: dict, parent: 'AmdtContainer | None' = None
+    ) -> 'Amendment':
         amendment_text_gen = (
             f'{t.get("hangingIndentation", "") or ""} {t.get("text", "")}'.strip()
-            for t in amendment_json.get("amendmentLines", [])
+            for t in amendment_json.get('amendmentLines', [])
         )
-        amendment_text = "<div>" + "\n".join(amendment_text_gen) + "</div>"
+        amendment_text = '<div>' + '\n'.join(amendment_text_gen) + '</div>'
         html_element = html.fromstring(amendment_text)
         # add space after any span with a class of "sub-para-num" this will be important later
         for span in html_element.xpath(".//span[@class='sub-para-num']"):
             if span.tail:
-                span.tail = f" {span.tail}"
+                span.tail = f' {span.tail}'
             else:
-                span.tail = " "
+                span.tail = ' '
         amendment_text = utils.normalise_text(
             xp.text_content(utils.clean_whitespace(html_element))
         )
 
-        explanatory_text = amendment_json.get("explanatoryText", "")
+        explanatory_text = amendment_json.get('explanatoryText', '')
 
         amendmet_number: str = amendment_json.get(
-            "marshalledListText", ""
+            'marshalledListText', ''
         )  # amendment_no
-        decision: Decision = Decision(amendment_json.get("decision", ""))
+        decision: Decision = Decision(amendment_json.get('decision', ''))
         # self.decision_explanation: str = amendment_json.get("decisionExplanation", "")
         sponsors = [
-            Sponsor.from_json(item) for item in amendment_json.get("sponsors", [])
+            Sponsor.from_json(item) for item in amendment_json.get('sponsors', [])
         ]
 
-        _star: str | None = amendment_json.get("statusIndicator", None)
+        _star: str | None = amendment_json.get('statusIndicator', None)
         if _star is None:
             star: Star = Star.none()
         else:
             star = Star(_star)
 
-        _id = amendment_json.get("amendmentId", "")
+        _id = amendment_json.get('amendmentId', '')
 
         return cls(
-            amendment_text, explanatory_text, amendmet_number, decision, sponsors, parent, star, _id
+            amendment_text,
+            explanatory_text,
+            amendmet_number,
+            decision,
+            sponsors,
+            parent,
+            star,
+            _id,
         )
 
     @classmethod
-    def from_xml(cls, amendment_xml: _Element, parent: "AmdtContainer | None" = None) -> "Amendment":
+    def from_xml(
+        cls, amendment_xml: _Element, parent: 'AmdtContainer | None' = None
+    ) -> 'Amendment':
         # assume amendment_xml is an amendmentBody element
 
         # get the decision
         decision_block = amendment_xml.xpath(
             './/xmlns:block[@name="decision"]', namespaces=NSMAP
         )
-        decision = ""
+        decision = ''
         if len(decision_block) > 0:
             decision = utils.normalise_text(xp.text_content(decision_block[0]))
         decision = Decision(decision)
 
         #  get the amendment number
         try:
-            e_id = amendment_xml.xpath("xmlns:amendment/xmlns:amendmentBody/@eId", namespaces=NSMAP)[0]
-            amdt_no = e_id.split("_")[-1]
+            e_id = amendment_xml.xpath(
+                'xmlns:amendment/xmlns:amendmentBody/@eId', namespaces=NSMAP
+            )[0]
+            amdt_no = e_id.split('_')[-1]
         except Exception:
-            print("Warning no amendment number found")
-            amdt_no = ""
+            print('Warning no amendment number found')
+            amdt_no = ''
 
         # get the sponsors
         # proposer = xp.get_doc_introducer(amendment_xml)
@@ -349,18 +358,18 @@ class Amendment:
             './/xmlns:amendmentJustification/xmlns:blockContainer[class="explanatoryStatement"]/xmlns:p',
             namespaces=NSMAP,
         )
-        explanatory_text = "\n".join(xp.text_content(p) for p in explanatory_text_ps)
+        explanatory_text = '\n'.join(xp.text_content(p) for p in explanatory_text_ps)
 
         # get amendment text
         try:
             amendment_content = xp.get_amdt_content_2(amendment_xml)[0]
         except IndexError:
-            logger.error("No amendment content found")
+            logger.error('No amendment content found')
             raise
 
         try:
             amendment_num = amendment_content.find(
-                ".//xmlns:num[@ukl:dnum]", namespaces=NSMAP
+                './/xmlns:num[@ukl:dnum]', namespaces=NSMAP
             )
             amendment_num.getparent().remove(amendment_num)  # type: ignore
         except Exception as e:
@@ -374,13 +383,21 @@ class Amendment:
             xp.text_content(utils.clean_whitespace(amendment_content))
         )
 
-        star = Star(amendment_xml.get(QName(UKL, "statusIndicator"), default=""))
+        star = Star(amendment_xml.get(QName(UKL, 'statusIndicator'), default=''))
 
-        _id = amendment_xml.xpath(".//*/@GUID[1]", namespaces=NSMAP)[0]
+        _id = amendment_xml.xpath('.//*/@GUID[1]', namespaces=NSMAP)[0]
         # print(f"ID: {_id}")
 
-
-        return cls(amendment_text, explanatory_text, amdt_no, decision, sponsors, parent, star, _id)
+        return cls(
+            amendment_text,
+            explanatory_text,
+            amdt_no,
+            decision,
+            sponsors,
+            parent,
+            star,
+            _id,
+        )
 
 
 def normalise_amendments_xml(amendment_xml: _Element) -> _Element:
@@ -388,39 +405,37 @@ def normalise_amendments_xml(amendment_xml: _Element) -> _Element:
 
 
 def add_quotes_to_quoted_elements(amendment_element: _Element) -> None:
-
     """Element is modified in place"""
 
     # get the text
     # if there is a quoted structure there could be strangeness with quotes
     quoted_elements: list[_Element] = amendment_element.xpath(
-        ".//xmlns:*[@ukl:endQuote or @ukl:startQuote or @endQuote or @startQuote]", namespaces=NSMAP
+        './/xmlns:*[@ukl:endQuote or @ukl:startQuote or @endQuote or @startQuote]',
+        namespaces=NSMAP,
     )
     # print(f"Quoted Elements: {len(quoted_elements)}")
     for qs in quoted_elements:
         tag = QName(qs).localname
-        if tag == "def":
-            print(f"Def: {qs.text}")
+        if tag == 'def':
+            print(f'Def: {qs.text}')
             # print(qs.attrib)
-        if qs.get("startQuote") == "“" or qs.get(f"{{{UKL}}}startQuote") == "“":
-
+        if qs.get('startQuote') == '“' or qs.get(f'{{{UKL}}}startQuote') == '“':
             if qs.text:
                 qs.text = f'“{qs.text}'
 
             else:
-                qs.text = "“"
-        if qs.get("endQuote") == "”" or qs.get(f"{{{UKL}}}endQuote") == "”":
-            if tag == "quotedStructure":
+                qs.text = '“'
+        if qs.get('endQuote') == '”' or qs.get(f'{{{UKL}}}endQuote') == '”':
+            if tag == 'quotedStructure':
                 if qs.tail:
                     qs.tail = f'”{qs.tail}'
                 else:
-                    qs.tail = "”"
+                    qs.tail = '”'
             else:
                 if qs.text:
                     qs.text = f'{qs.text}”'
                 else:
-                    qs.text = "”"
-
+                    qs.text = '”'
 
 
 class AmdtContainer(Mapping):
@@ -430,11 +445,13 @@ class AmdtContainer(Mapping):
         self,
         amendments: list[Amendment],
         container_type: ContainerType = ContainerType.UNKNOWN,
-        bill_title: str = "Unknown Bill Title",
-        pub_date: str = "Unknown Published Date",
-        resource_identifier: str = "Unknown",
+        bill_title: str = 'Unknown Bill Title',
+        pub_date: str = 'Unknown Published Date',
+        resource_identifier: str = 'Unknown',
+        bill_id: int | None = None,
+        stage_id: int | None = None,
+        stage_name: str | None = None,
     ):
-
         # move this to the javascript
         # self.short_file_name = utils.truncate_string(self.file_name).replace(".xml", "")
 
@@ -454,7 +471,7 @@ class AmdtContainer(Mapping):
         self.amdt_set = set(amdt.num for amdt in self.amendments)
 
     @classmethod
-    def blank_container(cls) -> "AmdtContainer":
+    def blank_container(cls) -> 'AmdtContainer':
         return cls([])
 
     @classmethod
@@ -491,9 +508,8 @@ class AmdtContainer(Mapping):
         cls,
         xml_element: _Element,
         container_type: ContainerType = ContainerType.UNKNOWN,
-        resource_identifier: str = "Test",
-    ) -> "AmdtContainer":
-
+        resource_identifier: str = 'Test',
+    ) -> 'AmdtContainer':
         amendments: list[Amendment] = []
 
         for amdt_xml in xp.get_amendments(xml_element):
@@ -516,8 +532,7 @@ class AmdtContainer(Mapping):
         return amdt_container
 
     @classmethod
-    def from_xml_file(cls, xml_file: Path) -> "AmdtContainer":
-
+    def from_xml_file(cls, xml_file: Path) -> 'AmdtContainer':
         resource_identifier = xml_file.name  # important
         file_path = str(xml_file.resolve())  # should this be location
         tree = etree.parse(file_path)
@@ -528,23 +543,27 @@ class AmdtContainer(Mapping):
             resource_identifier=resource_identifier,
         )
 
-
     def get_meta_data_from_xml(self, root_element: _Element) -> None:
         try:
-            list_type_text: str = root_element.findtext(".//block[@name='listType']", namespaces=NSMAP2)  # type: ignore
+            list_type_text: str = root_element.findtext(
+                ".//block[@name='listType']", namespaces=NSMAP2
+            )  # type: ignore
             self.container_type = get_container_type(list_type_text)
             # self.meta_list_type = list_type.text  # type: ignore
 
         except Exception as e:
-            warning_msg = f"Can't find List Type meta data. Check {self.resource_identifier}"
+            warning_msg = (
+                f"Can't find List Type meta data. Check {self.resource_identifier}"
+            )
             # self.meta_list_type = warning_msg  # should we add this back in?
-            logger.warning(f"Problem parsing XML. {warning_msg}: {repr(e)}")
+            logger.warning(f'Problem parsing XML. {warning_msg}: {repr(e)}')
 
         try:
-            print(len(root_element.xpath("//xmlns:TLCConcept", namespaces=NSMAP)))
+            print(len(root_element.xpath('//xmlns:TLCConcept', namespaces=NSMAP)))
             bill_title = root_element.xpath(
                 # TODO: if this works add it to the compare amendments documents
-                "//xmlns:TLCConcept[@eId='varBillTitle']/@showAs", namespaces=NSMAP
+                "//xmlns:TLCConcept[@eId='varBillTitle']/@showAs",
+                namespaces=NSMAP,
             )
             # don't use .get here  as that defaults to None
             # self.meta_bill_title = bill_title.attrib["showAs"]  # type: ignore
@@ -552,9 +571,11 @@ class AmdtContainer(Mapping):
             # [x] test
         except Exception as e:
             print(repr(root_element))
-            warning_msg = f"Can't find Bill Title meta data. Check {self.resource_identifier}"
+            warning_msg = (
+                f"Can't find Bill Title meta data. Check {self.resource_identifier}"
+            )
             self.meta_bill_title = warning_msg
-            logger.warning(f"Problem parsing XML. {warning_msg}: {repr(e)}")
+            logger.warning(f'Problem parsing XML. {warning_msg}: {repr(e)}')
 
         try:
             # add a test for this
@@ -562,22 +583,27 @@ class AmdtContainer(Mapping):
                 ".//FRBRManifestation/FRBRdate[@name='published']", namespaces=NSMAP2
             )
             self.meta_pub_date = datetime.strptime(
-                published_date.get("date", default=""), "%Y-%m-%d"  # type: ignore
-            ).strftime("%A %d %B %Y")
+                published_date.get('date', default=''),
+                '%Y-%m-%d',  # type: ignore
+            ).strftime('%A %d %B %Y')
 
         except Exception as e:
-            warning_msg = f"Can't find Published Date meta data. Check {self.resource_identifier}"
+            warning_msg = (
+                f"Can't find Published Date meta data. Check {self.resource_identifier}"
+            )
             self.meta_pub_date = warning_msg
             if not isinstance(e, AttributeError):
-                warning_msg += f": {repr(e)}"
-            logger.info(f"Problem parsing XML. {warning_msg}")
+                warning_msg += f': {repr(e)}'
+            logger.info(f'Problem parsing XML. {warning_msg}')
 
     def _create_amdt_map(self) -> dict[str, Amendment]:
         _amdt_map: dict[str, Amendment] = {}
 
         for amendment in self.amendments:
             if amendment.num in _amdt_map:
-                logger.warning(f"{self.container_type}: Duplicate amendment number: {amendment.num}")
+                logger.warning(
+                    f'{self.container_type}: Duplicate amendment number: {amendment.num}'
+                )
             _amdt_map[amendment.num] = amendment
 
         return _amdt_map
@@ -621,7 +647,7 @@ class Report:
             self.html_tree = html.parse(COMPARE_REPORT_TEMPLATE)
             self.html_root = self.html_tree.getroot()
         except Exception as e:
-            logger.error(f"Error parsing HTML template file: {e}")
+            logger.error(f'Error parsing HTML template file: {e}')
             raise
 
         # create AmdtContainer object for xml amendments
@@ -630,7 +656,7 @@ class Report:
         elif iselement(xml):
             self.xml_amdts = AmdtContainer.from_xml_element(xml)
         else:
-            raise TypeError("xml must be a Path or an Element")
+            raise TypeError('xml must be a Path or an Element')
 
         # create AmdtContainer object for json amendments
         self.json_amdts = AmdtContainer.from_json(json_amdts)
@@ -696,8 +722,10 @@ class Report:
 
         try:
             # change the title
-            self.html_root.find('.//title').text = "Check Amendments"  # type: ignore
-            self.html_root.find('.//h1').text = "Check Amendments on Bills.parliament.uk"  # type: ignore
+            self.html_root.find('.//title').text = 'Check Amendments'  # type: ignore
+            self.html_root.find(
+                './/h1'
+            ).text = 'Check Amendments on Bills.parliament.uk'  # type: ignore
         except Exception:
             pass
 
@@ -719,36 +747,28 @@ class Report:
     def render_intro(self) -> HtmlElement:
         # ------------------------- intro section ------------------------ #
         into = (
-            "This report summarises differences between amendments in the "
-            "bills API and the amendments in the LawMaker document"
-            " XML official list documents. The document is:"
-            f"<br><strong>{self.xml_amdts.meta_bill_title}</strong>"
+            'This report summarises differences between amendments in the '
+            'bills API and the amendments in the LawMaker document'
+            ' XML official list documents. The document is:'
+            f'<br><strong>{self.xml_amdts.meta_bill_title}</strong>'
         )
 
-        meta_data_table = templates.Table(
-            ("", self.xml_amdts.meta_bill_title)
-        )
+        meta_data_table = templates.Table(('', self.xml_amdts.meta_bill_title))
 
         # meta_data_table.add_row(
         #     ("File path", self.xml_amdts.file_path)
         # )
-        meta_data_table.add_row(
-            ("Bill Title", self.xml_amdts.meta_bill_title)
-        )
-        meta_data_table.add_row(
-            ("Published date", self.xml_amdts.meta_pub_date)
-        )
-        meta_data_table.add_row(
-            ("List Type", self.xml_amdts.container_type)
-        )
+        meta_data_table.add_row(('Bill Title', self.xml_amdts.meta_bill_title))
+        meta_data_table.add_row(('Published date', self.xml_amdts.meta_pub_date))
+        meta_data_table.add_row(('List Type', self.xml_amdts.container_type))
 
         section = html.fromstring(
             '<div class="wrap">'
             '<section id="intro">'
-            "<h2>Introduction</h2>"
-            f"<p>{into}</p>"
-            "</section>"
-            "</div>"
+            '<h2>Introduction</h2>'
+            f'<p>{into}</p>'
+            '</section>'
+            '</div>'
         )
 
         section.append(meta_data_table.html)
@@ -758,41 +778,41 @@ class Report:
     def render_missing_amdts(self) -> HtmlElement:
         # ----------- Removed and added amendments section ----------- #
         # build up text content
-        removed_content = "Missing amendments: <strong>None</strong>"
+        removed_content = 'Missing amendments: <strong>None</strong>'
         if self.missing_api_amdts:
             removed_content = (
-                f"Missing content: <strong>{len(self.missing_api_amdts)}</strong><br />"
-                f"{' '.join(self.missing_api_amdts)}"
+                f'Missing content: <strong>{len(self.missing_api_amdts)}</strong><br />'
+                f'{" ".join(self.missing_api_amdts)}'
             )
 
         info = (
-            "<p>Listed below are any Amendments (& New Clauses etc.) which are"
-            " present in the XML from LawMaker but not present in Amendments"
-            " avaliable via the API. This means that they are almost certainly"
-            " also missing from bills.parliament. </p>"
+            '<p>Listed below are any Amendments (& New Clauses etc.) which are'
+            ' present in the XML from LawMaker but not present in Amendments'
+            ' avaliable via the API. This means that they are almost certainly'
+            ' also missing from bills.parliament. </p>'
         )
 
-        card = templates.Card("Missing amendments")
+        card = templates.Card('Missing amendments')
         card.secondary_info.extend(
             # html.fromstring(f"<p>{added_content}</p>"),
             html.fragments_fromstring(
-                f"{info}<p>{removed_content}</p>",
-                no_leading_text=True
+                f'{info}<p>{removed_content}</p>', no_leading_text=True
             )
         )
         return card.html
 
     def added_and_removed_names_table(self) -> HtmlElement:
-
         if not self.name_changes:
             return html.fromstring(
-                "<p><strong>Zero</strong> amendments have name changes.</p>"
+                '<p><strong>Zero</strong> amendments have name changes.</p>'
             )
 
-        name_changes = templates.Table(("Ref", "Names missing from API", "Names in API but not in XML", "Totals"))
+        name_changes = templates.Table(
+            ('Ref', 'Names missing from API', 'Names in API but not in XML', 'Totals')
+        )
 
         # we have a special class for this table
-        name_changes.html.classes.add("an-table")  # type: ignore
+        name_changes.html.classes.add('an-table')  # type: ignore
 
         for item in self.name_changes:
             names_added = []
@@ -809,30 +829,28 @@ class Report:
             total_removed = len(item.removed)
             totals = []
             if total_added:
-                totals.append(f"Added: {total_added}")
+                totals.append(f'Added: {total_added}')
             if total_removed:
-                totals.append(f"Removed: {total_removed}")
+                totals.append(f'Removed: {total_removed}')
 
             name_changes.add_row(
-                (item.num, p_names_added, ", ".join(item.removed), ", ".join(totals))
+                (item.num, p_names_added, ', '.join(item.removed), ', '.join(totals))
             )
 
         return name_changes.html
 
     def render_added_and_removed_names(self) -> HtmlElement:
-
         """Added and removed names section"""
 
         no_name_changes: HtmlElement | None = None
 
         if self.no_name_changes:
-
-            sec = (templates.SmallCollapsableSection(
-                f"<span><strong>{len(self.no_name_changes)}</strong>"
-                f" amendments have correct names: "
+            sec = templates.SmallCollapsableSection(
+                f'<span><strong>{len(self.no_name_changes)}</strong>'
+                f' amendments have correct names: '
                 '<small class="text-muted"> [show]</small></span>'
-            ))
-            sec.collapsible.text = f"{', '.join(self.no_name_changes)}"
+            )
+            sec.collapsible.text = f'{", ".join(self.no_name_changes)}'
             no_name_changes = sec.html
 
         name_changes_table = self.added_and_removed_names_table()
@@ -845,8 +863,8 @@ class Report:
         if self.name_changes_in_context:
             changed_amdts.append(
                 html.fromstring(
-                    f"<p><strong>{len(self.name_changes_in_context)}</strong> amendments"
-                    " have different names in the API: </p>\n"
+                    f'<p><strong>{len(self.name_changes_in_context)}</strong> amendments'
+                    ' have different names in the API: </p>\n'
                 )
             )
             for item in self.name_changes_in_context:
@@ -857,7 +875,7 @@ class Report:
                     )
                 )
         else:
-            logger.info("No name changes in context")
+            logger.info('No name changes in context')
 
         names_change_context_section.add_content(changed_amdts)
 
@@ -865,7 +883,7 @@ class Report:
             # might as well not output anything if not necessary
             names_change_context_section.clear()
 
-        card = templates.Card("Check Names")
+        card = templates.Card('Check Names')
         card.secondary_info.extend(
             (
                 name_changes_table,
@@ -882,42 +900,36 @@ class Report:
         # build up text content
         correct_stars: HtmlElement | None = None
         if self.correct_stars:
-
-            sec = (templates.SmallCollapsableSection(
-                f"<span><strong>{len(self.correct_stars)}</strong>"
-                f" amendments have correct stars: "
+            sec = templates.SmallCollapsableSection(
+                f'<span><strong>{len(self.correct_stars)}</strong>'
+                f' amendments have correct stars: '
                 '<small class="text-muted"> [show]</small></span>'
-            ))
-            sec.collapsible.text = f"{', '.join(self.correct_stars)}"
+            )
+            sec.collapsible.text = f'{", ".join(self.correct_stars)}'
             correct_stars = sec.html
 
-        incorrect_stars = (
-            "All amendments have correct stars"
-        )
+        incorrect_stars = 'All amendments have correct stars'
         if self.incorrect_stars:
             incorrect_stars = (
                 f'<strong class="red">{len(self.incorrect_stars)} amendments'
-                f" have incorrect stars:</strong>  {', '.join(self.incorrect_stars)}"
+                f' have incorrect stars:</strong>  {", ".join(self.incorrect_stars)}'
             )
 
-        card = templates.Card("Star Check")
-        card.secondary_info.append(html.fromstring(f"<p>{incorrect_stars}</p>"))
+        card = templates.Card('Star Check')
+        card.secondary_info.append(html.fromstring(f'<p>{incorrect_stars}</p>'))
         if correct_stars is not None:
             card.tertiary_info.append(correct_stars)
 
         return card.html
 
-
     def render_changed_amdts(self) -> HtmlElement:
         # -------------------- Changed Amendments -------------------- #
         # build up text content
-        changed_amdts = (
-            "<p>Amendments in the API match those in the XML 😀</p>"
-        )
+        changed_amdts = '<p>Amendments in the API match those in the XML 😀</p>'
         if self.incorrect_amdt_in_api:
             changed_amdts = (
                 f'<p><strong class="red">{len(self.incorrect_amdt_in_api)}</strong>'
-                " amendments have incorrect content in the API: </p>\n"
+                ' amendments have incorrect content in the API: </p>\n'
             )
             for item in self.incorrect_amdt_in_api:
                 num_a = link_from_num_or_num(
@@ -927,7 +939,7 @@ class Report:
                 )
                 changed_amdts += f"<p class='h5'>{num_a}:</p>\n{item.html_diff}\n"
 
-        card = templates.Card("Changed amendments")
+        card = templates.Card('Changed amendments')
         card.secondary_info.extend(
             html.fragments_fromstring(changed_amdts, no_leading_text=True)
         )
@@ -935,16 +947,14 @@ class Report:
         return card.html
 
     def render_no_decision_check(self) -> HtmlElement:
-
-        card = templates.Card("Decision Check")
+        card = templates.Card('Decision Check')
         card.secondary_info.append(
             html.fromstring(
-                "<p>The XML file does not appear to be a proceedings"
-                " paper so no decisions have been checked.</p>"
+                '<p>The XML file does not appear to be a proceedings'
+                ' paper so no decisions have been checked.</p>'
             )
         )
         return card.html
-
 
     def render_decisions(self) -> HtmlElement:
         # -------------------- Decision check section -------------------- #
@@ -964,32 +974,32 @@ class Report:
         correct_decisions: HtmlElement | None = None
 
         if self.correct_decisions:
-            sec = (templates.SmallCollapsableSection(
-                f"<span><strong>{len(self.correct_decisions)}</strong>"
-                f" amendments in the API have decisions which match the"
-                " decision in the provided XML file: "
+            sec = templates.SmallCollapsableSection(
+                f'<span><strong>{len(self.correct_decisions)}</strong>'
+                f' amendments in the API have decisions which match the'
+                ' decision in the provided XML file: '
                 '<small class="text-muted"> [show]</small></span>'
-            ))
-            sec.collapsible.text = f"{', '.join(self.correct_decisions)}"
+            )
+            sec.collapsible.text = f'{", ".join(self.correct_decisions)}'
             correct_decisions = sec.html
 
         if self.incorrect_decisions:
             incorrect_decisions = (
                 f'<p><strong class="red">{len(self.incorrect_decisions)}</strong>'
-                " amendments in the API have decisions which do not match the decision in the provided XML file: </p>\n"
+                ' amendments in the API have decisions which do not match the decision in the provided XML file: </p>\n'
             )
-            incorrect_decisions += f"<p>{'<br/>'.join(self.incorrect_decisions)}</p>"
+            incorrect_decisions += f'<p>{"<br/>".join(self.incorrect_decisions)}</p>'
         else:
-            incorrect_decisions = (
-                "<p>Every decision (on all amendments) in the API matches the decision in the XML. 😀</p>"
-            )
+            incorrect_decisions = '<p>Every decision (on all amendments) in the API matches the decision in the XML. 😀</p>'
 
         note = '<p class="small"><strong>Note:</strong> For unknown reasons, decisions recorded in a the proceedings paper do not map onto the decisions in the API (and by extension, the amendments section of bills.parliament.uk). For the purposes of this check the following groups of decisions are considered to be the same:</p>'
-        list_items = [f"<li>{', '.join(l)}</li>" for l in Decision.similar_decisions]
+        list_items = [f'<li>{", ".join(l)}</li>' for l in Decision.similar_decisions]
         note += f"<ul class='small'>{''.join(list_items)}</ul>"
 
-        card = templates.Card("Decision Check")
-        card.secondary_info.append(html.fromstring(f"<div>{note + incorrect_decisions}</div>"))
+        card = templates.Card('Decision Check')
+        card.secondary_info.append(
+            html.fromstring(f'<div>{note + incorrect_decisions}</div>')
+        )
 
         if correct_decisions is not None:
             card.tertiary_info.append(correct_decisions)
@@ -997,21 +1007,22 @@ class Report:
         return card.html
 
     def render_ex_statements(self) -> HtmlElement:
-
         # -------------------- Explanatory Statements -------------------- #
         # build up text content
         incorrect_ex_statements = (
-            "<p>All explanatory statements in the API match those in the XML 😀</p>"
+            '<p>All explanatory statements in the API match those in the XML 😀</p>'
         )
         if self.incorrect_ex_statements:
             incorrect_ex_statements = (
                 f'<p><strong class="red">{len(self.incorrect_ex_statements)}</strong>'
-                " amendments have incorrect explanatory statements in the API: </p>\n"
+                ' amendments have incorrect explanatory statements in the API: </p>\n'
             )
 
-            incorrect_ex_statements += f"<p>{'<br/>'.join(self.incorrect_ex_statements)}</p>"
+            incorrect_ex_statements += (
+                f'<p>{"<br/>".join(self.incorrect_ex_statements)}</p>'
+            )
 
-        card = templates.Card("Explanatory Statements")
+        card = templates.Card('Explanatory Statements')
         card.secondary_info.extend(
             html.fragments_fromstring(incorrect_ex_statements, no_leading_text=True)
         )
@@ -1035,15 +1046,15 @@ class Report:
             api_amdt = api_amdts[key]
 
             if api_amdt.star == xml_amdt.star:
-                self.correct_stars.append(f"{api_amdt.num} ({api_amdt.star})")
+                self.correct_stars.append(f'{api_amdt.num} ({api_amdt.star})')
             else:
                 self.incorrect_stars.append(
-                    f"{api_amdt.num} has {api_amdt.star} ({xml_amdt.star} expected)"
+                    f'{api_amdt.num} has {api_amdt.star} ({xml_amdt.star} expected)'
                 )
 
-
-    def added_and_removed_amdts(self, old_doc: "AmdtContainer", new_doc: "AmdtContainer"):
-
+    def added_and_removed_amdts(
+        self, old_doc: 'AmdtContainer', new_doc: 'AmdtContainer'
+    ):
         """Find the amendment numbers missing from the API"""
 
         self.missing_api_amdts = list(old_doc.amdt_set.difference(new_doc.amdt_set))
@@ -1057,10 +1068,14 @@ class Report:
 
         if self.duplicate_names:
             # warn in UI
-            logger.warning(f"Duplicate names found in {new_amdt.num}")
+            logger.warning(f'Duplicate names found in {new_amdt.num}')
 
-        added_names = [item.name for item in new_amdt.sponsors if item not in old_amdt.sponsors]
-        removed_names = [item.name for item in old_amdt.sponsors if item not in new_amdt.sponsors]
+        added_names = [
+            item.name for item in new_amdt.sponsors if item not in old_amdt.sponsors
+        ]
+        removed_names = [
+            item.name for item in old_amdt.sponsors if item not in new_amdt.sponsors
+        ]
 
         if not added_names and not removed_names:
             # there have been no name changes
@@ -1071,7 +1086,6 @@ class Report:
             )
 
     def diff_names_in_context(self, xml_amdt: Amendment, api_amdt: Amendment):
-
         """
         Create an HTML string containing a tables showing the differences
         between the sponsors of xml amendments and api amendments.
@@ -1083,15 +1097,14 @@ class Report:
         dif_html_str = utils.html_diff_lines(
             fromlines,
             tolines,
-            fromdesc="Lawmaker XML",
-            todesc="Bills API",
+            fromdesc='Lawmaker XML',
+            todesc='Bills API',
         )
 
         if dif_html_str is not None:
             self.name_changes_in_context.append(ChangedAmdt(xml_amdt.num, dif_html_str))
 
     def diff_amdt_content(self, new_amdt: Amendment, old_amdt: Amendment):
-
         """
         Create an HTML string containing a tables showing the differences
         between old_amdt//amendmentContent and new_amdt//amendmentContent.
@@ -1100,25 +1113,25 @@ class Report:
         amendment. It does not contain the sponsor information.
         """
 
-        new_amdt_content = new_amdt.amendment_text.split("\n")
-        old_amdt_content = old_amdt.amendment_text.split("\n")
+        new_amdt_content = new_amdt.amendment_text.split('\n')
+        old_amdt_content = old_amdt.amendment_text.split('\n')
 
         if len(new_amdt_content) == 0 or len(old_amdt_content) == 0:
-            logger.warning(f"{new_amdt.num}: has no content")
+            logger.warning(f'{new_amdt.num}: has no content')
             return
 
         # sometimes the line breaks are different due to ref elements etc.
         # so first we will compare the text content normalised and with the
         # line breaks removed
-        new_amdt_content_no_lines = utils.normalise_text(" ".join(new_amdt_content))
-        old_amdt_content_no_lines = utils.normalise_text(" ".join(old_amdt_content))
+        new_amdt_content_no_lines = utils.normalise_text(' '.join(new_amdt_content))
+        old_amdt_content_no_lines = utils.normalise_text(' '.join(old_amdt_content))
 
         # if new_amdt.num == "59":
         #     print(new_amdt_content_no_lines)
         #     print(old_amdt_content_no_lines)
 
         if new_amdt_content_no_lines == old_amdt_content_no_lines:
-            logger.info(f"{new_amdt.num}: content the same when line breaks removed.")
+            logger.debug(f'{new_amdt.num}: content the same when line breaks removed.')
             return
 
         dif_html_str = utils.html_diff_lines(
@@ -1131,7 +1144,6 @@ class Report:
             self.incorrect_amdt_in_api.append(ChangedAmdt(new_amdt.num, dif_html_str))
 
     def diff_decision(self, xml_amdt: Amendment, api_amdt: Amendment):
-
         """
         Check that the decision in the API matches the decision in the XML.
         """
@@ -1147,10 +1159,11 @@ class Report:
             # I don't think we need to strip here
             self.correct_decisions.append(xml_amdt.num)
         else:
-            self.incorrect_decisions.append(f"{xml_amdt.num} (API: {api_decision}, XML: {xml_decision})")
+            self.incorrect_decisions.append(
+                f'{xml_amdt.num} (API: {api_decision}, XML: {xml_decision})'
+            )
 
     def diff_ex_statements(self, xml_amdt: Amendment, api_amdt: Amendment):
-
         """
         Check that the explanatory text in the API matches the explanatory text in the XML.
         """
@@ -1662,7 +1675,6 @@ def find_duplicate_sponsors(lst: list[Sponsor]) -> list[Sponsor]:
     # If the length of the set is less than the length of the list,
     # then there are duplicates
     if len(unique_items) < len(lst):
-
         sorted_items = sorted(list(unique_items))
 
         # Create a dictionary to store the count of each item
@@ -1682,17 +1694,20 @@ def find_duplicate_sponsors(lst: list[Sponsor]) -> list[Sponsor]:
 
 
 def main():
-
     parser = argparse.ArgumentParser(
-        description="Compare amendments between an XML file and the API. If no JSON file is provided, the API will be queried automatically."
+        description='Compare amendments between an XML file and the API. If no JSON file is provided, the API will be queried automatically.'
     )
-    parser.add_argument("xml_file", type=argparse.FileType('rb'), help="XML amendment or proceedings file path")
     parser.add_argument(
-        "--json",
+        'xml_file',
+        type=argparse.FileType('rb'),
+        help='XML amendment or proceedings file path',
+    )
+    parser.add_argument(
+        '--json',
         type=argparse.FileType('r'),
-        metavar="json_file",
+        metavar='json_file',
         default=None,
-        help="Existing JSON file with amendments details"
+        help='Existing JSON file with amendments details',
     )
     args = parser.parse_args()
 
@@ -1702,7 +1717,7 @@ def main():
         amendments_list_json = also_query_bills_api(Path(args.xml_file.name))
 
     if not amendments_list_json:
-        logger.error("No amendments found from JSON file or API. Exiting.")
+        logger.error('No amendments found from JSON file or API. Exiting.')
         return 1
 
     tree = etree.parse(args.xml_file)
@@ -1712,21 +1727,21 @@ def main():
 
     amendments_xml = root.xpath(xpath, namespaces=NSMAP)
 
-    logger.info(f"No. of amendments found in xml: {len(amendments_xml)}")
+    logger.info(f'No. of amendments found in xml: {len(amendments_xml)}')
 
-    filename = "API_html_diff.html"
+    filename = 'API_html_diff.html'
 
     report = Report(root, amendments_list_json)
 
     report.html_tree.write(
         filename,
-        method="html",
-        encoding="utf-8",
-        doctype="<!DOCTYPE html>",
+        method='html',
+        encoding='utf-8',
+        doctype='<!DOCTYPE html>',
     )
 
     webbrowser.open(Path(filename).resolve().as_uri())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
