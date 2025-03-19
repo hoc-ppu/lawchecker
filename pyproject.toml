@@ -24,6 +24,7 @@ dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
+    "ruff",
     "pytest",
     "types-lxml",
     "pyinstaller;sys_platform!='darwin'",
@@ -44,6 +45,13 @@ bill_numbering = "lawchecker.compare_bill_numbering:cli"
 
 [tool.isort]
 profile = "black"
+
+[tool.ruff]
+line-length = 88
+select = ["E", "W", "B"]
+
+[tool.ruff.format]
+quote-style = "single"
 
 [tool.setuptools.dynamic]
 version = {attr = "lawchecker.__version__"}

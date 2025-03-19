@@ -1,5 +1,4 @@
 import argparse
-import csv
 import json
 import re
 import sys
@@ -23,7 +22,7 @@ from lawchecker.compare_amendment_documents import ChangedAmdt, ChangedNames
 from lawchecker.compare_bill_numbering import clean as clean_filename
 from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, UKL
-from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
+from lawchecker.stars import NO_STAR, Star
 
 JSON = int | str | float | bool | None | list['JSON'] | dict[str, 'JSON']
 JSONObject = dict[str, JSON]
@@ -487,7 +486,13 @@ class AmdtContainer(Mapping):
 
         amendments: list[Amendment] = []
 
-        for amendment in json_data.get('items', []):
+        amendment_dicts = json_data.get('items', [])
+
+        if not amendment_dicts:
+            logger.error('No amendments found in JSON data')
+            return cls([])
+
+        for amendment in amendment_dicts:  # type: ignore
             try:
                 amendment = Amendment.from_json(amendment)
                 amendments.append(amendment)
@@ -583,7 +588,7 @@ class AmdtContainer(Mapping):
                 ".//FRBRManifestation/FRBRdate[@name='published']", namespaces=NSMAP2
             )
             self.meta_pub_date = datetime.strptime(
-                published_date.get('date', default=''),
+                published_date.get('date', default=''),  # type: ignore
                 '%Y-%m-%d',  # type: ignore
             ).strftime('%A %d %B %Y')
 
@@ -602,7 +607,8 @@ class AmdtContainer(Mapping):
         for amendment in self.amendments:
             if amendment.num in _amdt_map:
                 logger.warning(
-                    f'{self.container_type}: Duplicate amendment number: {amendment.num}'
+                    f'{self.container_type}: Duplicate amendment'
+                    f' number: {amendment.num}'
                 )
             _amdt_map[amendment.num] = amendment
 
@@ -986,13 +992,23 @@ class Report:
         if self.incorrect_decisions:
             incorrect_decisions = (
                 f'<p><strong class="red">{len(self.incorrect_decisions)}</strong>'
-                ' amendments in the API have decisions which do not match the decision in the provided XML file: </p>\n'
+                ' amendments in the API have decisions which do not match the'
+                ' decision in the provided XML file: </p>\n'
             )
             incorrect_decisions += f'<p>{"<br/>".join(self.incorrect_decisions)}</p>'
         else:
-            incorrect_decisions = '<p>Every decision (on all amendments) in the API matches the decision in the XML. 😀</p>'
+            incorrect_decisions = (
+                '<p>Every decision (on all amendments) in the API matches'
+                ' the decision in the XML. 😀</p>'
+            )
 
-        note = '<p class="small"><strong>Note:</strong> For unknown reasons, decisions recorded in a the proceedings paper do not map onto the decisions in the API (and by extension, the amendments section of bills.parliament.uk). For the purposes of this check the following groups of decisions are considered to be the same:</p>'
+        note = (
+            '<p class="small"><strong>Note:</strong> For unknown reasons, decisions'
+            ' recorded in a the proceedings paper do not map onto the decisions in'
+            ' the API (and by extension, the amendments section of'
+            ' bills.parliament.uk). For the purposes of this check the following'
+            ' groups of decisions are considered to be the same:</p>'
+        )
         list_items = [f'<li>{", ".join(l)}</li>' for l in Decision.similar_decisions]
         note += f"<ul class='small'>{''.join(list_items)}</ul>"
 
@@ -1344,11 +1360,11 @@ class Report:
         bill_text_e = templates.EditableTextDiv(bill_title_text)
         amdt_no_title_e = html.fromstring('<h2>Amendment numbers</h2>')
         amdt_no_text_e = templates.EditableTextDiv(
-            children=html.fragments_fromstring(problem_amendment_numbers)
+            children=html.fragments_fromstring(problem_amendment_numbers)  # type: ignore
         )
         guids_title_e = html.fromstring('<h2>Amendments GUIDs</h2>')
         guids_text_e = templates.EditableTextDiv(
-            children=html.fragments_fromstring(problem_amendment_guids)
+            children=html.fragments_fromstring(problem_amendment_guids)  # type: ignore
         )
 
         date_title_e = html.fromstring('<h2>Date and time of issue</h2>')
@@ -1497,7 +1513,7 @@ def also_query_bills_api(
             response = requests.get(url)
             response_json = response.json()
             stages = response_json.get('items', [])
-            for item in stages:
+            for item in stages:  # type: ignore
                 description = item.get('description', '')
                 if description.casefold().strip() == stage.casefold().strip():
                     api_stage_description = description
@@ -1512,7 +1528,7 @@ def also_query_bills_api(
 
     logger.notice(f'Bill ID: {bill_id} Stage ID: {stage_id}')
 
-    if not all([bill_id, stage_id]):
+    if not (isinstance(bill_id, int) and isinstance(stage_id, int)):
         logger.error('Could not get bill ID or stage ID from the API.')
         return
 
@@ -1695,7 +1711,8 @@ def find_duplicate_sponsors(lst: list[Sponsor]) -> list[Sponsor]:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Compare amendments between an XML file and the API. If no JSON file is provided, the API will be queried automatically.'
+        description='Compare amendments between an XML file and the API.'
+        ' If no JSON file is provided, the API will be queried automatically.'
     )
     parser.add_argument(
         'xml_file',

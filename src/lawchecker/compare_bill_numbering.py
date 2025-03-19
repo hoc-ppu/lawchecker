@@ -196,7 +196,8 @@ class CompareBillNumbering:
     @classmethod
     def from_folder(cls, in_folder: Path | None):
         """
-        Create an instance of CompareBillNumbering by parsing all XML files in the specified folder.
+        Create an instance of CompareBillNumbering by parsing all XML
+        files in the specified folder.
 
         This method scans the specified folder for XML files, parses each file,
         and initializes a CompareBillNumbering instance with the parsed XML data.
@@ -333,20 +334,27 @@ class CompareBillNumbering:
 def cli():
     parser = argparse.ArgumentParser(
         description=(
-            'Takes in UK Bill XML files and generates CSV files(s) showing how numbering (of clauses etc.) has changed.'
+            'Takes in UK Bill XML files and generates CSV files(s)'
+            ' showing how numbering (of clauses etc.) has changed.'
         )
     )
 
     parser.add_argument(
         '--input-folder',
         type=Path,
-        help='Specify a different folder for finding bill XML. Defaults to current directory.',
+        help=(
+            'Specify a different folder for finding bill XML.'
+            ' Defaults to current directory.'
+        ),
     )
 
     parser.add_argument(
         '--output-folder',
         type=Path,
-        help='Specify a different folder for saving the output files. Defaults to current directory.',
+        help=(
+            'Specify a different folder for saving the output files.'
+            ' Defaults to current directory.'
+        ),
     )
 
     args = parser.parse_args(sys.argv[1:])

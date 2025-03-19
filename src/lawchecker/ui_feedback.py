@@ -49,16 +49,6 @@ class ProgressModal:
 
     def update(self, text: str, log=False, log_level='INFO') -> None:
         self.static_update(self.window, text, log, log_level)
-        # if log:
-        #     try:
-        #         getattr(logger, log_level.lower())(text)
-        #     except AttributeError:
-        #         logger.error(f"Invalid log level: {log_level}")
-        #         logger.info(text)
-
-        # if isinstance(self.window, Window):
-
-        #     self.window.evaluate_js(f"progress_modal_update({repr(text)})")
 
     def __exit__(self, exc_type, exc_value, exc_traceback) -> None:
         if isinstance(self.window, Window):

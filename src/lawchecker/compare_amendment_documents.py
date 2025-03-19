@@ -151,8 +151,8 @@ class SupDocument(Mapping):
                 ".//FRBRManifestation/FRBRdate[@name='published']", namespaces=NSMAP2
             )
             self.meta_pub_date = datetime.strptime(
-                published_date.get('date', default=''),
-                '%Y-%m-%d',  # type: ignore
+                published_date.get('date', default=''),  # type: ignore
+                '%Y-%m-%d',
             ).strftime('%A %d %B %Y')
 
         except Exception as e:

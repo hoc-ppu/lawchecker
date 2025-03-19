@@ -11,7 +11,8 @@ from lawchecker.lawchecker_logger import logger
 
 def truncate_string(s, max_length=26):
     """
-    Truncate a string to a maximum length by replacing the middle characters with three dots.
+    Truncate a string to a maximum length by replacing the middle
+    characters with three dots.
 
     If the string length is greater than the specified maximum length, the
     middle characters are replaced with '__'. The resulting string will have
@@ -154,7 +155,8 @@ def clean_whitespace(parent_element: _Element) -> _Element:
                 element.tail = f'{element.tail}\n'
 
         if tag == 'mod' and element.text:
-            # TODO: improve this. See Terrorism (Protection of Premises)  2R & AAC. Session 2024-25
+            # TODO: improve this.
+            # See Terrorism (Protection of Premises)  2R & AAC. Session 2024-25
             element.text = f'{element.text}\n'
 
         if tag == 'quotedStructure' and element.getprevious() is not None:

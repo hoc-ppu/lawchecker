@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "dnum",
         "dotenv",
         "edms",
         "fdos",
@@ -7,6 +8,7 @@
         "guids",
         "mref",
         "pywebviewready",
+        "qstr",
         "Rdate",
         "rref",
         "Vite"
@@ -16,4 +18,10 @@
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "prettier.enable": true,
+
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
 }
