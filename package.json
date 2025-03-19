@@ -8,9 +8,10 @@
     "bundle": "vite build",
     "build": "npm run clean && npm run bundle && run-script-os",
     "build:macos": "python build-macos.py py2app",
+    "build:windows": "pyinstaller --log-level=WARN lawChecker.spec",
     "clean": "run-script-os",
     "clean:default": "rm ui_bundle/index.html 2>/dev/null; rm -rf dist 2>/dev/null; rm -rf build 2>/dev/null; ",
-    "clean:windows": "if exist ui_bundle/index.html del ui_bundle/index.html & if exist dist rd /S /Q dist & if exist build rd /S /Q build",
+    "clean:windows": "if exist ui_bundle/index.html del ui_bundle/index.html 2>nul & if exist dist rd /S /Q dist & if exist build rd /S /Q build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
