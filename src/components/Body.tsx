@@ -51,7 +51,14 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
             <a href="https://github.com/hoc-ppu/lawchecker" target="_blank">
               Github
             </a>
-            .
+            . See the{" "}
+            <a
+              href="https://github.com/hoc-ppu/lawchecker/blob/main/CHANGELOG.md"
+              target="_blank"
+            >
+              Changelog
+            </a>{" "}
+            for what's new.
           </div>
         </div>
 
