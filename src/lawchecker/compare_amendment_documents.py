@@ -15,7 +15,7 @@ from lxml.html import HtmlElement
 from lawchecker import templates
 from lawchecker import xpath_helpers as xp
 from lawchecker.lawchecker_logger import logger
-from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, UKL
+from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, PARSER, UKL
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
 from lawchecker.utils import diff_xml_content, truncate_string
 
@@ -93,7 +93,7 @@ class SupDocument(Mapping):
         if isinstance(xml, Path):
             self.file_name = xml.name
             self.file_path = str(xml.resolve())
-            tree = etree.parse(self.file_path)
+            tree = etree.parse(self.file_path, parser=PARSER)
             self.root = tree.getroot()
         else:
             self.file_name = 'Test'
