@@ -279,7 +279,7 @@ def html_diff_lines(
 
 
 def normalise_text(text: str) -> str:
-    text = text.replace('\n”', '”')  # should this go here?
+    text = text.replace('”', '”\n')  # should this go here?
     text = text.replace(' ”', '”')  # should this go here?
     text = text.replace('“ ', '“')  # should this go here?
 
