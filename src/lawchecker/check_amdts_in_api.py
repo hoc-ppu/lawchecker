@@ -454,6 +454,10 @@ class AmdtContainer(Mapping):
         # move this to the javascript
         # self.short_file_name = utils.truncate_string(self.file_name).replace(".xml", "")
 
+        # sometimes in the API there is more than one amendment with the same number
+        # this causes problems when trying to compare the amendments
+        self.duplicate_amdt_nums: list[str] = []
+
         # defaults for metadata
         self.container_type: ContainerType = container_type
         self.meta_bill_title: str = bill_title
@@ -606,11 +610,16 @@ class AmdtContainer(Mapping):
 
         for amendment in self.amendments:
             if amendment.num in _amdt_map:
-                logger.warning(
-                    f'{self.container_type}: Duplicate amendment'
-                    f' number: {amendment.num}'
-                )
+                self.duplicate_amdt_nums.append(amendment.num)
             _amdt_map[amendment.num] = amendment
+
+        if len(self.duplicate_amdt_nums) > 0:
+            logger.warning(
+                f'The following amendmet number(s) in the {self.container_type} are'
+                ' repeated (i.e. more than one amendment with the same number)'
+                ' This should never happen and will confuse this app:'
+                f' {", ".join(self.duplicate_amdt_nums)}'
+            )
 
         return _amdt_map
 
@@ -741,6 +750,7 @@ class Report:
         insert_point.extend(
             (
                 self.render_intro(),
+                self.render_duplicate_amdt_nos(),
                 self.render_missing_amdts(),
                 self.render_added_and_removed_names(),
                 self.render_stars(),
@@ -780,6 +790,47 @@ class Report:
         section.append(meta_data_table.html)
 
         return section
+
+    def render_duplicate_amdt_nos(self) -> HtmlElement:
+        duplicate_xml_amdts = len(self.xml_amdts.duplicate_amdt_nums) > 0
+        duplicate_api_amdts = len(self.json_amdts.duplicate_amdt_nums) > 0
+
+        if not duplicate_xml_amdts and not duplicate_api_amdts:
+            # noting to show so just return an empty div
+            return html.Element('div')
+
+        info = (
+            '<p>Amendment numbers should be unique. The following amendment'
+            ' numbers are repeated. <span class="red">This should never'
+            ' happen</span> and is likely to cause problems with this app.</p>'
+        )
+        card = templates.Card('Duplicate amendment numbers')
+
+        if duplicate_xml_amdts:
+            info += '<p>XML Amendments:</p><p>'
+            for num in self.xml_amdts.duplicate_amdt_nums:
+                info += f'{num}<br/>'
+            info += '</p>'
+
+        if duplicate_api_amdts:
+            info += '<p>API Amendments:</p><p>'
+            for num in self.json_amdts.duplicate_amdt_nums:
+                view_online = ''
+                if self.json_amdts.bill_id and self.json_amdts.stage_id:
+                    link = (
+                        'https://bills.parliament.uk/bills/'
+                        f'{self.json_amdts.bill_id}/stages/'
+                        f'{self.json_amdts.stage_id}/amendments'
+                        f'?searchTerm=&amendmentNumber={num}&Decision=All'
+                    )
+                    view_online = f'(<a href="{link}">View online</a>)'
+                info += f'{num}  {view_online}<br/>'
+            info += '</p>'
+
+        card.secondary_info.extend(
+            html.fragments_fromstring(info, no_leading_text=True)
+        )
+        return card.html
 
     def render_missing_amdts(self) -> HtmlElement:
         # ----------- Removed and added amendments section ----------- #

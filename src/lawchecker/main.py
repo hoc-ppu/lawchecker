@@ -599,16 +599,17 @@ class Api:
 def get_entrypoint():
     if not APP_FROZEN:  # unfrozen development
         logger.info('App is not frozen')
-        for _ in range(8):
+        for _ in range(20):
             try:
                 # must use the right port here, we use 5174.
                 # Changed in vite.config.ts file
                 url = 'http://localhost:5175'
-                get = requests.get(url, timeout=0.1)
+                get = requests.get(url, timeout=0.05)
                 if get.status_code == 200:
                     return url
             except Exception:
-                time.sleep(0.1)
+                pass
+            time.sleep(5)
 
         logger.info('Vite server not running. Trying static files')
         return Path('ui_bundle/index.html').resolve().as_uri()  # TODO: fix this
