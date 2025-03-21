@@ -20,7 +20,7 @@ import lawchecker.lawchecker_logger as lawchecker_logger
 from lawchecker import (
     __version__,
     added_names_report,
-    check_amdts_in_api,
+    check_web_amdts,
     pp_xml_lxml,
     settings,
 )
@@ -470,7 +470,7 @@ class Api:
         with ProgressModal() as modal:
             modal.update('Querying Bills API for amendments. Please wait...')
             try:
-                json_amdts = check_amdts_in_api.also_query_bills_api(file, save_json)
+                json_amdts = check_web_amdts.also_query_bills_api(file, save_json)
                 if not json_amdts:
                     logger.error('No JSON returned from API.')
             except Exception as e:
@@ -506,7 +506,7 @@ class Api:
         with ProgressModal() as modal:
             modal.update('Querying Bills API for amendments. Please wait...')
             try:
-                json_amdts = check_amdts_in_api.get_amendments_json(
+                json_amdts = check_web_amdts.get_amendments_json(
                     bill_id_int, stage_id_int
                 )
                 if not json_amdts:
@@ -520,7 +520,7 @@ class Api:
             file_path = (
                 Path(self.api_amend_xml).parent / f'{bill_id}_{stage_id}_amdts.json'
             )
-            check_amdts_in_api.save_json_to_file(json_amdts, file_path)
+            check_web_amdts.save_json_to_file(json_amdts, file_path)
 
         self.api_amend_json = json_amdts
 
@@ -544,7 +544,7 @@ class Api:
     def create_api_csv(self):
         if not self.data_is_avaliable():
             return
-        report = check_amdts_in_api.Report(self.api_amend_xml, self.api_amend_json)
+        report = check_web_amdts.Report(self.api_amend_xml, self.api_amend_json)
 
         # logger.info([key for key in report.json_amdts.keys()])
         logger.notice(f'stage_id: {report.json_amdts.stage_id}')
@@ -556,7 +556,7 @@ class Api:
     def create_api_report(self):
         if not self.data_is_avaliable():
             return
-        report = check_amdts_in_api.Report(self.api_amend_xml, self.api_amend_json)
+        report = check_web_amdts.Report(self.api_amend_xml, self.api_amend_json)
 
         # filename = "API_html_diff.html"
 
