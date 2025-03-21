@@ -170,15 +170,20 @@ class Sponsor:
         self.member_id = member_id
 
     def __eq__(self, other: 'Sponsor') -> bool:
+        """Check if two sponsors are the same"""
+
+        # Here we will not actually compare the name text, as sometimes someone
+        # can be for example 'Secretary Wes Streeting' and 'Wes Streeting'
         if not isinstance(other, Sponsor):
             return NotImplemented
 
-        name_match = self.name == other.name
+        # name_match = self.name == other.name
         member_id_match = self.member_id == other.member_id
         is_lead_match = self.is_lead == other.is_lead
         sort_order_match = self.sort_order == other.sort_order
 
-        return name_match and member_id_match and is_lead_match and sort_order_match
+        # return name_match and member_id_match and is_lead_match and sort_order_match
+        return member_id_match and is_lead_match and sort_order_match
 
     def __lt__(self, other: 'Sponsor') -> bool:
         return self.name < other.name
@@ -895,9 +900,9 @@ class Report:
             total_removed = len(item.removed)
             totals = []
             if total_added:
-                totals.append(f'Added: {total_added}')
+                totals.append(f'XML only: {total_added}')
             if total_removed:
-                totals.append(f'Removed: {total_removed}')
+                totals.append(f'API only: {total_removed}')
 
             name_changes.add_row(
                 (item.num, p_names_added, ', '.join(item.removed), ', '.join(totals))
