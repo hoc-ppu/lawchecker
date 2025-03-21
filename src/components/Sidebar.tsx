@@ -80,7 +80,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           />
 
           <SidebarSubItem
-            title="Check Amendment API"
+            title="Check Web Amendments"
             collapsibleId="checkAmendmentAPICollapsible"
             pageActiveState={pageActiveState}
             // toggleCollapsible={toggleCollapsible}

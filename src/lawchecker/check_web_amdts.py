@@ -292,7 +292,13 @@ class Amendment:
             xp.text_content(utils.clean_whitespace(html_element))
         )
 
-        explanatory_text = amendment_json.get('explanatoryText', '')
+        explanatory_text_html = amendment_json.get('explanatoryText', '')
+        if explanatory_text_html:
+            explanatory_text = utils.normalise_text(
+                xp.text_content(html.fromstring(f'<div>{explanatory_text_html}</div>'))
+            )
+        else:
+            explanatory_text = ''
 
         amendmet_number: str = amendment_json.get(
             'marshalledListText', ''
@@ -354,7 +360,7 @@ class Amendment:
 
         # get the explanatory text
         explanatory_text_ps = amendment_xml.xpath(
-            './/xmlns:amendmentJustification/xmlns:blockContainer[class="explanatoryStatement"]/xmlns:p',
+            './/xmlns:amendmentJustification/xmlns:blockContainer[@class="explanatoryStatement"]//xmlns:p',
             namespaces=NSMAP,
         )
         explanatory_text = '\n'.join(xp.text_content(p) for p in explanatory_text_ps)
@@ -416,7 +422,8 @@ def add_quotes_to_quoted_elements(amendment_element: _Element) -> None:
     for qs in quoted_elements:
         tag = QName(qs).localname
         if tag == 'def':
-            print(f'Def: {qs.text}')
+            # print(f'Def: {qs.text}')
+            pass
             # print(qs.attrib)
         if qs.get('startQuote') == '“' or qs.get(f'{{{UKL}}}startQuote') == '“':
             if qs.text:
@@ -487,6 +494,7 @@ class AmdtContainer(Mapping):
         bill_id: int | None = json_data.get('billId', None)  # type: ignore
         stage_id: int | None = json_data.get('stageId', None)  # type: ignore
         stage_name: str | None = json_data.get('stageDescription', None)  # type: ignore
+        bill_title: str = json_data.get('shortTitle', 'Unknown Bill Title')  # type: ignore
 
         amendments: list[Amendment] = []
 
@@ -506,6 +514,7 @@ class AmdtContainer(Mapping):
         return cls(
             amendments,
             container_type=container_type,
+            bill_title=bill_title,
             resource_identifier=resource_identifier,
             bill_id=bill_id,
             stage_id=stage_id,
@@ -1226,9 +1235,7 @@ class Report:
             # I don't think we need to strip here
             self.correct_decisions.append(xml_amdt.num)
         else:
-            self.incorrect_decisions.append(
-                f'{xml_amdt.num} (API: {api_decision}, XML: {xml_decision})'
-            )
+            self.incorrect_decisions.append(f'{xml_amdt.num}')
 
     def diff_ex_statements(self, xml_amdt: Amendment, api_amdt: Amendment):
         """
@@ -1243,9 +1250,7 @@ class Report:
             return
 
         if utils.normalise_text(xml_ex) != utils.normalise_text(api_ex):
-            self.incorrect_ex_statements.append(
-                f'{xml_amdt.num} (API: {api_ex}, XML: {xml_ex})'
-            )
+            self.incorrect_ex_statements.append(xml_amdt.num)
 
     def create_table_for_sharepoint(self):
         """
@@ -1698,7 +1703,7 @@ def link_from_num_or_num(
 
 
 def create_hyperlink_str(url: str, text: str) -> str:
-    return f'<a href="{url}">{text}</a>'
+    return f'<a href="{url}" target="_blank">{text}</a>'
 
 
 def get_url_for_amendment(
@@ -1777,6 +1782,11 @@ def main():
         default=None,
         help='Existing JSON file with amendments details',
     )
+    parser.add_argument(
+        '--sp',
+        action='store_true',
+        help='Create a table for SharePoint instead of the full report',
+    )
     args = parser.parse_args()
 
     if args.json:
@@ -1800,15 +1810,17 @@ def main():
     filename = 'API_html_diff.html'
 
     report = Report(root, amendments_list_json)
+    if args.sp:
+        report.create_table_for_sharepoint()
+    else:
+        report.html_tree.write(
+            filename,
+            method='html',
+            encoding='utf-8',
+            doctype='<!DOCTYPE html>',
+        )
 
-    report.html_tree.write(
-        filename,
-        method='html',
-        encoding='utf-8',
-        doctype='<!DOCTYPE html>',
-    )
-
-    webbrowser.open(Path(filename).resolve().as_uri())
+        webbrowser.open(Path(filename).resolve().as_uri())
 
 
 if __name__ == '__main__':

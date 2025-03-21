@@ -42,6 +42,7 @@ compare_report = "lawchecker.compare_amendment_documents:main"
 startgui = "lawchecker.main:main"
 compare_bills = "lawchecker.compare_bill_documents:main"
 bill_numbering = "lawchecker.compare_bill_numbering:cli"
+web_amendments = "lawchecker.check_web_amdts:main"
 
 [tool.isort]
 profile = "black"

@@ -46,16 +46,21 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
     <Collapsible
       isOpenState={props.pageActiveState}
       stateId="checkAmendmentAPICollapsible"
-      title="Check Amendments API"
+      title="Check Web Amendments"
     >
       <Card step="Introduction" info="">
         {/* You can put more than one button in here */}
         <p>
-          You can create a report summarising differences between amendments in
-          the bills API and the in the LawMaker XML for a amendment paper or
-          proceedings paper. This report will show you: Missing Amendments,
-          Differences in names, and amendments that are not the same in both the
-          paper and the API. You will need the LM XML file for the paper.
+          You can create a report summarising differences between amendments on
+          the parliament website and in the amendment paper or proceedings
+          paper. This works by comparing LawMaker XML to JSON from the{" "}
+          <a href="https://bills-api.parliament.uk/index.html" target="_blank">
+            Bills API
+          </a>{" "}
+          (though you can also provide a previously downloaded JSON file). This
+          report will show you: Missing Amendments, Differences in names, and
+          amendments that are not the same in both the paper and the API. You
+          will need the LM XML file for the paper.
         </p>
       </Card>
       <Card
