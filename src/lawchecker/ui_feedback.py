@@ -87,7 +87,7 @@ class UILogHandler(logging.StreamHandler):
         message = message.encode('unicode-escape').decode()
 
         if record.levelname == 'NOTICE':
-            # Do not emit notice level to the ui.
+            # Do not emit word NOTICE to the ui.
             message = f'{message}'
         else:
             message = f'{record.levelname}: {message}'
