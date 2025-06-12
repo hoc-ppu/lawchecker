@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 import re
 import sys
 import urllib.parse
@@ -16,12 +17,19 @@ from lxml import etree, html
 from lxml.etree import QName, _Element, iselement
 from lxml.html import HtmlElement
 
-from lawchecker import pp_xml_lxml, templates, utils
+from lawchecker import common, pp_xml_lxml, templates, utils
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_amendment_documents import ChangedAmdt, ChangedNames
 from lawchecker.compare_bill_numbering import clean as clean_filename
 from lawchecker.lawchecker_logger import logger
-from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP, NSMAP2, UKL
+from lawchecker.settings import (
+    AMENDMENT_DETAILS_URL_TEMPLATE,
+    AMENDMENTS_URL_TEMPLATE,
+    COMPARE_REPORT_TEMPLATE,
+    NSMAP,
+    NSMAP2,
+    UKL,
+)
 from lawchecker.stars import NO_STAR, Star
 
 JSON = int | str | float | bool | None | list['JSON'] | dict[str, 'JSON']
@@ -106,20 +114,56 @@ class InvalidDataError(ValueError):
         super().__init__(self.message)
 
 
+# class ProgressAsyncioGather:
+#     def __init__(self, *tasks: asyncio.Task):
+#         self.total = len(tasks)
+#         self.bar_length = 50
+#         self.count = 0
+#         self.tasks = tasks
+#         self.active_window = common.RunTimeEnv.webview_window
+#         self.last_percent = 0
+
+#         for task in tasks:
+#             task.add_done_callback(self.progress)
+
+#     def __enter__(self):
+#         return asyncio.gather(*self.tasks)
+
+#     def progress(self, _: asyncio.Task):
+#         if self.active_window is not None:
+#             progress_bar_id = self.active_window.evaluate_js('newProgressBar()')
+#             logger.info(f'Progress bar id: {progress_bar_id}')
+
+#         self.count += 1
+#         ratio = self.count / self.total
+#         filled_len = round(self.bar_length * ratio)
+#         percents = round(100 * ratio)
+#         bar = '#' * filled_len + '-' * (self.bar_length - filled_len)
+#         sys.stdout.write(f'[{bar}] {percents}%\r')
+#         sys.stdout.flush()
+
+#         if self.active_window is not None and percents != self.last_percent:
+#             try:
+#                 self.active_window.evaluate_js(
+#                     f'updateProgressBar("{progress_bar_id}", {percents})'
+#                 )
+#             except Exception as e:
+#                 logger.error(f'Error updating progress bar: {e}')
+
+#         self.last_percent = percents
+
+#     def __exit__(self, exc_type, exc_value, exc_traceback):
+#         print()
+
+
 def progress_bar(iterable: Iterable, total: int) -> list:
     # also add the progress bar to the webview
-    update_gui = False
-    active_window = None
+    active_window = common.RunTimeEnv.webview_window
     progress_bar_id = ''
-    if 'webview' in sys.modules:
-        # TODO: do something better than this
-        import webview
 
-        active_window = webview.active_window()
     if active_window is not None:
         progress_bar_id = active_window.evaluate_js('newProgressBar()')
         logger.info(f'Progress bar id: {progress_bar_id}')
-        update_gui = True
     output = []
     count = 0
     bar_len = 50
@@ -136,7 +180,7 @@ def progress_bar(iterable: Iterable, total: int) -> list:
         sys.stdout.write(f'[{bar}] {percents}%\r')
         sys.stdout.flush()
 
-        if update_gui and active_window is not None and percents != last_percent:
+        if active_window is not None and percents != last_percent:
             try:
                 active_window.evaluate_js(
                     f'updateProgressBar("{progress_bar_id}", {percents})'
@@ -151,9 +195,13 @@ def progress_bar(iterable: Iterable, total: int) -> list:
     return output
 
 
-def request_json(url: str) -> dict:
+def get_json_sync(url: str) -> JSONObject:
     response = requests.get(url)
     return response.json()
+
+
+# async def get_json_async(url: str) -> JSONObject:
+#     return await asyncio.to_thread(get_json_sync, url)
 
 
 class Sponsor:
@@ -1298,45 +1346,45 @@ class Report:
             )
 
         for item in self.missing_api_amdts:
-            missing_amendment_text += f'<p>{item}<p/>'
-            missing_amendment_guids += f'<p>{self.xml_amdts[item].id}<p/>'
+            missing_amendment_text += f'<p>{item}</p>'
+            missing_amendment_guids += f'<p>{self.xml_amdts[item].id}</p>'
 
         logger.debug('Created missing amendments text')
 
         incorrect_amendments_text = ''
         incorrect_amendment_guids = ''
         if len(self.incorrect_amdt_in_api) > 0:
-            incorrect_amendments_text = '<p><br/>Amendments with incorrect content:<p/>'
+            incorrect_amendments_text = '<p><br/>Amendments with incorrect content:</p>'
             incorrect_amendment_guids = incorrect_amendments_text
         for item in self.incorrect_amdt_in_api:
             num_a = link_from_num_or_num(item.num, self.json_amdts)
-            incorrect_amendments_text += f'<p>{num_a}<p/>'
-            incorrect_amendment_guids += f'<p>{self.xml_amdts[item.num].id}<p/>'
+            incorrect_amendments_text += f'<p>{num_a}</p>'
+            incorrect_amendment_guids += f'<p>{self.xml_amdts[item.num].id}</p>'
 
         logger.debug('Created incorrect amendments text')
 
         incorrect_names = ''
         incorrect_names_guids = ''
         if len(self.name_changes) > 0:
-            incorrect_names = '<p><br/>Amendments with incorrect names:<p/>'
+            incorrect_names = '<p><br/>Amendments with incorrect names:</p>'
             incorrect_names_guids = incorrect_names
         for item in self.name_changes:
             num_a = link_from_num_or_num(item.num, self.json_amdts)
-            incorrect_names += f'<p>{num_a}<p/>'
-            incorrect_names_guids += f'<p>{self.xml_amdts[item.num].id}<p/>'
+            incorrect_names += f'<p>{num_a}</p>'
+            incorrect_names_guids += f'<p>{self.xml_amdts[item.num].id}</p>'
 
         logger.debug('Created incorrect names text')
 
         incorrect_stars = ''
         incorrect_stars_guids = ''
         if len(self.incorrect_stars) > 0:
-            incorrect_stars = '<p><br/>Amendments with incorrect stars:<p/>'
+            incorrect_stars = '<p><br/>Amendments with incorrect stars:</p>'
             incorrect_stars_guids = incorrect_stars
         for item in self.incorrect_stars:
-            incorrect_stars += f'<p>{item}<p/>'
+            incorrect_stars += f'<p>{item}</p>'
             try:
                 amdt_num = item.split(' has ')[0]
-                incorrect_stars_guids += f'<p>{self.xml_amdts[amdt_num].id}<p/>'
+                incorrect_stars_guids += f'<p>{self.xml_amdts[amdt_num].id}</p>'
             except Exception as e:
                 logger.error(f'Error getting GUID for {item}: {e}')
 
@@ -1345,7 +1393,7 @@ class Report:
         incorrect_decisions = ''
         incorrect_decisions_guids = ''
         if len(self.incorrect_decisions) > 0:
-            incorrect_decisions = '<p><br/>Amendments with incorrect decisions:<p/>'
+            incorrect_decisions = '<p><br/>Amendments with incorrect decisions:</p>'
             incorrect_decisions_guids = incorrect_decisions
         for item in self.incorrect_decisions:
             try:
@@ -1353,8 +1401,8 @@ class Report:
                 num_a = link_from_num_or_num(amdt_num, self.json_amdts)
                 i_text = item.replace(amdt_num, num_a)
                 # logger.info(f"num_a: {num_a} amdt_num: {amdt_num} i_text: {i_text}")
-                incorrect_decisions += f'<p>{i_text}<p/>'
-                incorrect_decisions_guids += f'<p>{self.xml_amdts[amdt_num].id}<p/>'
+                incorrect_decisions += f'<p>{i_text}</p>'
+                incorrect_decisions_guids += f'<p>{self.xml_amdts[amdt_num].id}</p>'
             except Exception as e:
                 logger.error(f'Error getting GUID for {item}: {e}')
 
@@ -1579,7 +1627,7 @@ def also_query_bills_api(
                 if description.casefold().strip() == stage.casefold().strip():
                     api_stage_description = description
                     stage_id = item.get('id', None)
-                    logger.info(
+                    logger.notice(
                         f'Stage found in API: {api_stage_description}. Stage ID: {stage_id}'
                     )
                     break
@@ -1593,8 +1641,13 @@ def also_query_bills_api(
         logger.error('Could not get bill ID or stage ID from the API.')
         return
 
-    amdts_json = get_amendments_json(
-        bill_id, stage_id, api_stage_description, api_bill_short_title
+    amendments_summary_json = get_amendments_summary_json(bill_id, stage_id)
+    amdts_json = get_amendments_detailed_json(
+        amendments_summary_json,
+        bill_id,
+        stage_id,
+        api_stage_description,
+        api_bill_short_title,
     )
 
     if save_json:
@@ -1628,17 +1681,65 @@ def save_json_to_file(json_data: dict[str, JSON], file_path: Path) -> None:
         logger.error(repr(e))
 
 
-def get_amendments_json(
+# def get_amendments_json(
+#     bill_id: int,
+#     stage_id: int,
+#     stage_description: str = '',
+#     api_bill_short_title: str = '',
+# ) -> dict[str, JSON]:
+#     json_summary_amendments = get_amendments_summary_json(bill_id, stage_id)
+
+#     amendment_ids = [
+#         amendment.get('amendmentId') for amendment in json_summary_amendments
+#     ]
+
+#     def _request_data(
+#         amendment_id: str,
+#     ) -> requests.Response:
+#         """Query the API."""
+
+#         url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
+
+#         return requests.get(url)
+
+#     with ThreadPoolExecutor(max_workers=40) as pool:
+#         # create a progress bar and return a list
+#         responses = progress_bar(
+#             pool.map(
+#                 lambda amendment_id: _request_data(amendment_id),
+#                 amendment_ids,
+#             ),
+#             len(amendment_ids),
+#         )
+#         print()  # newline after progress bar
+
+#     json_amendments_list: list[JSONType] = [response.json() for response in responses]
+
+#     json_output = {
+#         'shortTitle': api_bill_short_title,
+#         'billId': bill_id,
+#         'stageId': stage_id,
+#         'stageDescription': stage_description,
+#         'items': json_amendments_list,
+#     }
+
+#     return json_output
+
+
+def get_amendments_detailed_json(
+    amendments_summary_json: list[JSONObject],
     bill_id: int,
     stage_id: int,
     stage_description: str = '',
     api_bill_short_title: str = '',
-) -> dict[str, JSON]:
-    json_summary_amendments = get_amendments_summary_json(bill_id, stage_id)
-
+) -> JSONObject:
+    with open(Path(__file__).parent / 'amendments_summary.json', 'w') as f:
+        json.dump(amendments_summary_json, f, indent=2)
     amendment_ids = [
-        amendment.get('amendmentId') for amendment in json_summary_amendments
+        amendment.get('amendmentId') for amendment in amendments_summary_json
     ]
+    print(f'{len(amendment_ids)=}')
+    print(amendment_ids)
 
     def _request_data(
         amendment_id: str,
@@ -1649,7 +1750,7 @@ def get_amendments_json(
 
         return requests.get(url)
 
-    with ThreadPoolExecutor(max_workers=8) as pool:
+    with ThreadPoolExecutor(max_workers=40) as pool:
         # create a progress bar and return a list
         responses = progress_bar(
             pool.map(
@@ -1660,6 +1761,7 @@ def get_amendments_json(
         )
         print()  # newline after progress bar
 
+    print(responses)
     json_amendments_list: list[JSONType] = [response.json() for response in responses]
 
     json_output = {
@@ -1673,21 +1775,66 @@ def get_amendments_json(
     return json_output
 
 
+# def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]:
+#     i = 0
+#     json_amendments = []
+#     while True:
+#         skip = i * 20
+#         url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments?skip={skip}'
+
+#         response = requests.get(url)
+#         response_json = response.json()
+#         items = response_json['items']
+#         if len(items) == 0:
+#             break
+#         json_amendments += items
+
+#         i += 1
+
+#     return json_amendments
+
+
 def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]:
-    i = 0
-    json_amendments = []
-    while True:
-        skip = i * 20
-        url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments?skip={skip}'
+    # run the first query synchronously to get the total count
+    url = AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=0)
+    response_json = get_json_sync(url)
 
-        response = requests.get(url)
-        response_json = response.json()
-        items = response_json['items']
-        if len(items) == 0:
-            break
-        json_amendments += items
+    json_amendments: list[JSONObject] = response_json.get('items')  # type: ignore
 
-        i += 1
+    total_results: int = response_json.get('totalResults', 0)  # type: ignore
+
+    print(f'Total Amendments found in API: {total_results}')
+
+    number_of_requests = math.ceil(total_results / 40)
+
+    urls = [
+        AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=i * 40)
+        for i in range(1, number_of_requests)
+    ]
+    print(f'{urls=}')
+
+    responses: list[JSONObject] = []
+    with ThreadPoolExecutor(max_workers=40) as pool:
+        # create a progress bar and return a list
+        responses = progress_bar(
+            pool.map(
+                get_json_sync,
+                urls,
+            ),
+            len(urls),
+        )
+        print()  # newline after progress bar
+
+    with open(Path(__file__).parent / 'responses.json', 'w') as f:
+        json.dump(responses, f, indent=2)
+
+    # json_amendments += [response.get('items') for response in responses]
+    for respose in responses:
+        if respose.get('items'):
+            json_amendments += respose.get('items')
+
+    with open(Path(__file__).parent / 'responses2.json', 'w') as f:
+        json.dump(json_amendments, f, indent=2)
 
     return json_amendments
 

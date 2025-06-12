@@ -150,8 +150,17 @@ class SupDocument(Mapping):
             published_date = self.root.find(
                 ".//FRBRManifestation/FRBRdate[@name='published']", namespaces=NSMAP2
             )
+            # sometimes published date include the time info
+            # e.g. 2023-09-06T00:00:00Z
+            # so we need to strip that out
+            _published_date = published_date.get('date', default='')
+            if _published_date:
+                # remove the time info
+                _published_date = _published_date.split('T')[0]
+            else:
+                _published_date = ''
             self.meta_pub_date = datetime.strptime(
-                published_date.get('date', default=''),  # type: ignore
+                _published_date,  # type: ignore
                 '%Y-%m-%d',
             ).strftime('%A %d %B %Y')
 
