@@ -1488,164 +1488,164 @@ class Report:
             )
         )
 
-    def create_csv(self):
-        # TODO: this needs some fixing
-        if self.all_clear():
-            logger.warning('No problems were found so no CSV file will be created.')
-            return
+    # def create_csv(self):
+    #     # TODO: this needs some fixing
+    #     if self.all_clear():
+    #         logger.warning('No problems were found so no CSV file will be created.')
+    #         return
 
-        logger.notice(
-            f'{len(self.missing_api_amdts)} Missing amendments.'
-            f' {len(self.incorrect_amdt_in_api)} incorrect amendments.'
-            f' {len(self.name_changes)} amendment have incorrect names.'
-            f' {len(self.incorrect_stars)} amendments have incorrect stars.'
-            f' {len(self.incorrect_decisions)} amendments have incorrect decisions.'
-            f' {len(self.incorrect_ex_statements)} amendments have incorrect explanatory statements.'
-        )
+    #     logger.notice(
+    #         f'{len(self.missing_api_amdts)} Missing amendments.'
+    #         f' {len(self.incorrect_amdt_in_api)} incorrect amendments.'
+    #         f' {len(self.name_changes)} amendment have incorrect names.'
+    #         f' {len(self.incorrect_stars)} amendments have incorrect stars.'
+    #         f' {len(self.incorrect_decisions)} amendments have incorrect decisions.'
+    #         f' {len(self.incorrect_ex_statements)} amendments have incorrect explanatory statements.'
+    #     )
 
-        missing_amendment_text = missing_amendment_guids = ''
-        for item in self.missing_api_amdts:
-            missing_amendment_text += f'{item}\n'
-            missing_amendment_guids += f'{self.xml_amdts[item].id}\n'
+    #     missing_amendment_text = missing_amendment_guids = ''
+    #     for item in self.missing_api_amdts:
+    #         missing_amendment_text += f'{item}\n'
+    #         missing_amendment_guids += f'{self.xml_amdts[item].id}\n'
 
-        logger.debug('Created missing amendments text')
+    #     logger.debug('Created missing amendments text')
 
-        incorrect_amendments_text = ''
-        incorrect_amendment_guids = ''
-        incorrect_amendment_links = ''
-        for item in self.incorrect_amdt_in_api:
-            # TODO: fix ChangedAmdt to use AmdtRef not str for num
-            incorrect_amendments_text += f'{item.ref}\n'
-            # long ref
-            incorrect_amendment_guids += f'{self.xml_amdts[item.ref].id}\n'
-            # TODO: fix this
-            logger.info(url_from_num_or_na(item.ref, self.json_amdts))
-            incorrect_amendment_links += (
-                url_from_num_or_na(item.ref, self.json_amdts) + '\n'
-            )
+    #     incorrect_amendments_text = ''
+    #     incorrect_amendment_guids = ''
+    #     incorrect_amendment_links = ''
+    #     for item in self.incorrect_amdt_in_api:
+    #         # TODO: fix ChangedAmdt to use AmdtRef not str for num
+    #         incorrect_amendments_text += f'{item.ref}\n'
+    #         # long ref
+    #         incorrect_amendment_guids += f'{self.xml_amdts[item.ref].id}\n'
+    #         # TODO: fix this
+    #         logger.info(url_from_num_or_na(item.ref, self.json_amdts))
+    #         incorrect_amendment_links += (
+    #             url_from_num_or_na(item.ref, self.json_amdts) + '\n'
+    #         )
 
-        logger.debug('Created incorrect amendments text')
+    #     logger.debug('Created incorrect amendments text')
 
-        incorrect_names = ''
-        incorrect_names_guids = ''
-        incorrect_names_links = ''
+    #     incorrect_names = ''
+    #     incorrect_names_guids = ''
+    #     incorrect_names_links = ''
 
-        for item in self.name_changes:
-            # short ref
-            incorrect_names += f'{item.ref}\n'
-            incorrect_names_guids += f'{self.xml_amdts[item.ref].id}\n'
-            incorrect_names_links += (
-                url_from_num_or_na(item.ref, self.json_amdts) + '\n'
-            )
+    #     for item in self.name_changes:
+    #         # short ref
+    #         incorrect_names += f'{item.ref}\n'
+    #         incorrect_names_guids += f'{self.xml_amdts[item.ref].id}\n'
+    #         incorrect_names_links += (
+    #             url_from_num_or_na(item.ref, self.json_amdts) + '\n'
+    #         )
 
-        logger.debug('Created incorrect names text')
+    #     logger.debug('Created incorrect names text')
 
-        incorrect_stars = ''
-        incorrect_stars_guids = ''
+    #     incorrect_stars = ''
+    #     incorrect_stars_guids = ''
 
-        for item in self.incorrect_stars:
-            incorrect_stars += f'{item}\n'
-            try:
-                amdt_num = item.split(' has ')[0]
-                incorrect_stars_guids += f'{self.xml_amdts[amdt_num].id}'
-            except Exception as e:
-                logger.error(f'Error getting GUID for {item}: {e}')
+    #     for item in self.incorrect_stars:
+    #         incorrect_stars += f'{item}\n'
+    #         try:
+    #             amdt_num = item.split(' has ')[0]
+    #             incorrect_stars_guids += f'{self.xml_amdts[amdt_num].id}'
+    #         except Exception as e:
+    #             logger.error(f'Error getting GUID for {item}: {e}')
 
-        logger.debug('Created incorrect stars text')
+    #     logger.debug('Created incorrect stars text')
 
-        incorrect_decisions = ''
-        incorrect_decisions_guids = ''
+    #     incorrect_decisions = ''
+    #     incorrect_decisions_guids = ''
 
-        for item in self.incorrect_decisions:
-            try:
-                amdt_num = item.split(' (API: ')[0]
-                num_a = link_from_num_or_num(amdt_num, self.json_amdts)
-                i_text = item.replace(amdt_num, num_a)
-                # logger.info(f"num_a: {num_a} amdt_num: {amdt_num} i_text: {i_text}")
-                incorrect_decisions += f'{i_text}'
-                incorrect_decisions_guids += f'{self.xml_amdts[amdt_num].id}\n'
-            except Exception as e:
-                logger.error(f'Error getting GUID for {item}: {e}')
+    #     for item in self.incorrect_decisions:
+    #         try:
+    #             amdt_num = item.split(' (API: ')[0]
+    #             num_a = link_from_num_or_num(amdt_num, self.json_amdts)
+    #             i_text = item.replace(amdt_num, num_a)
+    #             # logger.info(f"num_a: {num_a} amdt_num: {amdt_num} i_text: {i_text}")
+    #             incorrect_decisions += f'{i_text}'
+    #             incorrect_decisions_guids += f'{self.xml_amdts[amdt_num].id}\n'
+    #         except Exception as e:
+    #             logger.error(f'Error getting GUID for {item}: {e}')
 
-        logger.debug('Created incorrect decisions text')
+    #     logger.debug('Created incorrect decisions text')
 
-        incorrect_ex_statements = ''
-        incorrect_ex_statements_guids = ''
-        if len(self.incorrect_ex_statements) > 0:
-            incorrect_ex_statements = (
-                'Amendments with incorrect explanatory statements:\n'
-            )
-            incorrect_ex_statements_guids = incorrect_ex_statements
-        for item in self.incorrect_ex_statements:
-            num_a = link_from_num_or_num(item, self.json_amdts)
-            incorrect_ex_statements += f'{num_a}\n'
-            try:
-                incorrect_ex_statements_guids += f'{self.xml_amdts[item].id}\n'
-            except Exception as e:
-                logger.error(f'Error getting GUID for {item}: {e}')
+    #     incorrect_ex_statements = ''
+    #     incorrect_ex_statements_guids = ''
+    #     if len(self.incorrect_ex_statements) > 0:
+    #         incorrect_ex_statements = (
+    #             'Amendments with incorrect explanatory statements:\n'
+    #         )
+    #         incorrect_ex_statements_guids = incorrect_ex_statements
+    #     for item in self.incorrect_ex_statements:
+    #         num_a = link_from_num_or_num(item, self.json_amdts)
+    #         incorrect_ex_statements += f'{num_a}\n'
+    #         try:
+    #             incorrect_ex_statements_guids += f'{self.xml_amdts[item].id}\n'
+    #         except Exception as e:
+    #             logger.error(f'Error getting GUID for {item}: {e}')
 
-        data = [
-            [
-                'Bill',
-                'Stage',
-                'Amendment paper date',
-                'Date row created',
-                'Missing amendments',
-                'Missing amendment GUIDs',
-                'Incorrect amendments',
-                'Incorrect amendment GUIDs',
-                'Incorrect amendment link',
-                'Incorrect names',
-                'Incorrect names GUIDs',
-                'Incorrect stars',
-                'Incorrect stars GUIDs',
-                'Incorrect decisions',
-                'Incorrect decisions GUIDs',
-                'Incorrect explanatory statements',
-                'Incorrect explanatory statements GUIDs',
-            ],
-            [
-                self.xml_amdts.meta_bill_title,
-                self.xml_amdts.stage_name,
-                self.xml_amdts.meta_pub_date,
-                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                missing_amendment_text,
-                missing_amendment_guids,
-                incorrect_amendments_text,
-                incorrect_amendment_guids,
-                incorrect_amendment_links,
-                incorrect_names,
-                incorrect_names_guids,
-                incorrect_stars,
-                incorrect_stars_guids,
-                incorrect_decisions,
-                incorrect_decisions_guids,
-                incorrect_ex_statements,
-                incorrect_ex_statements_guids,
-            ],
-        ]
+    #     data = [
+    #         [
+    #             'Bill',
+    #             'Stage',
+    #             'Amendment paper date',
+    #             'Date row created',
+    #             'Missing amendments',
+    #             'Missing amendment GUIDs',
+    #             'Incorrect amendments',
+    #             'Incorrect amendment GUIDs',
+    #             'Incorrect amendment link',
+    #             'Incorrect names',
+    #             'Incorrect names GUIDs',
+    #             'Incorrect stars',
+    #             'Incorrect stars GUIDs',
+    #             'Incorrect decisions',
+    #             'Incorrect decisions GUIDs',
+    #             'Incorrect explanatory statements',
+    #             'Incorrect explanatory statements GUIDs',
+    #         ],
+    #         [
+    #             self.xml_amdts.meta_bill_title,
+    #             self.xml_amdts.stage_name,
+    #             self.xml_amdts.meta_pub_date,
+    #             datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+    #             missing_amendment_text,
+    #             missing_amendment_guids,
+    #             incorrect_amendments_text,
+    #             incorrect_amendment_guids,
+    #             incorrect_amendment_links,
+    #             incorrect_names,
+    #             incorrect_names_guids,
+    #             incorrect_stars,
+    #             incorrect_stars_guids,
+    #             incorrect_decisions,
+    #             incorrect_decisions_guids,
+    #             incorrect_ex_statements,
+    #             incorrect_ex_statements_guids,
+    #         ],
+    #     ]
 
-        bill_stage = self.json_amdts.stage_name
-        xml_file_path = self.xml_file_path
-        if xml_file_path:
-            parent_path = xml_file_path.resolve().parent
-        else:
-            parent_path = Path.cwd()
+    #     bill_stage = self.json_amdts.stage_name
+    #     xml_file_path = self.xml_file_path
+    #     if xml_file_path:
+    #         parent_path = xml_file_path.resolve().parent
+    #     else:
+    #         parent_path = Path.cwd()
 
-        bill_title_text = self.xml_amdts.meta_bill_title
+    #     bill_title_text = self.xml_amdts.meta_bill_title
 
-        if bill_stage is not None:
-            file_name = f'{bill_title_text}_{bill_stage}_amdt_table.csv'
-        else:
-            file_name = f'{bill_title_text}_amdt_table.csv'
+    #     if bill_stage is not None:
+    #         file_name = f'{bill_title_text}_{bill_stage}_amdt_table.csv'
+    #     else:
+    #         file_name = f'{bill_title_text}_amdt_table.csv'
 
-        file_path = parent_path / file_name
+    #     file_path = parent_path / file_name
 
-        with open(file_path, 'w', newline='') as f:
-            writer = csv.writer(f)
-            writer.writerows(data)
+    #     with open(file_path, 'w', newline='') as f:
+    #         writer = csv.writer(f)
+    #         writer.writerows(data)
 
-        logger.notice(f'CSV file created at {file_path}. ')
+    #     logger.notice(f'CSV file created at {file_path}. ')
 
     def create_table_for_sharepoint(self):
         """
@@ -2061,8 +2061,8 @@ def get_amendments_detailed_json(
     amendment_ids = [
         amendment.get('amendmentId') for amendment in amendments_summary_json
     ]
-    print(f'{len(amendment_ids)=}')
-    print(amendment_ids)
+    logger.info(f'{len(amendment_ids)=}')
+    logger.info(f'{amendment_ids=}')
 
     def _request_data(
         amendment_id: str,
@@ -2084,7 +2084,7 @@ def get_amendments_detailed_json(
         )
         print()  # newline after progress bar
 
-    print(responses)
+    logger.info(f'{responses=}')
     json_amendments_list: list[JSONType] = [response.json() for response in responses]
 
     json_output = {
@@ -2134,7 +2134,7 @@ def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]
         AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=i * 40)
         for i in range(1, number_of_requests)
     ]
-    print(f'{urls=}')
+    logger.info(f'{urls=}')
 
     responses: list[JSONObject] = []
     with ThreadPoolExecutor(max_workers=40) as pool:
