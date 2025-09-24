@@ -1,4 +1,5 @@
 import argparse
+import csv
 import json
 import math
 import re
@@ -7,10 +8,11 @@ import urllib.parse
 import webbrowser
 from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, NamedTuple
 
 import requests
 from lxml import etree, html
@@ -19,7 +21,6 @@ from lxml.html import HtmlElement
 
 from lawchecker import common, pp_xml_lxml, templates, utils
 from lawchecker import xpath_helpers as xp
-from lawchecker.compare_amendment_documents import ChangedAmdt, ChangedNames
 from lawchecker.compare_bill_numbering import clean as clean_filename
 from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import (
@@ -28,6 +29,7 @@ from lawchecker.settings import (
     COMPARE_REPORT_TEMPLATE,
     NSMAP,
     NSMAP2,
+    PARSER,
     UKL,
 )
 from lawchecker.stars import NO_STAR, Star
@@ -54,6 +56,26 @@ def get_container_type(string: str) -> ContainerType:
             return container_type
 
     return ContainerType.UNKNOWN
+
+
+#
+class ChangedNames(NamedTuple):
+    # note different to compare_amendment_documents.ChangedNames
+    num: str  # do we need this?
+    added: list[str]
+    removed: list[str]
+    ref: 'AmdtRef'
+
+
+@dataclass
+class ChangedAmdt:
+    # note different to compare_amendment_documents.ChangedAmdt
+    ref: 'AmdtRef'
+    html_diff: str
+
+    @property
+    def num(self) -> str:
+        return self.ref.short_ref
 
 
 class Decision:
@@ -114,46 +136,42 @@ class InvalidDataError(ValueError):
         super().__init__(self.message)
 
 
-# class ProgressAsyncioGather:
-#     def __init__(self, *tasks: asyncio.Task):
-#         self.total = len(tasks)
-#         self.bar_length = 50
-#         self.count = 0
-#         self.tasks = tasks
-#         self.active_window = common.RunTimeEnv.webview_window
-#         self.last_percent = 0
+class AmdtRef:
+    """Reference to an amendment by number and dnum"""
 
-#         for task in tasks:
-#             task.add_done_callback(self.progress)
+    def __init__(self, num: str, dnum: str):
+        # could num just be the empty string?
+        if not dnum:
+            raise ValueError('dnum cannot be empty')
 
-#     def __enter__(self):
-#         return asyncio.gather(*self.tasks)
+        self.num: str = num
+        self.dnum: str = dnum
 
-#     def progress(self, _: asyncio.Task):
-#         if self.active_window is not None:
-#             progress_bar_id = self.active_window.evaluate_js('newProgressBar()')
-#             logger.info(f'Progress bar id: {progress_bar_id}')
+    def __str__(self) -> str:
+        if self.num:
+            return f'{self.num} ({self.dnum})'
+        return self.dnum
 
-#         self.count += 1
-#         ratio = self.count / self.total
-#         filled_len = round(self.bar_length * ratio)
-#         percents = round(100 * ratio)
-#         bar = '#' * filled_len + '-' * (self.bar_length - filled_len)
-#         sys.stdout.write(f'[{bar}] {percents}%\r')
-#         sys.stdout.flush()
+    def __repr__(self) -> str:
+        return f'AmdtRef(num={self.num}, dnum={self.dnum})'
 
-#         if self.active_window is not None and percents != self.last_percent:
-#             try:
-#                 self.active_window.evaluate_js(
-#                     f'updateProgressBar("{progress_bar_id}", {percents})'
-#                 )
-#             except Exception as e:
-#                 logger.error(f'Error updating progress bar: {e}')
+    @property
+    def short_ref(self) -> str:
+        if self.num:
+            return self.num
+        return self.dnum
 
-#         self.last_percent = percents
+    @property
+    def long_ref(self) -> str:
+        return f'{self.num} ({self.dnum})' if self.num else self.dnum
 
-#     def __exit__(self, exc_type, exc_value, exc_traceback):
-#         print()
+    def __hash__(self) -> int:
+        return hash((self.num, self.dnum))
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, AmdtRef):
+            return NotImplemented
+        return self.num == other.num and self.dnum == other.dnum
 
 
 def progress_bar(iterable: Iterable, total: int) -> list:
@@ -198,10 +216,6 @@ def progress_bar(iterable: Iterable, total: int) -> list:
 def get_json_sync(url: str) -> JSONObject:
     response = requests.get(url)
     return response.json()
-
-
-# async def get_json_async(url: str) -> JSONObject:
-#     return await asyncio.to_thread(get_json_sync, url)
 
 
 class Sponsor:
@@ -301,15 +315,18 @@ class Amendment:
         parent: 'AmdtContainer | None' = None,
         star: Star = NO_STAR,
         id: str = '',
+        dnum: str = '',
     ):
         self.amendment_text = amendment_text
         self.explanatory_text = explanatory_text
-        self.num: str = amendment_number
+        self.num: str = utils.clean_amendment_number(amendment_number)
         self.decision: Decision = decision
         self.sponsors: list[Sponsor] = sponsors
         self.parent: 'AmdtContainer | None' = parent
         self.star = star
         self.id = id
+        self.dnum = dnum.strip().casefold()
+        self.key = AmdtRef(num=self.num, dnum=self.dnum)
 
         # we might need to come up with an amendment id that is the same for both
         # the API and the XML... in particular a problem with amendments to amendments
@@ -317,10 +334,14 @@ class Amendment:
     def __eq__(self, other: 'Amendment') -> bool:
         if not isinstance(other, Amendment):
             return NotImplemented
+
+        self_num_cleaned = self.num.replace('(', '').replace(')', '')
+        other_num_cleaned = other.num.replace('(', '').replace(')', '')
+
         return (
             self.amendment_text == other.amendment_text
             and self.explanatory_text == other.explanatory_text
-            and self.num == other.num
+            and self_num_cleaned == other_num_cleaned
             and self.decision == other.decision
             and self.sponsors == other.sponsors
         )
@@ -370,6 +391,8 @@ class Amendment:
 
         _id = amendment_json.get('amendmentId', '')
 
+        dnum = amendment_json.get('dNum', '')
+
         return cls(
             amendment_text,
             explanatory_text,
@@ -379,6 +402,7 @@ class Amendment:
             parent,
             star,
             _id,
+            dnum,
         )
 
     @classmethod
@@ -386,6 +410,9 @@ class Amendment:
         cls, amendment_xml: _Element, parent: 'AmdtContainer | None' = None
     ) -> 'Amendment':
         # assume amendment_xml is an amendmentBody element
+
+        # default dnum to empty string
+        dnum = ''
 
         # get the decision
         decision_block = amendment_xml.xpath(
@@ -397,14 +424,14 @@ class Amendment:
         decision = Decision(decision)
 
         #  get the amendment number
-        try:
-            e_id = amendment_xml.xpath(
-                'xmlns:amendment/xmlns:amendmentBody/@eId', namespaces=NSMAP
-            )[0]
-            amdt_no = e_id.split('_')[-1]
-        except Exception:
-            print('Warning no amendment number found')
-            amdt_no = ''
+        # try:
+        #     e_id = amendment_xml.xpath(
+        #         'xmlns:amendment/xmlns:amendmentBody/@eId', namespaces=NSMAP
+        #     )[0]
+        #     amdt_no = e_id.split('_')[-1]
+        # except Exception:
+        #     print('Warning no amendment number found')
+        #     amdt_no = ''
 
         # get the sponsors
         # proposer = xp.get_doc_introducer(amendment_xml)
@@ -426,9 +453,36 @@ class Amendment:
             raise
 
         try:
+            dnum = amendment_content.xpath('.//xmlns:num/@ukl:dnum', namespaces=NSMAP)[
+                0
+            ]
+            # raise a TypeError if dnum is not a string
+            if not isinstance(dnum, str):
+                raise InvalidDataError(
+                    f'dNum attribute is not a string, got {type(dnum).__name__}'
+                    f': {repr(dnum)}'
+                )
+            if not dnum.strip():
+                raise InvalidDataError('dNum attribute is empty or whitespace only')
+            logger.info(f'dNum: {dnum}')
+
+        except IndexError:
+            logger.warning('No dNum attribute found in amendment content')
+        except Exception as e:
+            logger.warning(f'Error getting dNum: {repr(e)}')
+
+        amdt_no = ''
+        try:
             amendment_num = amendment_content.find(
                 './/xmlns:num[@ukl:dnum]', namespaces=NSMAP
             )
+            if amendment_num is not None:
+                amdt_no = amendment_num.text or ''
+            if not amdt_no:
+                # this happens in Lords running lists
+                logger.info(f'No amendment number found for item with dnum: {dnum}')
+
+            # Why do we remove the amendment number from the content again?
             amendment_num.getparent().remove(amendment_num)  # type: ignore
         except Exception as e:
             logger.error(
@@ -436,6 +490,21 @@ class Amendment:
             )
 
         add_quotes_to_quoted_elements(amendment_content)
+
+        if (
+            amendment_content.get('GUID', None)
+            == '_2788704c-65ff-4413-aa67-644d7e32ea50'
+        ):
+            logger.info('Found thing!')
+            cleaned_whitespace = utils.clean_whitespace(amendment_content)
+
+            logger.info(etree.tostring(cleaned_whitespace))
+            text_content = xp.text_content(cleaned_whitespace)
+
+            logger.info(f'Text content: {text_content}')
+
+            normalised_text = utils.normalise_text(text_content)
+            logger.info(f'Normalised text: {normalised_text}')
 
         amendment_text = utils.normalise_text(
             xp.text_content(utils.clean_whitespace(amendment_content))
@@ -455,6 +524,7 @@ class Amendment:
             parent,
             star,
             _id,
+            dnum,
         )
 
 
@@ -518,6 +588,9 @@ class AmdtContainer(Mapping):
         # this causes problems when trying to compare the amendments
         self.duplicate_amdt_nums: list[str] = []
 
+        # we really shouldn't have duplicate dnums but you never know with this data
+        self.duplicate_amdt_keys: list[AmdtRef] = []
+
         # defaults for metadata
         self.container_type: ContainerType = container_type
         self.meta_bill_title: str = bill_title
@@ -530,8 +603,9 @@ class AmdtContainer(Mapping):
         self.stage_id = stage_id
         self.stage_name = stage_name
 
-        self._dict = self._create_amdt_map()
-        self.amdt_set = set(amdt.num for amdt in self.amendments)
+        self._dict: dict[AmdtRef, Amendment] = self._create_amdt_map()
+        self.amdt_set: set[AmdtRef] = set(self._dict.keys())
+        # {utils.clean_amendment_number(amdt.num) for amdt in self.amendments}
 
     @classmethod
     def blank_container(cls) -> 'AmdtContainer':
@@ -606,7 +680,7 @@ class AmdtContainer(Mapping):
     def from_xml_file(cls, xml_file: Path) -> 'AmdtContainer':
         resource_identifier = xml_file.name  # important
         file_path = str(xml_file.resolve())  # should this be location
-        tree = etree.parse(file_path)
+        tree = etree.parse(file_path, parser=PARSER)
         root = tree.getroot()
 
         return cls.from_xml_element(
@@ -667,26 +741,38 @@ class AmdtContainer(Mapping):
                 warning_msg += f': {repr(e)}'
             logger.info(f'Problem parsing XML. {warning_msg}')
 
-    def _create_amdt_map(self) -> dict[str, Amendment]:
-        _amdt_map: dict[str, Amendment] = {}
+    def _create_amdt_map(self) -> dict[AmdtRef, Amendment]:
+        _amdt_map: dict[AmdtRef, Amendment] = {}
 
         for amendment in self.amendments:
-            if amendment.num in _amdt_map:
-                self.duplicate_amdt_nums.append(amendment.num)
-            _amdt_map[amendment.num] = amendment
+            if amendment.key in _amdt_map:
+                self.duplicate_amdt_keys.append(amendment.key)
+            _amdt_map[amendment.key] = amendment
 
-        if len(self.duplicate_amdt_nums) > 0:
+        if len(self.duplicate_amdt_keys) > 0:
             logger.warning(
-                f'The following amendmet number(s) in the {self.container_type} are'
-                ' repeated (i.e. more than one amendment with the same number)'
+                f'The following amendment(s) in the {self.container_type} have '
+                f' both same amendment num and dnums.'
+                f' {", ".join(repr(key) for key in self.duplicate_amdt_keys)}'
                 ' This should never happen and will confuse this app:'
-                f' {", ".join(self.duplicate_amdt_nums)}'
             )
 
         return _amdt_map
 
-    def __getitem__(self, key):
-        return self._dict[key]
+    def __getitem__(self, key: AmdtRef) -> Amendment:
+        if key in self._dict:
+            return self._dict[key]
+        for k in self._dict:
+            if k.dnum == key.dnum:
+                msg = f'Found amendment with matching dnum but different num: {k} vs {key}'
+                # This can happen with lords running lists which do not
+                # normally have amendment numbers...
+                # it's possible that while the XML does not have amendment numbers
+                # the API does have amendment numbers
+                # (if updated since the XML was created)
+                logger.info(msg)
+                return self._dict[k]
+        raise KeyError(f'Amendment with key {key} not found')
 
     def __iter__(self):
         return iter(self._dict)
@@ -745,12 +831,12 @@ class Report:
         self.problem_amdts: list[ChangedAmdt] = []
 
         self.incorrect_amdt_in_api: list[ChangedAmdt] = []
-        self.incorrect_decisions: list[str] = []
+        self.incorrect_decisions: list[str] = []  # change to list[Decision]
         self.correct_decisions: list[str] = []
 
-        self.incorrect_ex_statements: list[str] = []
+        self.incorrect_ex_statements: list[str] = []  # change to list[AndtRef]
 
-        self.missing_api_amdts: list[str] = []
+        self.missing_api_amdts: list[AmdtRef] = []
 
         self.no_name_changes: list[str] = []
         self.name_changes: list[ChangedNames] = []
@@ -758,7 +844,7 @@ class Report:
         self.name_changes_in_context: list[ChangedAmdt] = []
 
         self.correct_stars: list[str] = []
-        self.incorrect_stars: list[str] = []
+        self.incorrect_stars: list[str] = []  # change to list[Star]
 
         # populate above lists of changes
         self.gather_changes()
@@ -771,6 +857,13 @@ class Report:
         against the same amendment in the old document (if possible),
         populate the various lists of changes
         """
+
+        msg = 'Amendments in XML and not in API:'
+        logger.info(f'{msg} {self.xml_amdts.amdt_set - self.json_amdts.amdt_set}')
+        msg = 'Amendments in API and not in XML:'
+        logger.info(f'{msg} {self.json_amdts.amdt_set - self.xml_amdts.amdt_set}')
+        msg = 'Amendments which appear in both:'
+        logger.info(f'{msg} {self.xml_amdts.amdt_set & self.json_amdts.amdt_set}')
 
         self.added_and_removed_amdts(self.xml_amdts, self.json_amdts)
         self.check_stars_in_api(self.xml_amdts, self.json_amdts)
@@ -813,6 +906,7 @@ class Report:
             (
                 self.render_intro(),
                 self.render_duplicate_amdt_nos(),
+                self.render_duplicate_amdt_keys(),
                 self.render_missing_amdts(),
                 self.render_added_and_removed_names(),
                 self.render_stars(),
@@ -864,7 +958,7 @@ class Report:
         info = (
             '<p>Amendment numbers should be unique. The following amendment'
             ' numbers are repeated. <span class="red">This should never'
-            ' happen</span> and is likely to cause problems with this app.</p>'
+            ' happen</span>.</p>'
         )
         card = templates.Card('Duplicate amendment numbers')
 
@@ -894,15 +988,65 @@ class Report:
         )
         return card.html
 
+    def render_duplicate_amdt_keys(self) -> HtmlElement:
+        duplicate_xml_amdts = len(self.xml_amdts.duplicate_amdt_keys) > 0
+        duplicate_api_amdts = len(self.json_amdts.duplicate_amdt_keys) > 0
+
+        if not duplicate_xml_amdts and not duplicate_api_amdts:
+            # noting to show so just return an empty div
+            return html.Element('div')
+
+        info = (
+            '<p>Amendment d numbers should be unique. The following amendment'
+            ' d numbers are repeated. <span class="red">This should never'
+            ' happen</span>.</p>'
+        )
+        card = templates.Card('Duplicate amendment d numbers')
+
+        if duplicate_xml_amdts:
+            info += '<p>XML Amendments:</p><p>'
+            for num in self.xml_amdts.duplicate_amdt_keys:
+                info += f'{num}<br/>'
+            info += '</p>'
+
+        if duplicate_api_amdts:
+            info += '<p>API Amendments:</p><p>'
+            for num in self.json_amdts.duplicate_amdt_keys:
+                view_online = ''
+                if self.json_amdts.bill_id and self.json_amdts.stage_id:
+                    link = (
+                        'https://bills.parliament.uk/bills/'
+                        f'{self.json_amdts.bill_id}/stages/'
+                        f'{self.json_amdts.stage_id}/amendments'
+                        f'?searchTerm=&amendmentNumber={num}&Decision=All'
+                    )
+                    view_online = f'(<a href="{link}">View online</a>)'
+                info += f'{num}  {view_online}<br/>'
+            info += '</p>'
+
+        card.secondary_info.extend(
+            html.fragments_fromstring(info, no_leading_text=True)
+        )
+        return card.html
+
     def render_missing_amdts(self) -> HtmlElement:
         # ----------- Removed and added amendments section ----------- #
         # build up text content
         removed_content = 'Missing amendments: <strong>None</strong>'
+
         if self.missing_api_amdts:
+            missing_amdt_reference: list[str] = []
+            for key in self.missing_api_amdts:
+                xml_amdt: Amendment | None = self.xml_amdts.get(key)
+                if xml_amdt is None:
+                    continue
+                missing_amdt_reference.append(xml_amdt.key.long_ref())
+
             removed_content = (
-                f'Missing content: <strong>{len(self.missing_api_amdts)}</strong><br />'
-                f'{" ".join(self.missing_api_amdts)}'
+                f'Missing content: <strong>{len(self.missing_api_amdts)}</strong><br/>'
             )
+            if missing_amdt_reference:
+                removed_content += ', '.join(missing_amdt_reference)
 
         info = (
             '<p>Listed below are any Amendments (& New Clauses etc.) which are'
@@ -953,6 +1097,7 @@ class Report:
                 totals.append(f'API only: {total_removed}')
 
             name_changes.add_row(
+                # put in long ref
                 (item.num, p_names_added, ', '.join(item.removed), ', '.join(totals))
             )
 
@@ -987,7 +1132,7 @@ class Report:
                 )
             )
             for item in self.name_changes_in_context:
-                num_a = link_from_num_or_num(item.num, self.xml_amdts)
+                num_a = link_from_num_or_num(item.ref, self.xml_amdts)
                 changed_amdts.append(
                     html.fromstring(
                         f"<div><p class='h5 mt-4'>{num_a}:</p>\n{item.html_diff}\n</div>"
@@ -1053,7 +1198,7 @@ class Report:
             for item in self.incorrect_amdt_in_api:
                 num_a = link_from_num_or_num(
                     # TODO: change this to self.link_from_num_or_num
-                    item.num,
+                    item.ref,
                     self.json_amdts,
                 )
                 changed_amdts += f"<p class='h5'>{num_a}:</p>\n{item.html_diff}\n"
@@ -1175,10 +1320,11 @@ class Report:
             api_amdt = api_amdts[key]
 
             if api_amdt.star == xml_amdt.star:
-                self.correct_stars.append(f'{api_amdt.num} ({api_amdt.star})')
+                # use short ref
+                self.correct_stars.append(f'{api_amdt.key.short_ref} ({api_amdt.star})')
             else:
                 self.incorrect_stars.append(
-                    f'{api_amdt.num} has {api_amdt.star} ({xml_amdt.star} expected)'
+                    f'{api_amdt.key.short_ref} has {api_amdt.star} ({xml_amdt.star} expected)'
                 )
 
     def added_and_removed_amdts(
@@ -1186,18 +1332,27 @@ class Report:
     ):
         """Find the amendment numbers missing from the API"""
 
+        logger.info(
+            'Finding amendments missing from the API. '
+            f'Old doc has {len(old_doc.amendments)} amendments, '
+            f'new doc has {len(new_doc.amendments)} amendments'
+        )
+
         self.missing_api_amdts = list(old_doc.amdt_set.difference(new_doc.amdt_set))
+        logger.info(f'Found {len(self.missing_api_amdts)} missing API amendments.')
 
         # we don't need amendments in the API but not in the document
         # self.added_amdts = list(new_doc.amdt_set.difference(old_doc.amdt_set))
 
     def diff_names(self, new_amdt: Amendment, old_amdt: Amendment):
+        logger.debug(f'Finding differences in names for {new_amdt.key}')
         # look for duplicate names. Only need to do this for the new_amdt.
         self.duplicate_names = find_duplicate_sponsors(new_amdt.sponsors)
 
         if self.duplicate_names:
             # warn in UI
-            logger.warning(f'Duplicate names found in {new_amdt.num}')
+            # use long ref
+            logger.warning(f'Duplicate names found in {new_amdt.key.long_ref}')
 
         added_names = [
             item.name for item in new_amdt.sponsors if item not in old_amdt.sponsors
@@ -1208,10 +1363,12 @@ class Report:
 
         if not added_names and not removed_names:
             # there have been no name changes
-            self.no_name_changes.append(new_amdt.num)
+            self.no_name_changes.append(new_amdt.key.long_ref)
         else:
             self.name_changes.append(
-                ChangedNames(new_amdt.num, added_names, removed_names)
+                ChangedNames(
+                    new_amdt.key.long_ref, added_names, removed_names, new_amdt.key
+                )
             )
 
     def diff_names_in_context(self, xml_amdt: Amendment, api_amdt: Amendment):
@@ -1231,7 +1388,7 @@ class Report:
         )
 
         if dif_html_str is not None:
-            self.name_changes_in_context.append(ChangedAmdt(xml_amdt.num, dif_html_str))
+            self.name_changes_in_context.append(ChangedAmdt(xml_amdt.key, dif_html_str))
 
     def diff_amdt_content(self, new_amdt: Amendment, old_amdt: Amendment):
         """
@@ -1246,7 +1403,8 @@ class Report:
         old_amdt_content = old_amdt.amendment_text.split('\n')
 
         if len(new_amdt_content) == 0 or len(old_amdt_content) == 0:
-            logger.warning(f'{new_amdt.num}: has no content')
+            # use the long ref
+            logger.warning(f'{new_amdt.key.long_ref}: has no content')
             return
 
         # sometimes the line breaks are different due to ref elements etc.
@@ -1260,7 +1418,10 @@ class Report:
         #     print(old_amdt_content_no_lines)
 
         if new_amdt_content_no_lines == old_amdt_content_no_lines:
-            logger.debug(f'{new_amdt.num}: content the same when line breaks removed.')
+            # use the long ref
+            logger.debug(
+                f'{new_amdt.key.long_ref}: content the same when line breaks removed.'
+            )
             return
 
         dif_html_str = utils.html_diff_lines(
@@ -1270,7 +1431,8 @@ class Report:
             todesc=self.json_amdts.resource_identifier,
         )
         if dif_html_str is not None:
-            self.incorrect_amdt_in_api.append(ChangedAmdt(new_amdt.num, dif_html_str))
+            # short ref
+            self.incorrect_amdt_in_api.append(ChangedAmdt(new_amdt.key, dif_html_str))
 
     def diff_decision(self, xml_amdt: Amendment, api_amdt: Amendment):
         """
@@ -1286,13 +1448,15 @@ class Report:
 
         if xml_decision == api_decision:
             # I don't think we need to strip here
-            self.correct_decisions.append(xml_amdt.num)
+            # try out both refs
+            self.correct_decisions.append(xml_amdt.key.short_ref)
         else:
-            self.incorrect_decisions.append(f'{xml_amdt.num}')
+            self.incorrect_decisions.append(f'{xml_amdt.key.short_ref}')
 
     def diff_ex_statements(self, xml_amdt: Amendment, api_amdt: Amendment):
         """
-        Check that the explanatory text in the API matches the explanatory text in the XML.
+        Check that the explanatory text in the API matches the explanatory
+        text in the XML.
         """
 
         xml_ex = xml_amdt.explanatory_text
@@ -1303,7 +1467,185 @@ class Report:
             return
 
         if utils.normalise_text(xml_ex) != utils.normalise_text(api_ex):
-            self.incorrect_ex_statements.append(xml_amdt.num)
+            # short ref
+            self.incorrect_ex_statements.append(xml_amdt.key.short_ref)
+
+    def all_clear(self) -> bool:
+        """
+        Check if there are any problems with the amendments.
+        Returns True if there are no problems, False otherwise.
+        """
+        return all(
+            # check that all lists of problems are empty
+            len(i) == 0
+            for i in (
+                self.missing_api_amdts,
+                self.incorrect_amdt_in_api,
+                self.name_changes,
+                self.incorrect_stars,
+                self.incorrect_decisions,
+                self.incorrect_ex_statements,
+            )
+        )
+
+    def create_csv(self):
+        # TODO: this needs some fixing
+        if self.all_clear():
+            logger.warning('No problems were found so no CSV file will be created.')
+            return
+
+        logger.notice(
+            f'{len(self.missing_api_amdts)} Missing amendments.'
+            f' {len(self.incorrect_amdt_in_api)} incorrect amendments.'
+            f' {len(self.name_changes)} amendment have incorrect names.'
+            f' {len(self.incorrect_stars)} amendments have incorrect stars.'
+            f' {len(self.incorrect_decisions)} amendments have incorrect decisions.'
+            f' {len(self.incorrect_ex_statements)} amendments have incorrect explanatory statements.'
+        )
+
+        missing_amendment_text = missing_amendment_guids = ''
+        for item in self.missing_api_amdts:
+            missing_amendment_text += f'{item}\n'
+            missing_amendment_guids += f'{self.xml_amdts[item].id}\n'
+
+        logger.debug('Created missing amendments text')
+
+        incorrect_amendments_text = ''
+        incorrect_amendment_guids = ''
+        incorrect_amendment_links = ''
+        for item in self.incorrect_amdt_in_api:
+            # TODO: fix ChangedAmdt to use AmdtRef not str for num
+            incorrect_amendments_text += f'{item.ref}\n'
+            # long ref
+            incorrect_amendment_guids += f'{self.xml_amdts[item.ref].id}\n'
+            # TODO: fix this
+            logger.info(url_from_num_or_na(item.ref, self.json_amdts))
+            incorrect_amendment_links += (
+                url_from_num_or_na(item.ref, self.json_amdts) + '\n'
+            )
+
+        logger.debug('Created incorrect amendments text')
+
+        incorrect_names = ''
+        incorrect_names_guids = ''
+        incorrect_names_links = ''
+
+        for item in self.name_changes:
+            # short ref
+            incorrect_names += f'{item.ref}\n'
+            incorrect_names_guids += f'{self.xml_amdts[item.ref].id}\n'
+            incorrect_names_links += (
+                url_from_num_or_na(item.ref, self.json_amdts) + '\n'
+            )
+
+        logger.debug('Created incorrect names text')
+
+        incorrect_stars = ''
+        incorrect_stars_guids = ''
+
+        for item in self.incorrect_stars:
+            incorrect_stars += f'{item}\n'
+            try:
+                amdt_num = item.split(' has ')[0]
+                incorrect_stars_guids += f'{self.xml_amdts[amdt_num].id}'
+            except Exception as e:
+                logger.error(f'Error getting GUID for {item}: {e}')
+
+        logger.debug('Created incorrect stars text')
+
+        incorrect_decisions = ''
+        incorrect_decisions_guids = ''
+
+        for item in self.incorrect_decisions:
+            try:
+                amdt_num = item.split(' (API: ')[0]
+                num_a = link_from_num_or_num(amdt_num, self.json_amdts)
+                i_text = item.replace(amdt_num, num_a)
+                # logger.info(f"num_a: {num_a} amdt_num: {amdt_num} i_text: {i_text}")
+                incorrect_decisions += f'{i_text}'
+                incorrect_decisions_guids += f'{self.xml_amdts[amdt_num].id}\n'
+            except Exception as e:
+                logger.error(f'Error getting GUID for {item}: {e}')
+
+        logger.debug('Created incorrect decisions text')
+
+        incorrect_ex_statements = ''
+        incorrect_ex_statements_guids = ''
+        if len(self.incorrect_ex_statements) > 0:
+            incorrect_ex_statements = (
+                'Amendments with incorrect explanatory statements:\n'
+            )
+            incorrect_ex_statements_guids = incorrect_ex_statements
+        for item in self.incorrect_ex_statements:
+            num_a = link_from_num_or_num(item, self.json_amdts)
+            incorrect_ex_statements += f'{num_a}\n'
+            try:
+                incorrect_ex_statements_guids += f'{self.xml_amdts[item].id}\n'
+            except Exception as e:
+                logger.error(f'Error getting GUID for {item}: {e}')
+
+        data = [
+            [
+                'Bill',
+                'Stage',
+                'Amendment paper date',
+                'Date row created',
+                'Missing amendments',
+                'Missing amendment GUIDs',
+                'Incorrect amendments',
+                'Incorrect amendment GUIDs',
+                'Incorrect amendment link',
+                'Incorrect names',
+                'Incorrect names GUIDs',
+                'Incorrect stars',
+                'Incorrect stars GUIDs',
+                'Incorrect decisions',
+                'Incorrect decisions GUIDs',
+                'Incorrect explanatory statements',
+                'Incorrect explanatory statements GUIDs',
+            ],
+            [
+                self.xml_amdts.meta_bill_title,
+                self.xml_amdts.stage_name,
+                self.xml_amdts.meta_pub_date,
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                missing_amendment_text,
+                missing_amendment_guids,
+                incorrect_amendments_text,
+                incorrect_amendment_guids,
+                incorrect_amendment_links,
+                incorrect_names,
+                incorrect_names_guids,
+                incorrect_stars,
+                incorrect_stars_guids,
+                incorrect_decisions,
+                incorrect_decisions_guids,
+                incorrect_ex_statements,
+                incorrect_ex_statements_guids,
+            ],
+        ]
+
+        bill_stage = self.json_amdts.stage_name
+        xml_file_path = self.xml_file_path
+        if xml_file_path:
+            parent_path = xml_file_path.resolve().parent
+        else:
+            parent_path = Path.cwd()
+
+        bill_title_text = self.xml_amdts.meta_bill_title
+
+        if bill_stage is not None:
+            file_name = f'{bill_title_text}_{bill_stage}_amdt_table.csv'
+        else:
+            file_name = f'{bill_title_text}_amdt_table.csv'
+
+        file_path = parent_path / file_name
+
+        with open(file_path, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerows(data)
+
+        logger.notice(f'CSV file created at {file_path}. ')
 
     def create_table_for_sharepoint(self):
         """
@@ -1315,19 +1657,7 @@ class Report:
         missing_amendment_text = ''
         missing_amendment_guids = ''
 
-        if all(
-            [
-                len(i) == 0
-                for i in (
-                    self.missing_api_amdts,
-                    self.incorrect_amdt_in_api,
-                    self.name_changes,
-                    self.incorrect_stars,
-                    self.incorrect_decisions,
-                    self.incorrect_ex_statements,
-                )
-            ]
-        ):
+        if self.all_clear():
             logger.warning('No problems were found so no table will be created.')
             return
 
@@ -1357,9 +1687,10 @@ class Report:
             incorrect_amendments_text = '<p><br/>Amendments with incorrect content:</p>'
             incorrect_amendment_guids = incorrect_amendments_text
         for item in self.incorrect_amdt_in_api:
-            num_a = link_from_num_or_num(item.num, self.json_amdts)
+            # do whatever we do with link
+            num_a = link_from_num_or_num(item.ref, self.json_amdts)
             incorrect_amendments_text += f'<p>{num_a}</p>'
-            incorrect_amendment_guids += f'<p>{self.xml_amdts[item.num].id}</p>'
+            incorrect_amendment_guids += f'<p>{self.xml_amdts[item.ref].id}</p>'
 
         logger.debug('Created incorrect amendments text')
 
@@ -1369,9 +1700,9 @@ class Report:
             incorrect_names = '<p><br/>Amendments with incorrect names:</p>'
             incorrect_names_guids = incorrect_names
         for item in self.name_changes:
-            num_a = link_from_num_or_num(item.num, self.json_amdts)
+            num_a = link_from_num_or_num(item.ref, self.json_amdts)
             incorrect_names += f'<p>{num_a}</p>'
-            incorrect_names_guids += f'<p>{self.xml_amdts[item.num].id}</p>'
+            incorrect_names_guids += f'<p>{self.xml_amdts[item.ref].id}</p>'
 
         logger.debug('Created incorrect names text')
 
@@ -1592,17 +1923,9 @@ def also_query_bills_api(
     bill_json = bills[0]
 
     # try to get the stage from the xml
-    stage: str | None = None
-    try:
-        # block = amdt_xml_root.xpath('//*[local-name()="block"][@name="stage"]')
-        stage = xp.text_content(
-            amdt_xml_root.xpath(
-                '//xmlns:block[@name="stage"]/xmlns:docStage', namespaces=NSMAP
-            )[0]
-        )
-    except Exception as e:
-        logger.warning("Could not find stage in amendment XML. Can't query API.")
-        logger.warning(repr(e))
+    stage: str | None = utils.get_stage_from_amdts_xml(amdt_xml_root)
+    if not stage:
+        logger.error('Could not find stage in amendment XML. Cannot query API.')
         return
 
     # TODO: fix this
@@ -1840,18 +2163,34 @@ def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]
 
 
 def link_from_num_or_num(
-    amendment_no: str, api_amendment_container: AmdtContainer
+    amendment_ref: AmdtRef, api_amendment_container: AmdtContainer
 ) -> str:
     """
     Create a hyperlink to the amendment on the bills.parliament.uk website.
     """
 
-    url = get_url_for_amendment(amendment_no, api_amendment_container)
+    url = get_url_for_amendment(amendment_ref, api_amendment_container)
 
     if not url:
-        return amendment_no
+        return amendment_ref.short_ref
 
-    return create_hyperlink_str(url, amendment_no)
+    return create_hyperlink_str(url, amendment_ref.short_ref)
+
+
+def url_from_num_or_na(
+    amendment_ref: AmdtRef, api_amendment_container: AmdtContainer
+) -> str:
+    """
+    Create a hyperlink to the amendment on the bills.parliament.uk website.
+    If the amendment is not found, return 'N/A'.
+    """
+
+    url = get_url_for_amendment(amendment_ref, api_amendment_container)
+
+    if not url:
+        return 'N/A'
+
+    return url
 
 
 def create_hyperlink_str(url: str, text: str) -> str:
@@ -1859,8 +2198,11 @@ def create_hyperlink_str(url: str, text: str) -> str:
 
 
 def get_url_for_amendment(
-    amendment_no: str, api_amendment_container: AmdtContainer
+    amendment_ref: AmdtRef, api_amendment_container: AmdtContainer
 ) -> str | None:
+    """
+    Create a hyperlink to the amendment on the bills.parliament.uk website.
+    """
     bill_id = api_amendment_container.bill_id
     stage_id = api_amendment_container.stage_id
 
@@ -1869,9 +2211,9 @@ def get_url_for_amendment(
         return
 
     try:
-        amdt_object = api_amendment_container[amendment_no.strip()]
+        amdt_object = api_amendment_container[amendment_ref]
     except KeyError:
-        logger.info(f'{amendment_no.strip()} not in {api_amendment_container}')
+        logger.info(f'{amendment_ref} not in {api_amendment_container}')
         return
 
     amendment_id = amdt_object.id
@@ -1950,7 +2292,7 @@ def main():
         logger.error('No amendments found from JSON file or API. Exiting.')
         return 1
 
-    tree = etree.parse(args.xml_file)
+    tree = etree.parse(args.xml_file, parser=PARSER)
     root = tree.getroot()
 
     xpath = "//xmlns:amendment[@name='hcamnd']/xmlns:amendmentBody[@eId]"

@@ -13,14 +13,21 @@ from pathlib import Path
 from typing import Any, Literal, cast
 
 import requests
-import webview
-from webview import Window  # TODO: fix this
+
+try:
+    import webview
+    from webview import Window  # TODO: fix this
+except ImportError as e:
+    print('Error: pywebview is not installed. Please install it to run the GUI.')
+    print('You may need to run: `pip install .[gui]` from the project root directory.')
+    raise e
 
 import lawchecker.lawchecker_logger as lawchecker_logger
 from lawchecker import (
     __version__,
     added_names_report,
     check_web_amdts,
+    common,
     pp_xml_lxml,
     settings,
 )
@@ -32,6 +39,8 @@ from lawchecker.lawchecker_logger import logger
 from lawchecker.ui_feedback import ProgressModal, UILogHandler
 
 APP_FROZEN = getattr(sys, 'frozen', False)
+
+logger.info('Main imports complete')
 
 # Reference to the active window will be stored here
 window: Window | None = None
@@ -82,8 +91,7 @@ class Api:
     def _open_file_dialog(self, file_type='') -> Path | None:
         # select a file
 
-        active_window = webview.active_window()
-        active_window = cast(Window, active_window)
+        active_window = cast(Window, common.RunTimeEnv.webview_window)
 
         if file_type == 'xml':
             file_types = ('XML files (*.xml)',)
@@ -132,8 +140,8 @@ class Api:
 
     def select_folder(self, folder_specifier: str) -> None:
         print(f'select_folder called with folder_specifier: {folder_specifier}')
-        active_window = webview.active_window()
-        active_window = cast(Window, active_window)
+
+        active_window = cast(Window, common.RunTimeEnv.webview_window)
 
         result = active_window.create_file_dialog(
             webview.FOLDER_DIALOG, directory=str(Path.home())
@@ -217,9 +225,9 @@ class Api:
         """
         try:
             webbrowser.open(settings.DASH_XML_URL)  # type: ignore
-            return 'Dashboard XML opened in browser.'
+            logger.info('Dashboard XML opened in browser.')
         except Exception as e:
-            return f'Error: Could not open browser {repr(e)}'
+            logger.error(f'Error: Could not open browser {repr(e)}')
 
     def open_dash_xml_file(self) -> str:
         """
@@ -231,8 +239,7 @@ class Api:
         if self.dated_folder_Path is not None:
             default_location = self.dated_folder_Path / settings.DASHBOARD_DATA_FOLDER
 
-        active_window = webview.active_window()
-        active_window = cast(Window, active_window)
+        active_window = cast(Window, common.RunTimeEnv.webview_window)
 
         result = active_window.create_file_dialog(
             webview.OPEN_DIALOG,
@@ -258,8 +265,7 @@ class Api:
         if self.dated_folder_Path is not None:
             default_location = self.dated_folder_Path
 
-        active_window = webview.active_window()
-        active_window = cast(Window, active_window)
+        active_window = cast(Window, common.RunTimeEnv.webview_window)
 
         result = active_window.create_file_dialog(
             webview.FOLDER_DIALOG, directory=str(default_location)
@@ -486,7 +492,9 @@ class Api:
         """
         Query the Bills API for the amendments using the bill and stage IDs.
         """
-        print(f'get_api_amendments_with_ids called with {bill_id=} and {stage_id=}')
+        logger.info(
+            f'get_api_amendments_with_ids called with {bill_id=} and {stage_id=}'
+        )
         if not bill_id or not stage_id:
             logger.error('Bill ID and Stage ID are required.')
             return
@@ -506,23 +514,28 @@ class Api:
         with ProgressModal() as modal:
             modal.update('Querying Bills API for amendments. Please wait...')
             try:
-                json_amdts = check_web_amdts.get_amendments_json(
-                    bill_id_int, stage_id_int
+                amendments_summary_json = check_web_amdts.get_amendments_summary_json(
+                    bill_id, stage_id
+                )
+                print(len(amendments_summary_json))
+                json_amdts = check_web_amdts.get_amendments_detailed_json(
+                    amendments_summary_json, bill_id_int, stage_id_int
                 )
                 if not json_amdts:
                     logger.error('No JSON returned from API.')
             except Exception as e:
                 logger.error(f'Error querying API: {e}')
+            else:
+                if save_json:
+                    file_path = (
+                        Path(self.api_amend_xml).parent
+                        / f'{bill_id}_{stage_id}_amdts.json'
+                    )
+                    check_web_amdts.save_json_to_file(json_amdts, file_path)
+
+                self.api_amend_json = json_amdts
 
             modal.update('Query complete.')
-
-        if save_json:
-            file_path = (
-                Path(self.api_amend_xml).parent / f'{bill_id}_{stage_id}_amdts.json'
-            )
-            check_web_amdts.save_json_to_file(json_amdts, file_path)
-
-        self.api_amend_json = json_amdts
 
     def data_is_avaliable(self) -> bool:
         """
@@ -533,25 +546,29 @@ class Api:
             return False
         if not self.api_amend_json:
             if self.existing_json_amdts_file:
-                with open(self.existing_json_amdts_file, 'r') as f:
-                    self.api_amend_json = json.load(f)
+                try:
+                    with open(self.existing_json_amdts_file, 'r') as f:
+                        self.api_amend_json = json.load(f)
+                except Exception as e:
+                    logger.error(f'Error loading JSON file: {repr(e)}')
+                    return False
             else:
                 logger.error('No JSON data available.')
                 return False
 
         return True
 
-    def create_api_csv(self):
-        if not self.data_is_avaliable():
-            return
-        report = check_web_amdts.Report(self.api_amend_xml, self.api_amend_json)
+    # def create_api_csv(self):
+    #     if not self.data_is_avaliable():
+    #         return
+    #     report = check_web_amdts.Report(self.api_amend_xml, self.api_amend_json)
 
-        # logger.info([key for key in report.json_amdts.keys()])
-        logger.notice(f'stage_id: {report.json_amdts.stage_id}')
-        logger.notice(f'bill_id: {report.json_amdts.bill_id}')
+    #     # logger.info([key for key in report.json_amdts.keys()])
+    #     logger.notice(f'stage_id: {report.json_amdts.stage_id}')
+    #     logger.notice(f'bill_id: {report.json_amdts.bill_id}')
 
-        report.create_table_for_sharepoint()
-        # logger.warning("main.create_api_csv called")
+    #     report.create_csv()
+    #     # logger.warning("main.create_api_csv called")
 
     def create_api_report(self):
         if not self.data_is_avaliable():
@@ -590,7 +607,7 @@ class Api:
 
     def set_v_info(self):
         logger.info('set_v_info called')
-        set_version_info(webview.active_window())
+        set_version_info(common.RunTimeEnv.webview_window)
 
     # ! def added_names_report(self):
     # !    added_names_report.main()
@@ -599,17 +616,19 @@ class Api:
 def get_entrypoint():
     if not APP_FROZEN:  # unfrozen development
         logger.info('App is not frozen')
+
+        # must use the right port here, we use 5174.
+        # Changed in vite.config.ts file
+        url = 'http://localhost:5175'
+
         for _ in range(20):
             try:
-                # must use the right port here, we use 5174.
-                # Changed in vite.config.ts file
-                url = 'http://localhost:5175'
                 get = requests.get(url, timeout=0.05)
                 if get.status_code == 200:
                     return url
             except Exception:
                 pass
-            time.sleep(5)
+            time.sleep(0.05)
 
         logger.info('Vite server not running. Trying static files')
         return Path('ui_bundle/index.html').resolve().as_uri()  # TODO: fix this
@@ -636,7 +655,7 @@ def get_entrypoint():
 
 
 def main():
-    logger.info('Starting Lawchecker main')
+    logger.info('Starting Lawchecker main function')
     # with open("what.txt", "w") as f:
     #     for k, v in sys.__dict__.items():
     #         f.write(f"{k}: {v}\n")
@@ -659,7 +678,6 @@ def main():
 
     api = Api()
 
-    global window
     window = webview.create_window(
         url=entry,
         js_api=api,
@@ -672,12 +690,10 @@ def main():
         # server=False,
     )
 
+    common.RunTimeEnv.webview_window = cast(Window, window)
+
     print('Loaded')
     logger.info('Main window created')
-
-    window = cast(Window, window)
-
-    # window.events.loaded += on_loaded
 
     debug = not APP_FROZEN  # no debug in build app
     # debug = True
@@ -693,6 +709,10 @@ def main():
         storage_path=str(Path.home() / 'pywebview' / 'lawchecker'),
         # http_server=False,
     )
+
+
+def entrypoint():
+    main()
 
 
 if __name__ == '__main__':

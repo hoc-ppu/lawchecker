@@ -61,3 +61,15 @@ compare_bills -c "example_files/bills/Social Housing (Regulation) Bill - commons
 an_report example_files/addedNames/Dashboard_Data/2023-06-28__18-15_input_from_SP.xml --marshal='example_files/addedNames/Amendment_Paper_XML'
 ```
 
+
+## Web amendments
+
+```shell
+web_amendments example_files/amendments/HL_Bill_134_Running_List_19_September.xml
+```
+
+Note: Once you have run this the first time, by default it will save a json file in the same folder and the xml file. On subsequent runs you can just run e.g.:
+
+```shell
+ web_amendments --json example_files/amendments/planning\ and\ infrastructure_report\ stage_amdts.json example_files/amendments/HL_Bill_134_Running_List_19_September.xml
+ ```

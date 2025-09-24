@@ -7,7 +7,7 @@
     "dev": "concurrently --kill-others --names vite,python \"vite --config vite.config.ts\"  \"python src/lawchecker/main.py\"",
     "bundle": "vite build",
     "build": "npm run clean && npm run bundle && run-script-os",
-    "build:macos": "python build-macos.py py2app",
+    "build:macos": "python build-macos.py -q py2app",
     "build:windows": "pyinstaller --log-level=WARN lawChecker.spec",
     "clean": "run-script-os",
     "clean:default": "rm ui_bundle/index.html 2>/dev/null; rm -rf dist 2>/dev/null; rm -rf build 2>/dev/null; ",

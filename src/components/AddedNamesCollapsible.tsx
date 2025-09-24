@@ -133,11 +133,13 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
             </a>
           </p>
         )}
-        <p><small>
-        <strong>Note:</strong> This button will also create subfolders, Dashboard_Data and
-          Amendment_Paper_XML. Ideally save data from Sharepoint in
-          Dashboard_Data and save Amendment XML in Amendment_Paper_XML (see
-          below).</small>
+        <p>
+          <small>
+            <strong>Note:</strong> This button will also create subfolders,
+            Dashboard_Data and Amendment_Paper_XML. Ideally save data from
+            Sharepoint in Dashboard_Data and save Amendment XML in
+            Amendment_Paper_XML (see below).
+          </small>
         </p>
       </Card>
       <Card step="Step&nbsp;2" info="Download dashboard data">
@@ -188,10 +190,16 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
             />
           </>
         )}
-        <p><small>
-        <strong>Note:</strong> The marshalling feature works with one or several papers. In
-          either case the <strong>XML file(s) need to be saved in a folder and you need
-          to select that folder.</strong> Do not try to select a single XML file.</small>
+        <p>
+          <small>
+            <strong>Note:</strong> The marshalling feature works with one or
+            several papers. In either case the{" "}
+            <strong>
+              XML file(s) must be saved in a folder and you need to select that
+              folder.
+            </strong>{" "}
+            Do not try to select a single XML file.
+          </small>
         </p>
       </Card>
 

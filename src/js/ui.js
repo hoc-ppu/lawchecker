@@ -103,6 +103,9 @@ function progress_modal_update(text) {
         // remove <wbr/> if it is at the beginning of the string
         text = text.slice(6);
     }
+    // replace \n with <br />
+    text = text.replace(/\\n/g, "<br />");
+    // text = text.replace(/\n/g, "<br />");
 
     // If this is an error message...
     const error_split = splitOnSubstringAtStart(text, 'ERROR:');

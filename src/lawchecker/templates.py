@@ -248,12 +248,23 @@ class SmallCollapsableSection:
 
 
 class EditableTextDiv:
-    def __init__(self, content: str = '', children: Sequence[HtmlElement] = []):
+    def __init__(self, content: str = '', children: Sequence[str | HtmlElement] = []):
         self.html = deepcopy(editable_text_div)
         if content:
             self.html.text = content
 
-        self.html.extend(children)
+        for i, child in enumerate(children):
+            if i > 0 and isinstance(child, str):
+                raise ValueError(
+                    'If children are provided, only the first element is'
+                    ' (optionally) allowed to be a string.'
+                )
+            if isinstance(child, str):
+                self.html.text = child
+            elif iselement(child):
+                self.html.append(child)
+            else:
+                raise TypeError('Children must be strings or lxml elements')
 
     def set_content(self, content: str):
         self.html.text = content

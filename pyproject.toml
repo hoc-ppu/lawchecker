@@ -1,10 +1,9 @@
 [project]
 name = "lawchecker"
-license = { file = "LICENCE" }
+license = "MIT"
 dependencies = [
     "lxml",
     "requests",
-    "pywebview",
     "python-dotenv",
 ]
 requires-python = ">=3.11"
@@ -30,6 +29,9 @@ dev = [
     "pyinstaller;sys_platform!='darwin'",
     "py2app;sys_platform=='darwin'",
 ]
+gui = [
+    "pywebview",
+]
 
 [build-system]
 requires = ["setuptools"]
@@ -39,7 +41,7 @@ build-backend = "setuptools.build_meta"
 [project.scripts]
 an_report = "lawchecker.added_names_report:main"
 compare_report = "lawchecker.compare_amendment_documents:main"
-startgui = "lawchecker.main:main"
+gui = "lawchecker.main:main"
 compare_bills = "lawchecker.compare_bill_documents:main"
 bill_numbering = "lawchecker.compare_bill_numbering:cli"
 web_amendments = "lawchecker.check_web_amdts:main"

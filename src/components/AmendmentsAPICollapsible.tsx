@@ -30,7 +30,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   };
 
   const handleCreateCSV = () => {
-    window.pywebview.api.create_api_csv();
+    // window.pywebview.api.create_api_csv();
     console.log("create_api_csv called");
   };
 
@@ -223,11 +223,11 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
           }}
         />
 
-        <Button
+        {/* <Button
           id="api_report_CSV"
-          text="Create data for SharePoint"
+          text="Create CSV file for PDS"
           handleClick={handleCreateCSV}
-        />
+        /> */}
       </Card>
     </Collapsible>
   );

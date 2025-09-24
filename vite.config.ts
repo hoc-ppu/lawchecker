@@ -10,7 +10,7 @@ export default defineConfig({
     svgr(),
     react(),
     // viteSingleFile({ removeViteModuleLoader: true, inlinePattern: /\.(js|css)$/ })
-    viteSingleFile()
+    viteSingleFile(),
   ],
   server: {
     host: "localhost",
@@ -26,9 +26,9 @@ export default defineConfig({
     // },
   },
   // Set the root directory to 'reactUi' insted of default 'src'
-  // root: 'reactUi',
+  root: "src",
   // consider changing the build dir
   build: {
-    outDir: "ui_bundle", // Adjust the output directory if needed
+    outDir: "../ui_bundle", // Adjust the output directory if needed
   },
 });

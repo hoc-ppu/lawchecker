@@ -1,9 +1,12 @@
 import sys
 from enum import Enum
 from pathlib import Path
+from typing import Any
 
 from dotenv import dotenv_values
 from lxml import etree
+
+WEBVIEW_WINDOW: None | Any = None
 
 
 class RtEnv(Enum):
@@ -101,6 +104,12 @@ if not COMPARE_REPORT_TEMPLATE.exists():
 
 class GLOBAL_VARS:
     anr_working_folder: Path | None = None
+
+
+# TODO: consider putting these in a class?
+AMENDMENTS_URL_TEMPLATE = 'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments?take=40&skip={skip}'
+
+AMENDMENT_DETAILS_URL_TEMPLATE = 'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendmet_id}'
 
 
 # ------------------------- default xml stuff ------------------------ #
