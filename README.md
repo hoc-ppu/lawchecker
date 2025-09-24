@@ -9,7 +9,7 @@ Automated checks/compares for UK Parliament legislative papers.
 
 You can create:
 - an HTML report which compares two Bill XML files
-- CSV files showing changes to clause (a.k.a. section) and schedule paragraph
+- CSV files showing changes to clause (a.k.a. section) and schedule paragraph numbers
 - an HTML report which compares two Amendment paper XML files
 - an HTML added names report
 - an HTML report showing the differences between amendments in XML from LawMaker and from the Parliament website (via the bills API)
@@ -88,12 +88,13 @@ pip install -e .[dev,gui] && npm install
 
 
 ## Usage
-Once installed there are five entry points. You can run these from the command line/terminal/powershell.
+Once installed there are several entry points. You can run these from the command line/terminal/powershell.
  - `gui` will start a graphical user interface (seen above) which lets you create all of the below reports.
- - `an_report` creates an added names report. Type `an_report --help` in your terminal or command prompt for help on how to use this.
- - `compare_report` creates a report detailing the differences between two Amendment paper XML files. Type `compare_report --help` for usage info.
  - `compare_bills` creates a report detailing the differences between two Bill files. Type `compare_bills --help`  for usage info.
  - `bill_numbering` creates a CSV file showing changes to clause (a.k.a. section) and schedule paragraphs numbers. Type `bill_numbering --help`  for usage info.
+ - `compare_report` creates a report detailing the differences between two Amendment paper XML files. Type `compare_report --help` for usage info.
+ - `an_report` creates an added names report. Type `an_report --help` in your terminal or command prompt for help on how to use this.
+ - `web_amendments` creates a report detailing the differences an amendment paper of proceedings paper and Amendments on the parliament webste. Type `web_amendments --help` for usage info.
 
 ### Examples
 
@@ -107,16 +108,18 @@ compare_report example_files/amendments/energy_rm_rep_0901.xml example_files/ame
 compare_bills "example_files/bills/Data Protection and Digital Information Bill - commons introduced.xml" "example_files/bills/Data Protection and Digital Information Bill - commons committee.xml"
 ```
 
-See `examples.md` for more
+See [examples.md](example_files/examples.md) for more
 
 ## Tests
 To run tests `pytest tests/`
 
-## Create Standalone .exe
+## Create Standalone .exe or .app file
 
-You can create an executable file (.exe file) on windoes and a .app on Mac as distributable versions. This will allow you to run the GUI version on a computer without python or other dependencies installed. Since the distributable is not signed users may get a warning about security or be prevented from running the program.
+You can create an executable file (.exe file) on windows and a .app on Mac as distributable versions. This will allow you to run the GUI version on a computer without python or other dependencies installed. Since the distributable is not signed users may get a warning about security or be prevented from running the program.
 
-To create the .exe run the following in powershell
+You will need to be using a Windows computer to create the .exe file. And you will need to be using a Mac computer to create the .app file. You will also need to have Node installed (see installation above). On either sort of computer run the following command in the terminal or powershell:
 ```bash
 npm run build
 ```
+
+You should then see the resulting file in the `dist` folder.
