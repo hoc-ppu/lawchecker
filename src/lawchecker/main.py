@@ -223,6 +223,12 @@ class Api:
         The user must download this first as there is security
         so we can't request it directly.
         """
+        if not settings.DASH_XML_URL:
+            logger.warning(
+                'No DASH_XML_URL set in settings. Likely there is no .env file'
+                '\nPlease create a .env file in the root of the project'
+                ' see .env.example for an example of the required format.'
+            )
         try:
             webbrowser.open(settings.DASH_XML_URL)  # type: ignore
             logger.info('Dashboard XML opened in browser.')

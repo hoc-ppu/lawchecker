@@ -6,6 +6,8 @@ from typing import Any
 from dotenv import dotenv_values
 from lxml import etree
 
+from lawchecker.lawchecker_logger import logger
+
 WEBVIEW_WINDOW: None | Any = None
 
 
@@ -44,7 +46,7 @@ try:
     DASH_XML_URL = secrets[DASH_XML_KEY]
 except KeyError:
     # TODO: Log this
-    print(
+    logger.info(
         'Error: Either no .env file or the file does not have '
         f' {DASH_XML_KEY} environment variable set.'
         '\nPlease create a .env file in the root of the project'
