@@ -58,3 +58,8 @@ quote-style = "single"
 
 [tool.setuptools.dynamic]
 version = {attr = "lawchecker.__version__"}
+
+[tool.setuptools.package-data]
+lawchecker = [
+    "templates/*.html",
+]
