@@ -101,6 +101,7 @@ def get_template_path(template_name: str) -> Path:
         logger.info(f'Template files path: {template_files}')
         return Path(str(template_files / template_name))
     except Exception:
+        logger.info('Could not load template using importlib.resources.')
         # Fallback
         return PARENT_FOLDER / TEMPLATES_FOLDER / template_name
 
@@ -108,6 +109,9 @@ def get_template_path(template_name: str) -> Path:
 HTML_TEMPLATE = get_template_path(AN_HTML_TEMPLATE)
 
 COMPARE_REPORT_TEMPLATE = get_template_path(COMPARE_REPORT_TEMPLATE_NAME)
+
+print(f'HTML_TEMPLATE: {HTML_TEMPLATE}')
+print(f'COMPARE_REPORT_TEMPLATE: {COMPARE_REPORT_TEMPLATE}')
 
 if not COMPARE_REPORT_TEMPLATE.exists():
     COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.parent.parent.joinpath(
