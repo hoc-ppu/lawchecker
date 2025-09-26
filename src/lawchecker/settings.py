@@ -97,7 +97,7 @@ def get_template_path(template_name: str) -> Path:
     """Get template path that works in all environments."""
     try:
         # Try using importlib.resources first (works in all environments)
-        template_files = files('lawchecker.templates')
+        template_files = files('lawchecker') / 'templates'
         msg = f'Template files path: {template_files}'
         logger.info(msg)
         print(msg)
