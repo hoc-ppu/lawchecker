@@ -80,7 +80,7 @@ match RUNTIME_ENV:
         # assume running as python script via usual interpreter
         # TODO: do we still need this?
         PARENT_FOLDER = Path(__file__).parent
-        if not PARENT_FOLDER.joinpath('template').exists():
+        if not PARENT_FOLDER.joinpath('templates').exists():
             PARENT_FOLDER = PARENT_FOLDER.parent
 
 
@@ -97,11 +97,11 @@ def get_template_path(template_name: str) -> Path:
     """Get template path that works in all environments."""
     try:
         # Try using importlib.resources first (works in all environments)
-        template_files = files('lawchecker') / 'templates'
+        template_files = files('lawchecker.templates')
         logger.info(f'Template files path: {template_files}')
         return Path(str(template_files / template_name))
     except Exception:
-        # Fallback to current method
+        # Fallback
         return PARENT_FOLDER / TEMPLATES_FOLDER / template_name
 
 
