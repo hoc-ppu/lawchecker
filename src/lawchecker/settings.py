@@ -98,10 +98,14 @@ def get_template_path(template_name: str) -> Path:
     try:
         # Try using importlib.resources first (works in all environments)
         template_files = files('lawchecker.templates')
-        logger.info(f'Template files path: {template_files}')
+        msg = f'Template files path: {template_files}'
+        logger.info(msg)
+        print(msg)
         return Path(str(template_files / template_name))
     except Exception:
-        logger.info('Could not load template using importlib.resources.')
+        msg = 'Could not load template using importlib.resources'
+        logger.info(msg)
+        print(msg)
         # Fallback
         return PARENT_FOLDER / TEMPLATES_FOLDER / template_name
 
