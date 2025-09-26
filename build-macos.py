@@ -6,10 +6,16 @@ import py2app
 from setuptools import setup
 
 
-def tree(path: Path):
+def tree(path: Path, destination_prefix: str = ''):
     for item in path.rglob('*'):
         if item.is_file():
-            yield (str(item.parent), [str(item)])
+            if destination_prefix:
+                # Remove the source path prefix and add destination prefix
+                relative_path = item.relative_to(path)
+                dest_dir = str(Path(destination_prefix) / relative_path.parent)
+            else:
+                dest_dir = str(item.parent)
+            yield (dest_dir, [str(item)])
 
 
 if os.path.exists('build'):
@@ -20,7 +26,12 @@ if os.path.exists('dist'):
 
 ENTRY_POINT = ['src/lawchecker/main.py']
 
-DATA_FILES = list(tree(Path('ui_bundle'))) + list(tree(Path('templates')))
+# fmt: off
+DATA_FILES = (
+    list(tree(Path('ui_bundle'))) +
+    list(tree(Path('src/templates'), 'templates'))
+)
+# fmt: on
 
 if Path('.env').exists():
     # Some items are secret and included in the .env file.

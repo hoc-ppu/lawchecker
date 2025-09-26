@@ -1,5 +1,6 @@
 import sys
 from enum import Enum
+from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
@@ -58,10 +59,10 @@ except KeyError:
 DEFAULT_OUTPUT_NAME = 'Added_Names_Report.html'
 
 
-XSLT_MARSHAL_PARAM_NAME = 'marsh-path'
+# XSLT_MARSHAL_PARAM_NAME = 'marsh-path'
+# XSL_1_NAME = 'anr_spo_rest.py'
+# XSL_2_NAME = 'anr_post_processing_html.py'
 
-XSL_1_NAME = 'anr_spo_rest.py'
-XSL_2_NAME = 'anr_post_processing_html.py'
 AN_HTML_TEMPLATE = 'anr_template.html'
 COMPARE_REPORT_TEMPLATE_NAME = 'compare_report_template.html'
 TEMPLATES_FOLDER = 'templates'
@@ -74,12 +75,14 @@ match RUNTIME_ENV:
     case RtEnv.EXE:
         PARENT_FOLDER = Path(sys.executable).parent
     case RtEnv.APP:
+        # I'm not sure that this is needed anymore as templates are now in
+        # lawchecker.app/Contents/Resources/lib/python3.12/lawchecker/templates
         PARENT_FOLDER = Path('../Resources')
     case _:
         # assume running as python script via usual interpreter
         # TODO: do we still need this?
-        PARENT_FOLDER = Path(__file__).parent.parent
-        if not PARENT_FOLDER.joinpath('template').exists():
+        PARENT_FOLDER = Path(__file__).parent
+        if not PARENT_FOLDER.joinpath('templates').exists():
             PARENT_FOLDER = PARENT_FOLDER.parent
 
 
@@ -92,11 +95,24 @@ if RUNTIME_ENV == RtEnv.SCRIPT or not REPORTS_FOLDER.exists():
     REPORTS_FOLDER = PARENT_FOLDER / '_Reports'
 
 
-HTML_TEMPLATE = PARENT_FOLDER / TEMPLATES_FOLDER / AN_HTML_TEMPLATE
+def get_template_path(template_name: str) -> Path:
+    """Get template path that works in all environments."""
+    try:
+        # Try using importlib.resources first (works in all environments)
+        template_files = files('lawchecker') / 'templates'
+        return Path(str(template_files / template_name))
+    except Exception:
+        # Fallback
+        logger.warning('Could not load template using importlib.resources')
+        return PARENT_FOLDER / TEMPLATES_FOLDER / template_name
 
-COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.joinpath(
-    TEMPLATES_FOLDER, COMPARE_REPORT_TEMPLATE_NAME
-)
+
+HTML_TEMPLATE = get_template_path(AN_HTML_TEMPLATE)
+
+COMPARE_REPORT_TEMPLATE = get_template_path(COMPARE_REPORT_TEMPLATE_NAME)
+
+logger.info(f'{HTML_TEMPLATE=}')
+logger.info(f'{COMPARE_REPORT_TEMPLATE=}')
 
 if not COMPARE_REPORT_TEMPLATE.exists():
     COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.parent.parent.joinpath(
