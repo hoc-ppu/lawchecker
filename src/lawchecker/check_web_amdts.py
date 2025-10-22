@@ -3,6 +3,7 @@ import csv
 import json
 import math
 import re
+import os
 import sys
 import urllib.parse
 import webbrowser
@@ -15,6 +16,9 @@ from pathlib import Path
 from typing import Any, Iterable, NamedTuple
 
 import requests
+from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
+from urllib3.util.retry import Retry
 from lxml import etree, html
 from lxml.etree import QName, _Element, iselement
 from lxml.html import HtmlElement
@@ -38,6 +42,26 @@ JSON = int | str | float | bool | None | list['JSON'] | dict[str, 'JSON']
 JSONObject = dict[str, JSON]
 JSONList = list[JSON]
 JSONType = JSONObject | JSONList
+
+
+# Shared requests.Session with retries/timeouts to reduce transient failures
+DEFAULT_TIMEOUT = 10  # seconds
+
+SESSION = requests.Session()
+RETRY_STRATEGY = Retry(
+    total=3,
+    backoff_factor=0.5,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=["HEAD", "GET", "OPTIONS"],
+)
+ADAPTER = HTTPAdapter(max_retries=RETRY_STRATEGY)
+SESSION.mount("https://", ADAPTER)
+SESSION.mount("http://", ADAPTER)
+# prevent socket reuse which can trigger EOF errors from some servers/proxies
+SESSION.headers.update({
+    'Connection': 'close',
+    'User-Agent': 'LawChecker/1.0',
+})
 
 
 class ContainerType(StrEnum):
@@ -214,8 +238,13 @@ def progress_bar(iterable: Iterable, total: int) -> list:
 
 
 def get_json_sync(url: str) -> JSONObject:
-    response = requests.get(url)
-    return response.json()
+    try:
+        response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    except RequestException as e:
+        logger.error(f'HTTP error fetching JSON from {url}: {e}')
+        raise
 
 
 class Sponsor:
@@ -1040,7 +1069,8 @@ class Report:
                 xml_amdt: Amendment | None = self.xml_amdts.get(key)
                 if xml_amdt is None:
                     continue
-                missing_amdt_reference.append(xml_amdt.key.long_ref())
+                missing_amdt_reference.append(xml_amdt.key.long_ref)
+                '--Satpal replaced parenthese'
 
             removed_content = (
                 f'Missing content: <strong>{len(self.missing_api_amdts)}</strong><br/>'
@@ -1895,15 +1925,12 @@ def also_query_bills_api(
         bill_title = urllib.parse.quote(bill_title)
         url = f'https://bills-api.parliament.uk/api/v1/Bills?SearchTerm={bill_title}&SortOrder=DateUpdatedDescending'
         logger.info(f'Querying: {url}')
-        response = requests.get(url)
-    except Exception:
-        logger.error('Error querying the API')
+        response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        response_json: JSONObject = response.json()
+    except RequestException as e:
+        logger.error(f'Error querying the API: {e}')
         return
-    if response.status_code != 200:
-        logger.error('Error querying the API')
-        return
-
-    response_json: JSONObject = response.json()
 
     # file_name = "amendments_details.json"
     # json.dump(response_json, open(file_name, "w"), ensure_ascii=False, indent=2)
@@ -1942,7 +1969,8 @@ def also_query_bills_api(
         # look thorugh all other stages to get the correct one
         try:
             url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_json["billId"]}/Stages'
-            response = requests.get(url)
+            response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+            response.raise_for_status()
             response_json = response.json()
             stages = response_json.get('items', [])
             for item in stages:  # type: ignore
@@ -2049,6 +2077,12 @@ def save_json_to_file(json_data: dict[str, JSON], file_path: Path) -> None:
 #     return json_output
 
 
+def create_friendly_name(text: str, lowercase: bool = True) -> str:
+    # Remove all non-alphanumeric characters (excluding underscores if needed)
+    cleaned = re.sub(r'[^A-Za-z0-9]', '', text)
+    return cleaned.lower() if lowercase else cleaned
+
+
 def get_amendments_detailed_json(
     amendments_summary_json: list[JSONObject],
     bill_id: int,
@@ -2056,7 +2090,10 @@ def get_amendments_detailed_json(
     stage_description: str = '',
     api_bill_short_title: str = '',
 ) -> JSONObject:
-    with open(Path(__file__).parent / 'amendments_summary.json', 'w') as f:
+    """'unique cache json'"""
+    filePathRoot = Path(__file__).parent / 'JSONCache'
+    os.makedirs(filePathRoot, exist_ok=True)
+    with open(filePathRoot / (create_friendly_name(api_bill_short_title) + '_summary.json'), 'w') as f:
         json.dump(amendments_summary_json, f, indent=2)
     amendment_ids = [
         amendment.get('amendmentId') for amendment in amendments_summary_json
@@ -2064,28 +2101,40 @@ def get_amendments_detailed_json(
     logger.info(f'{len(amendment_ids)=}')
     logger.info(f'{amendment_ids=}')
 
-    def _request_data(
-        amendment_id: str,
-    ) -> requests.Response:
-        """Query the API."""
+    def _request_data(amendment_id: str):
+        """Query the API using the shared SESSION and return response or None."""
+        url = (
+            f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
+        )
+        try:
+            resp = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+            resp.raise_for_status()
+            return resp
+        except Exception as e:
+            logger.error(f'Error fetching amendment {amendment_id}: {e}')
+            return None
 
-        url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
-
-        return requests.get(url)
-
-    with ThreadPoolExecutor(max_workers=40) as pool:
+    max_workers = min(10, max(2, len(amendment_ids)))
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
         # create a progress bar and return a list
         responses = progress_bar(
-            pool.map(
-                lambda amendment_id: _request_data(amendment_id),
-                amendment_ids,
-            ),
+            pool.map(lambda amendment_id: _request_data(amendment_id), amendment_ids),
             len(amendment_ids),
         )
         print()  # newline after progress bar
 
     logger.info(f'{responses=}')
-    json_amendments_list: list[JSONType] = [response.json() for response in responses]
+    json_amendments_list: list[JSONType] = []
+    for response in responses:
+        if response is None:
+            # keep a placeholder empty object to maintain list lengths
+            json_amendments_list.append({})
+            continue
+        try:
+            json_amendments_list.append(response.json())
+        except Exception as e:
+            logger.error(f'Error parsing JSON response: {e}')
+            json_amendments_list.append({})
 
     json_output = {
         'shortTitle': api_bill_short_title,
@@ -2137,15 +2186,10 @@ def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]
     logger.info(f'{urls=}')
 
     responses: list[JSONObject] = []
-    with ThreadPoolExecutor(max_workers=40) as pool:
+    max_workers = min(10, max(2, len(urls)))
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
         # create a progress bar and return a list
-        responses = progress_bar(
-            pool.map(
-                get_json_sync,
-                urls,
-            ),
-            len(urls),
-        )
+        responses = progress_bar(pool.map(get_json_sync, urls), len(urls))
         print()  # newline after progress bar
 
     with open(Path(__file__).parent / 'responses.json', 'w') as f:
@@ -2302,6 +2346,9 @@ def main():
     logger.info(f'No. of amendments found in xml: {len(amendments_xml)}')
 
     filename = 'API_html_diff.html'
+
+    if args.xml_file != None:
+        filename = Path(args.xml_file.name).stem + ".html"
 
     report = Report(root, amendments_list_json)
     if args.sp:

@@ -627,14 +627,20 @@ def get_entrypoint():
         # Changed in vite.config.ts file
         url = 'http://localhost:5175'
 
-        for _ in range(20):
+        # Give the dev server a reasonable chance to start. Use the shared
+        # SESSION with a sensible timeout so short transient network blips
+        # don't cause failures.
+        from lawchecker.check_web_amdts import SESSION, DEFAULT_TIMEOUT
+
+        attempts = 20
+        for i in range(attempts):
             try:
-                get = requests.get(url, timeout=0.05)
-                if get.status_code == 200:
+                resp = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+                if resp.status_code == 200:
                     return url
             except Exception:
-                pass
-            time.sleep(0.05)
+                # exponential backoff small sleep
+                time.sleep(min(0.5 * (i + 1), 5))
 
         logger.info('Vite server not running. Trying static files')
         return Path('ui_bundle/index.html').resolve().as_uri()  # TODO: fix this
