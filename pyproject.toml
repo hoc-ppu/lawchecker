@@ -5,6 +5,7 @@ dependencies = [
     "lxml",
     "requests",
     "python-dotenv",
+    "pywebview<6.0",
 ]
 requires-python = ">=3.11"
 keywords = [
@@ -21,7 +22,7 @@ keywords = [
 
 dynamic = ["version"]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "ruff",
     "pytest",

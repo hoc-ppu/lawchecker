@@ -2,8 +2,8 @@ import argparse
 import csv
 import json
 import math
-import re
 import os
+import re
 import sys
 import urllib.parse
 import webbrowser
@@ -16,12 +16,12 @@ from pathlib import Path
 from typing import Any, Iterable, NamedTuple
 
 import requests
-from requests.adapters import HTTPAdapter
-from requests.exceptions import RequestException
-from urllib3.util.retry import Retry
 from lxml import etree, html
 from lxml.etree import QName, _Element, iselement
 from lxml.html import HtmlElement
+from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
+from urllib3.util.retry import Retry
 
 from lawchecker import common, pp_xml_lxml, templates, utils
 from lawchecker import xpath_helpers as xp
@@ -52,16 +52,18 @@ RETRY_STRATEGY = Retry(
     total=3,
     backoff_factor=0.5,
     status_forcelist=[429, 500, 502, 503, 504],
-    allowed_methods=["HEAD", "GET", "OPTIONS"],
+    allowed_methods=['HEAD', 'GET', 'OPTIONS'],
 )
 ADAPTER = HTTPAdapter(max_retries=RETRY_STRATEGY)
-SESSION.mount("https://", ADAPTER)
-SESSION.mount("http://", ADAPTER)
+SESSION.mount('https://', ADAPTER)
+SESSION.mount('http://', ADAPTER)
 # prevent socket reuse which can trigger EOF errors from some servers/proxies
-SESSION.headers.update({
-    'Connection': 'close',
-    'User-Agent': 'LawChecker/1.0',
-})
+SESSION.headers.update(
+    {
+        'Connection': 'close',
+        'User-Agent': 'LawChecker/1.0',
+    }
+)
 
 
 class ContainerType(StrEnum):
@@ -1429,8 +1431,17 @@ class Report:
         amendment. It does not contain the sponsor information.
         """
 
-        new_amdt_content = new_amdt.amendment_text.split('\n')
-        old_amdt_content = old_amdt.amendment_text.split('\n')
+        # When consecutive ”” make sure no new line between
+
+        new_amdt_content_fixed_quotes = utils.fix_consecutive_quotes(
+            new_amdt.amendment_text
+        )
+        old_amdt_content_fixed_quotes = utils.fix_consecutive_quotes(
+            old_amdt.amendment_text
+        )
+
+        new_amdt_content = new_amdt_content_fixed_quotes.split('\n')
+        old_amdt_content = old_amdt_content_fixed_quotes.split('\n')
 
         if len(new_amdt_content) == 0 or len(old_amdt_content) == 0:
             # use the long ref
@@ -2093,7 +2104,10 @@ def get_amendments_detailed_json(
     """'unique cache json'"""
     filePathRoot = Path(__file__).parent / 'JSONCache'
     os.makedirs(filePathRoot, exist_ok=True)
-    with open(filePathRoot / (create_friendly_name(api_bill_short_title) + '_summary.json'), 'w') as f:
+    with open(
+        filePathRoot / (create_friendly_name(api_bill_short_title) + '_summary.json'),
+        'w',
+    ) as f:
         json.dump(amendments_summary_json, f, indent=2)
     amendment_ids = [
         amendment.get('amendmentId') for amendment in amendments_summary_json
@@ -2103,9 +2117,7 @@ def get_amendments_detailed_json(
 
     def _request_data(amendment_id: str):
         """Query the API using the shared SESSION and return response or None."""
-        url = (
-            f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
-        )
+        url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
         try:
             resp = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
             resp.raise_for_status()
@@ -2348,7 +2360,7 @@ def main():
     filename = 'API_html_diff.html'
 
     if args.xml_file != None:
-        filename = Path(args.xml_file.name).stem + ".html"
+        filename = Path(args.xml_file.name).stem + '.html'
 
     report = Report(root, amendments_list_json)
     if args.sp:

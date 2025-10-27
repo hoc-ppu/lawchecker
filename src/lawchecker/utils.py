@@ -305,6 +305,14 @@ def diff_xml_content(
     return dif_html_str
 
 
+def fix_consecutive_quotes(text: str) -> str:
+    """
+    Fix cases where consecutive quotation marks have unwanted newlines between them.
+    """
+    text = re.sub(r'\n(?=[”"])', '', text)
+    return text
+
+
 def html_diff_lines(
     fromlines: Sequence[str],
     tolines: Sequence[str],
