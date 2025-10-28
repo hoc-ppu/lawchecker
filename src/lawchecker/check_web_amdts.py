@@ -1,6 +1,7 @@
 import argparse
 import csv
 import json
+import logging
 import math
 import os
 import re
@@ -23,10 +24,10 @@ from requests.adapters import HTTPAdapter
 from requests.exceptions import RequestException
 from urllib3.util.retry import Retry
 
-from lawchecker import common, pp_xml_lxml, templates, utils
+from lawchecker import __version__, common, pp_xml_lxml, templates, utils
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_bill_numbering import clean as clean_filename
-from lawchecker.lawchecker_logger import logger
+from lawchecker.lawchecker_logger import ch, logger
 from lawchecker.settings import (
     AMENDMENT_DETAILS_URL_TEMPLATE,
     AMENDMENTS_URL_TEMPLATE,
@@ -2315,66 +2316,195 @@ def find_duplicate_sponsors(lst: list[Sponsor]) -> list[Sponsor]:
     return list()
 
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Compare amendments between an XML file and the API.'
-        ' If no JSON file is provided, the API will be queried automatically.'
+        ' If no JSON file is provided, the API will be queried automatically.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s amendments.xml
+  %(prog)s amendments.xml --json amendments.json
+  %(prog)s amendments.xml -o report.html
+  %(prog)s amendments.xml --sp
+        """,
     )
     parser.add_argument(
         'xml_file',
-        type=argparse.FileType('rb'),
+        type=Path,
         help='XML amendment or proceedings file path',
     )
     parser.add_argument(
         '--json',
-        type=argparse.FileType('r'),
+        type=Path,
         metavar='json_file',
         default=None,
         help='Existing JSON file with amendments details',
+    )
+    parser.add_argument(
+        '-o',
+        '--output',
+        type=Path,
+        metavar='OUTPUT_FILE',
+        default=None,
+        help='Where to save the output report HTML file',
     )
     parser.add_argument(
         '--sp',
         action='store_true',
         help='Create a table for SharePoint instead of the full report',
     )
+    parser.add_argument(
+        '--no-save-json',
+        action='store_true',
+        help='Do not save JSON response to file when querying API',
+    )
+    parser.add_argument(
+        '--no-browser',
+        action='store_true',
+        help='Do not attempt to open the report in a web browser',
+    )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        action='count',
+        default=0,
+        help='Increase verbosity (use -vv for debug level)',
+    )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f'%(prog)s {__version__}',
+    )
     args = parser.parse_args()
 
-    if args.json:
-        amendments_list_json = json.load(args.json)
-    else:
-        amendments_list_json = also_query_bills_api(Path(args.xml_file.name))
+    return args
 
-    if not amendments_list_json:
-        logger.error('No amendments found from JSON file or API. Exiting.')
+
+def setup_logging(verbosity: int):
+    """Setup logging based on verbosity level."""
+    if verbosity >= 2:
+        level = logging.DEBUG
+    elif verbosity == 1:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+
+    # set the logging level for the console handler
+    ch.setLevel(level)
+    # logger.setLevel(level)  # dont need this as already set to DEBUG
+
+
+def main():
+    try:
+        args = parse_arguments()
+
+        # Validate arguments
+        if (error_code := validate_arguments(args)) != 0:
+            return error_code
+
+        # Load or fetch amendments data
+        if args.json:
+            logger.info(f'Loading amendments from JSON file: {args.json}')
+            try:
+                with args.json.open('r') as f:
+                    amendments_list_json = json.load(f)
+            except json.JSONDecodeError as e:
+                logger.error(f'Invalid JSON file {args.json}: {e}')
+                return 1
+            except Exception as e:
+                logger.error(f'Error reading JSON file {args.json}: {e}')
+                return 1
+        else:
+            logger.info('Querying API for amendments data...')
+            save_json = not args.no_save_json
+            amendments_list_json = also_query_bills_api(args.xml_file, save_json)
+
+        if not amendments_list_json:
+            logger.error('No amendments found from JSON file or API.')
+            return 1
+
+        # Parse XML file
+        logger.info(f'Parsing XML file: {args.xml_file}')
+        try:
+            with args.xml_file.open('rb') as f:
+                tree = etree.parse(f, parser=PARSER)
+            root = tree.getroot()
+        except Exception as e:
+            logger.error(f'Error parsing XML file {args.xml_file}: {e}')
+            return 1
+
+        # Find amendments in XML
+        xpath = "//xmlns:amendment[@name='hcamnd']/xmlns:amendmentBody[@eId]"
+        amendments_xml = root.xpath(xpath, namespaces=NSMAP)
+        logger.info(f'Found {len(amendments_xml)} amendments in XML')
+
+        # Generate report
+        logger.info('Generating report...')
+        report = Report(root, amendments_list_json)
+
+        # Determine output filename
+        if args.output:
+            output_file = args.output
+        else:
+            output_file = args.xml_file.with_suffix('.html')
+
+        # Generate appropriate output
+        if args.sp:
+            logger.info('Creating SharePoint table...')
+            report.create_table_for_sharepoint()
+        else:
+            logger.info(f'Writing HTML report to: {output_file}')
+            report.html_tree.write(
+                str(output_file),
+                method='html',
+                encoding='utf-8',
+                doctype='<!DOCTYPE html>',
+            )
+
+            if not args.no_browser:
+                # Open in browser if possible
+                webbrowser.open(output_file.resolve().as_uri())
+
+    except KeyboardInterrupt:
+        logger.warning('Process interrupted by user. Exiting.')
+        return 130  # Standard exit code for SIGINT
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}')
         return 1
 
-    tree = etree.parse(args.xml_file, parser=PARSER)
-    root = tree.getroot()
+    return 0
 
-    xpath = "//xmlns:amendment[@name='hcamnd']/xmlns:amendmentBody[@eId]"
 
-    amendments_xml = root.xpath(xpath, namespaces=NSMAP)
+def validate_arguments(args):
+    """Validate command line arguments and return error code if invalid."""
+    if not args.xml_file.exists():
+        logger.error(f'XML file does not exist: {args.xml_file}')
+        return 1
 
-    logger.info(f'No. of amendments found in xml: {len(amendments_xml)}')
+    if not args.xml_file.is_file():
+        logger.error(f'XML path is not a file: {args.xml_file}')
+        return 1
 
-    filename = 'API_html_diff.html'
+    if not os.access(args.xml_file, os.R_OK):
+        logger.error(f'XML file is not readable: {args.xml_file}')
+        return 1
 
-    if args.xml_file != None:
-        filename = Path(args.xml_file.name).stem + '.html'
+    if args.json and not args.json.exists():
+        logger.error(f'JSON file does not exist: {args.json}')
+        return 1
 
-    report = Report(root, amendments_list_json)
-    if args.sp:
-        report.create_table_for_sharepoint()
-    else:
-        report.html_tree.write(
-            filename,
-            method='html',
-            encoding='utf-8',
-            doctype='<!DOCTYPE html>',
-        )
+    if args.output:
+        output_dir = args.output.parent
+        if not output_dir.exists():
+            try:
+                output_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                logger.error(f'Cannot create output directory {output_dir}: {e}')
+                return 1
 
-        webbrowser.open(Path(filename).resolve().as_uri())
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
