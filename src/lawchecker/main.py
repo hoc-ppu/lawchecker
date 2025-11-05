@@ -688,17 +688,21 @@ def main():
 
     api = Api()
 
-    window = webview.create_window(
-        url=entry,
-        js_api=api,
-        title='Lawchecker',
-        width=1050,
-        height=850,
-        min_size=(450, 350),
-        text_select=True,
-        zoomable=True,
-        # server=False,
-    )
+    try:
+        window = webview.create_window(
+            url=entry,
+            js_api=api,
+            title='Lawchecker',
+            width=1050,
+            height=850,
+            min_size=(450, 350),
+            text_select=True,
+            zoomable=True,
+            # server=False,
+        )
+    except Exception as e:
+        logger.error(f'Error creating webview window: {repr(e)}')
+        raise e
 
     common.RunTimeEnv.webview_window = cast(Window, window)
 
@@ -714,15 +718,15 @@ def main():
     gh.setLevel(level=lawchecker_logger.NOTICE_LEVEL)
     logger.addHandler(gh)
 
-    webview.start(
-        debug=debug,
-        storage_path=str(Path.home() / 'pywebview' / 'lawchecker'),
-        # http_server=False,
-    )
-
-
-def entrypoint():
-    main()
+    try:
+        webview.start(
+            debug=debug,
+            storage_path=str(Path.home() / 'pywebview' / 'lawchecker'),
+            # http_server=False,
+        )
+    except Exception as e:
+        logger.error(f'Error starting webview: {repr(e)}')
+        raise e
 
 
 if __name__ == '__main__':

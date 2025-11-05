@@ -5,7 +5,7 @@ dependencies = [
     "lxml",
     "requests",
     "python-dotenv",
-    "pywebview<6.0",
+    "pywebview",
 ]
 requires-python = ">=3.11"
 keywords = [
