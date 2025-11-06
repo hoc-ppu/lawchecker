@@ -351,6 +351,10 @@ def normalise_text(text: str) -> str:
     text = text.replace(' ”', '”')  # should this go here?
     text = text.replace('“ ', '“')  # should this go here?
 
+    # I have decided that I don't care about whitespace around em dashes
+    text = text.replace(' —', '—')
+    text = text.replace('— ', '—')
+
     text = text.replace('\u00a0', ' ')  # replace non-breaking space with normal space
     text = text.replace('\u2007', ' ')  # replace a figure space with normal space
 
