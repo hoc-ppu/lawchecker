@@ -627,6 +627,10 @@ def get_entrypoint():
         # Changed in vite.config.ts file
         url = 'http://localhost:5175'
 
+        # Developers do often use the dev server to try things out but not
+        # always as they may want to test the bundled HTML.
+        # so we will check if it is running first
+
         for _ in range(20):
             try:
                 get = requests.get(url, timeout=0.05)
@@ -684,17 +688,21 @@ def main():
 
     api = Api()
 
-    window = webview.create_window(
-        url=entry,
-        js_api=api,
-        title='Lawchecker',
-        width=1050,
-        height=850,
-        min_size=(450, 350),
-        text_select=True,
-        zoomable=True,
-        # server=False,
-    )
+    try:
+        window = webview.create_window(
+            url=entry,
+            js_api=api,
+            title='Lawchecker',
+            width=1050,
+            height=850,
+            min_size=(450, 350),
+            text_select=True,
+            zoomable=True,
+            # server=False,
+        )
+    except Exception as e:
+        logger.error(f'Error creating webview window: {repr(e)}')
+        raise e
 
     common.RunTimeEnv.webview_window = cast(Window, window)
 
@@ -710,15 +718,15 @@ def main():
     gh.setLevel(level=lawchecker_logger.NOTICE_LEVEL)
     logger.addHandler(gh)
 
-    webview.start(
-        debug=debug,
-        storage_path=str(Path.home() / 'pywebview' / 'lawchecker'),
-        # http_server=False,
-    )
-
-
-def entrypoint():
-    main()
+    try:
+        webview.start(
+            debug=debug,
+            storage_path=str(Path.home() / 'pywebview' / 'lawchecker'),
+            # http_server=False,
+        )
+    except Exception as e:
+        logger.error(f'Error starting webview: {repr(e)}')
+        raise e
 
 
 if __name__ == '__main__':

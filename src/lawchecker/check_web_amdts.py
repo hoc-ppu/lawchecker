@@ -1,7 +1,9 @@
 import argparse
 import csv
 import json
+import logging
 import math
+import os
 import re
 import sys
 import urllib.parse
@@ -18,11 +20,14 @@ import requests
 from lxml import etree, html
 from lxml.etree import QName, _Element, iselement
 from lxml.html import HtmlElement
+from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
+from urllib3.util.retry import Retry
 
-from lawchecker import common, pp_xml_lxml, templates, utils
+from lawchecker import __version__, common, pp_xml_lxml, templates, utils
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_bill_numbering import clean as clean_filename
-from lawchecker.lawchecker_logger import logger
+from lawchecker.lawchecker_logger import ch, logger
 from lawchecker.settings import (
     AMENDMENT_DETAILS_URL_TEMPLATE,
     AMENDMENTS_URL_TEMPLATE,
@@ -38,6 +43,28 @@ JSON = int | str | float | bool | None | list['JSON'] | dict[str, 'JSON']
 JSONObject = dict[str, JSON]
 JSONList = list[JSON]
 JSONType = JSONObject | JSONList
+
+
+# Shared requests.Session with retries/timeouts to reduce transient failures
+DEFAULT_TIMEOUT = 10  # seconds
+
+SESSION = requests.Session()
+RETRY_STRATEGY = Retry(
+    total=3,
+    backoff_factor=0.5,
+    status_forcelist=[429, 500, 502, 503, 504],
+    allowed_methods=['HEAD', 'GET', 'OPTIONS'],
+)
+ADAPTER = HTTPAdapter(max_retries=RETRY_STRATEGY)
+SESSION.mount('https://', ADAPTER)
+SESSION.mount('http://', ADAPTER)
+# prevent socket reuse which can trigger EOF errors from some servers/proxies
+SESSION.headers.update(
+    {
+        'Connection': 'close',
+        'User-Agent': 'LawChecker/1.0',
+    }
+)
 
 
 class ContainerType(StrEnum):
@@ -214,8 +241,13 @@ def progress_bar(iterable: Iterable, total: int) -> list:
 
 
 def get_json_sync(url: str) -> JSONObject:
-    response = requests.get(url)
-    return response.json()
+    try:
+        response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        return response.json()
+    except RequestException as e:
+        logger.error(f'HTTP error fetching JSON from {url}: {e}')
+        raise
 
 
 class Sponsor:
@@ -231,6 +263,12 @@ class Sponsor:
         self.sort_order = sort_order
         self.member_id = member_id
 
+    def __repr__(self) -> str:
+        return (
+            f'Sponsor(name={self.name}, member_id={self.member_id}, '
+            f'is_lead={self.is_lead}, sort_order={self.sort_order})'
+        )
+
     def __eq__(self, other: 'Sponsor') -> bool:
         """Check if two sponsors are the same"""
 
@@ -241,11 +279,13 @@ class Sponsor:
 
         # name_match = self.name == other.name
         member_id_match = self.member_id == other.member_id
-        is_lead_match = self.is_lead == other.is_lead
-        sort_order_match = self.sort_order == other.sort_order
+        # is_lead_match = self.is_lead == other.is_lead
+
+        # dont need to mind about sort order
+        # sort_order_match = self.sort_order == other.sort_order
 
         # return name_match and member_id_match and is_lead_match and sort_order_match
-        return member_id_match and is_lead_match and sort_order_match
+        return member_id_match  # and is_lead_match  # and sort_order_match
 
     def __lt__(self, other: 'Sponsor') -> bool:
         return self.name < other.name
@@ -514,6 +554,9 @@ class Amendment:
 
         _id = amendment_xml.xpath('.//*/@GUID[1]', namespaces=NSMAP)[0]
         # print(f"ID: {_id}")
+
+        if amdt_no.casefold().strip() == 'nc2':
+            logger.info(f'Sponsors from XML: {repr(sponsors)}')
 
         return cls(
             amendment_text,
@@ -840,7 +883,10 @@ class Report:
 
         self.no_name_changes: list[str] = []
         self.name_changes: list[ChangedNames] = []
-        # self.duplicate_names: list[str] = []
+        # self.duplicate_names: list[str] sp= []
+        self.duplicate_names_in_xml: list[Sponsor] = []
+        self.duplicate_names_in_api: list[Sponsor] = []
+
         self.name_changes_in_context: list[ChangedAmdt] = []
 
         self.correct_stars: list[str] = []
@@ -1040,7 +1086,8 @@ class Report:
                 xml_amdt: Amendment | None = self.xml_amdts.get(key)
                 if xml_amdt is None:
                     continue
-                missing_amdt_reference.append(xml_amdt.key.long_ref())
+                missing_amdt_reference.append(xml_amdt.key.long_ref)
+                '--Satpal replaced parenthese'
 
             removed_content = (
                 f'Missing content: <strong>{len(self.missing_api_amdts)}</strong><br/>'
@@ -1079,6 +1126,8 @@ class Report:
 
         for item in self.name_changes:
             names_added = []
+            names_removed = []
+
             for name in item.added:
                 names_added.append(
                     html.fromstring(
@@ -1087,6 +1136,15 @@ class Report:
                 )
             p_names_added = html.fromstring('<p class="row"></p>')
             p_names_added.extend(names_added)
+
+            for name in item.removed:
+                names_removed.append(
+                    html.fromstring(
+                        f'<span class="col-12 col-lg-6  mb-2">{name}</span>'
+                    )
+                )
+            p_names_removed = html.fromstring('<p class="row"></p>')
+            p_names_removed.extend(names_removed)
 
             total_added = len(item.added)
             total_removed = len(item.removed)
@@ -1098,7 +1156,7 @@ class Report:
 
             name_changes.add_row(
                 # put in long ref
-                (item.num, p_names_added, ', '.join(item.removed), ', '.join(totals))
+                (item.num, p_names_added, p_names_removed, ', '.join(totals))
             )
 
         return name_changes.html
@@ -1344,30 +1402,31 @@ class Report:
         # we don't need amendments in the API but not in the document
         # self.added_amdts = list(new_doc.amdt_set.difference(old_doc.amdt_set))
 
-    def diff_names(self, new_amdt: Amendment, old_amdt: Amendment):
-        logger.debug(f'Finding differences in names for {new_amdt.key}')
+    def diff_names(self, xml_amdt: Amendment, json_amdt: Amendment):
+        logger.debug(f'Finding differences in names for {xml_amdt.key}')
         # look for duplicate names. Only need to do this for the new_amdt.
-        self.duplicate_names = find_duplicate_sponsors(new_amdt.sponsors)
+        self.duplicate_names_in_api = find_duplicate_sponsors(json_amdt.sponsors)
+        self.duplicate_names_in_xml = find_duplicate_sponsors(xml_amdt.sponsors)
 
-        if self.duplicate_names:
-            # warn in UI
-            # use long ref
-            logger.warning(f'Duplicate names found in {new_amdt.key.long_ref}')
+        if self.duplicate_names_in_api:
+            logger.warning(f'Duplicate names found in {json_amdt.key.long_ref} in API')
+        if self.duplicate_names_in_xml:
+            logger.warning(f'Duplicate names found in {xml_amdt.key.long_ref} in XML')
 
         added_names = [
-            item.name for item in new_amdt.sponsors if item not in old_amdt.sponsors
+            item.name for item in xml_amdt.sponsors if item not in json_amdt.sponsors
         ]
         removed_names = [
-            item.name for item in old_amdt.sponsors if item not in new_amdt.sponsors
+            item.name for item in json_amdt.sponsors if item not in xml_amdt.sponsors
         ]
 
         if not added_names and not removed_names:
             # there have been no name changes
-            self.no_name_changes.append(new_amdt.key.long_ref)
+            self.no_name_changes.append(xml_amdt.key.long_ref)
         else:
             self.name_changes.append(
                 ChangedNames(
-                    new_amdt.key.long_ref, added_names, removed_names, new_amdt.key
+                    xml_amdt.key.long_ref, added_names, removed_names, xml_amdt.key
                 )
             )
 
@@ -1399,8 +1458,17 @@ class Report:
         amendment. It does not contain the sponsor information.
         """
 
-        new_amdt_content = new_amdt.amendment_text.split('\n')
-        old_amdt_content = old_amdt.amendment_text.split('\n')
+        # When consecutive ”” make sure no new line between
+
+        new_amdt_content_fixed_quotes = utils.fix_consecutive_quotes(
+            new_amdt.amendment_text
+        )
+        old_amdt_content_fixed_quotes = utils.fix_consecutive_quotes(
+            old_amdt.amendment_text
+        )
+
+        new_amdt_content = new_amdt_content_fixed_quotes.split('\n')
+        old_amdt_content = old_amdt_content_fixed_quotes.split('\n')
 
         if len(new_amdt_content) == 0 or len(old_amdt_content) == 0:
             # use the long ref
@@ -1413,7 +1481,7 @@ class Report:
         new_amdt_content_no_lines = utils.normalise_text(' '.join(new_amdt_content))
         old_amdt_content_no_lines = utils.normalise_text(' '.join(old_amdt_content))
 
-        # if new_amdt.num == "59":
+        # if new_amdt.num == '18':
         #     print(new_amdt_content_no_lines)
         #     print(old_amdt_content_no_lines)
 
@@ -1487,6 +1555,29 @@ class Report:
                 self.incorrect_ex_statements,
             )
         )
+
+    def json_summary(self) -> dict[str, Any]:
+        """
+        Create a summary of the report in JSON format.
+        """
+
+        summary: dict[str, Any] = {
+            'missing_amendments': [str(item) for item in self.missing_api_amdts],
+            'incorrect_amendments': [item.ref for item in self.incorrect_amdt_in_api],
+            'name_changes': [
+                {
+                    'ref': item.ref,
+                    'added': item.added,
+                    'removed': item.removed,
+                }
+                for item in self.name_changes
+            ],
+            'incorrect_stars': self.incorrect_stars,
+            'incorrect_decisions': self.incorrect_decisions,
+            'incorrect_explanatory_statements': self.incorrect_ex_statements,
+        }
+
+        return summary
 
     # def create_csv(self):
     #     # TODO: this needs some fixing
@@ -1895,15 +1986,12 @@ def also_query_bills_api(
         bill_title = urllib.parse.quote(bill_title)
         url = f'https://bills-api.parliament.uk/api/v1/Bills?SearchTerm={bill_title}&SortOrder=DateUpdatedDescending'
         logger.info(f'Querying: {url}')
-        response = requests.get(url)
-    except Exception:
-        logger.error('Error querying the API')
+        response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
+        response_json: JSONObject = response.json()
+    except RequestException as e:
+        logger.error(f'Error querying the API: {e}')
         return
-    if response.status_code != 200:
-        logger.error('Error querying the API')
-        return
-
-    response_json: JSONObject = response.json()
 
     # file_name = "amendments_details.json"
     # json.dump(response_json, open(file_name, "w"), ensure_ascii=False, indent=2)
@@ -1942,7 +2030,8 @@ def also_query_bills_api(
         # look thorugh all other stages to get the correct one
         try:
             url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_json["billId"]}/Stages'
-            response = requests.get(url)
+            response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+            response.raise_for_status()
             response_json = response.json()
             stages = response_json.get('items', [])
             for item in stages:  # type: ignore
@@ -2049,6 +2138,12 @@ def save_json_to_file(json_data: dict[str, JSON], file_path: Path) -> None:
 #     return json_output
 
 
+def create_friendly_name(text: str, lowercase: bool = True) -> str:
+    # Remove all non-alphanumeric characters (excluding underscores if needed)
+    cleaned = re.sub(r'[^A-Za-z0-9]', '', text)
+    return cleaned.lower() if lowercase else cleaned
+
+
 def get_amendments_detailed_json(
     amendments_summary_json: list[JSONObject],
     bill_id: int,
@@ -2056,7 +2151,13 @@ def get_amendments_detailed_json(
     stage_description: str = '',
     api_bill_short_title: str = '',
 ) -> JSONObject:
-    with open(Path(__file__).parent / 'amendments_summary.json', 'w') as f:
+    """'unique cache json'"""
+    filePathRoot = Path(__file__).parent / 'JSONCache'
+    os.makedirs(filePathRoot, exist_ok=True)
+    with open(
+        filePathRoot / (create_friendly_name(api_bill_short_title) + '_summary.json'),
+        'w',
+    ) as f:
         json.dump(amendments_summary_json, f, indent=2)
     amendment_ids = [
         amendment.get('amendmentId') for amendment in amendments_summary_json
@@ -2064,28 +2165,38 @@ def get_amendments_detailed_json(
     logger.info(f'{len(amendment_ids)=}')
     logger.info(f'{amendment_ids=}')
 
-    def _request_data(
-        amendment_id: str,
-    ) -> requests.Response:
-        """Query the API."""
-
+    def _request_data(amendment_id: str):
+        """Query the API using the shared SESSION and return response or None."""
         url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
+        try:
+            resp = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+            resp.raise_for_status()
+            return resp
+        except Exception as e:
+            logger.error(f'Error fetching amendment {amendment_id}: {e}')
+            return None
 
-        return requests.get(url)
-
-    with ThreadPoolExecutor(max_workers=40) as pool:
+    max_workers = min(10, max(2, len(amendment_ids)))
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
         # create a progress bar and return a list
         responses = progress_bar(
-            pool.map(
-                lambda amendment_id: _request_data(amendment_id),
-                amendment_ids,
-            ),
+            pool.map(lambda amendment_id: _request_data(amendment_id), amendment_ids),
             len(amendment_ids),
         )
         print()  # newline after progress bar
 
     logger.info(f'{responses=}')
-    json_amendments_list: list[JSONType] = [response.json() for response in responses]
+    json_amendments_list: list[JSONType] = []
+    for response in responses:
+        if response is None:
+            # keep a placeholder empty object to maintain list lengths
+            json_amendments_list.append({})
+            continue
+        try:
+            json_amendments_list.append(response.json())
+        except Exception as e:
+            logger.error(f'Error parsing JSON response: {e}')
+            json_amendments_list.append({})
 
     json_output = {
         'shortTitle': api_bill_short_title,
@@ -2137,15 +2248,10 @@ def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]
     logger.info(f'{urls=}')
 
     responses: list[JSONObject] = []
-    with ThreadPoolExecutor(max_workers=40) as pool:
+    max_workers = min(10, max(2, len(urls)))
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
         # create a progress bar and return a list
-        responses = progress_bar(
-            pool.map(
-                get_json_sync,
-                urls,
-            ),
-            len(urls),
-        )
+        responses = progress_bar(pool.map(get_json_sync, urls), len(urls))
         print()  # newline after progress bar
 
     with open(Path(__file__).parent / 'responses.json', 'w') as f:
@@ -2236,86 +2342,226 @@ def find_duplicate_sponsors(lst: list[Sponsor]) -> list[Sponsor]:
     """
 
     # Convert the list to a set to remove duplicates
-    unique_items = set(lst)
+    unique_items = []
+    duplicate_items = []
 
-    # If the length of the set is less than the length of the list,
-    # then there are duplicates
-    if len(unique_items) < len(lst):
-        sorted_items = sorted(list(unique_items))
+    for sponsor in lst:
+        if sponsor in unique_items:
+            if sponsor not in duplicate_items:
+                duplicate_items.append(sponsor)
+        else:
+            unique_items.append(sponsor)
 
-        # Create a dictionary to store the count of each item
-        item_counts = {}
+    # logger.info(f'{unique_items=}')
+    # logger.info(f'{duplicate_items=}')
 
-        # Count the number of occurrences of each item in the original list
-        for item in lst:
-            if item in item_counts:
-                item_counts[item] += 1
-            else:
-                item_counts[item] = 1
-
-        # Create a list of duplicates
-        return [item for item in sorted_items if item_counts[item] > 1]
-
-    return list()
+    return duplicate_items
 
 
-def main():
+def parse_arguments():
     parser = argparse.ArgumentParser(
         description='Compare amendments between an XML file and the API.'
-        ' If no JSON file is provided, the API will be queried automatically.'
+        ' If no JSON file is provided, the API will be queried automatically.',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s amendments.xml
+  %(prog)s amendments.xml --json amendments.json
+  %(prog)s amendments.xml -o report.html
+  %(prog)s amendments.xml --sp
+        """,
     )
     parser.add_argument(
         'xml_file',
-        type=argparse.FileType('rb'),
+        type=Path,
         help='XML amendment or proceedings file path',
     )
     parser.add_argument(
         '--json',
-        type=argparse.FileType('r'),
+        type=Path,
         metavar='json_file',
         default=None,
         help='Existing JSON file with amendments details',
+    )
+    parser.add_argument(
+        '-o',
+        '--output',
+        type=Path,
+        metavar='OUTPUT_FILE',
+        default=None,
+        help='Where to save the output report HTML file',
     )
     parser.add_argument(
         '--sp',
         action='store_true',
         help='Create a table for SharePoint instead of the full report',
     )
+    parser.add_argument(
+        '--no-save-json',
+        action='store_true',
+        help='Do not save JSON response to file when querying API',
+    )
+    parser.add_argument(
+        '--summary',
+        action='store_true',
+        help='Save a JSON summary of amendments to a file',
+    )
+    parser.add_argument(
+        '--no-browser',
+        action='store_true',
+        help='Do not attempt to open the report in a web browser',
+    )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        action='count',
+        default=0,
+        help='Increase verbosity (use -vv for debug level)',
+    )
+    parser.add_argument(
+        '--version',
+        action='version',
+        version=f'%(prog)s {__version__}',
+    )
     args = parser.parse_args()
 
-    if args.json:
-        amendments_list_json = json.load(args.json)
-    else:
-        amendments_list_json = also_query_bills_api(Path(args.xml_file.name))
+    return args
 
-    if not amendments_list_json:
-        logger.error('No amendments found from JSON file or API. Exiting.')
+
+def setup_logging(verbosity: int):
+    """Setup logging based on verbosity level."""
+    if verbosity >= 2:
+        level = logging.DEBUG
+    elif verbosity == 1:
+        level = logging.INFO
+    else:
+        level = logging.WARNING
+
+    # set the logging level for the console handler
+    ch.setLevel(level)
+    # logger.setLevel(level)  # dont need this as already set to DEBUG
+
+
+def main():
+    try:
+        args = parse_arguments()
+
+        # Validate arguments
+        if (error_code := validate_arguments(args)) != 0:
+            return error_code
+
+        # Load or fetch amendments data
+        if args.json:
+            logger.info(f'Loading amendments from JSON file: {args.json}')
+            try:
+                with args.json.open('r') as f:
+                    amendments_list_json = json.load(f)
+            except json.JSONDecodeError as e:
+                logger.error(f'Invalid JSON file {args.json}: {e}')
+                return 1
+            except Exception as e:
+                logger.error(f'Error reading JSON file {args.json}: {e}')
+                return 1
+        else:
+            logger.info('Querying API for amendments data...')
+            save_json = not args.no_save_json
+            amendments_list_json = also_query_bills_api(args.xml_file, save_json)
+
+        if not amendments_list_json:
+            logger.error('No amendments found from JSON file or API.')
+            return 1
+
+        # Parse XML file
+        logger.info(f'Parsing XML file: {args.xml_file}')
+        try:
+            with args.xml_file.open('rb') as f:
+                tree = etree.parse(f, parser=PARSER)
+            root = tree.getroot()
+        except Exception as e:
+            logger.error(f'Error parsing XML file {args.xml_file}: {e}')
+            return 1
+
+        # Find amendments in XML
+        xpath = "//xmlns:amendment[@name='hcamnd']/xmlns:amendmentBody[@eId]"
+        amendments_xml = root.xpath(xpath, namespaces=NSMAP)
+        logger.info(f'Found {len(amendments_xml)} amendments in XML')
+
+        # Generate report
+        logger.info('Generating report...')
+        report = Report(root, amendments_list_json)
+
+        # Determine output filename
+        if args.output:
+            output_file: Path = args.output
+        else:
+            output_file: Path = args.xml_file.with_suffix('.html')
+
+        if args.summary:
+            summary_json_file = output_file.with_name(
+                output_file.stem + '_summary.json'
+            )
+            with summary_json_file.open('w') as f:
+                json.dump(report.json_summary(), f, ensure_ascii=False, indent=2)
+            logger.info(f'Saved summary JSON file to: {summary_json_file}')
+        else:
+            logger.info('Skipping summary JSON file as --summary not specified.')
+
+        # Generate appropriate output
+        if args.sp:
+            logger.info('Creating SharePoint table...')
+            report.create_table_for_sharepoint()
+        else:
+            logger.info(f'Writing HTML report to: {output_file}')
+            report.html_tree.write(
+                str(output_file),
+                method='html',
+                encoding='utf-8',
+                doctype='<!DOCTYPE html>',
+            )
+
+            if not args.no_browser:
+                # Open in browser if possible
+                webbrowser.open(output_file.resolve().as_uri())
+
+    except KeyboardInterrupt:
+        logger.warning('Process interrupted by user. Exiting.')
+        return 130  # Standard exit code for SIGINT
+    except Exception as e:
+        logger.error(f'Unexpected error: {e}')
         return 1
 
-    tree = etree.parse(args.xml_file, parser=PARSER)
-    root = tree.getroot()
+    return 0
 
-    xpath = "//xmlns:amendment[@name='hcamnd']/xmlns:amendmentBody[@eId]"
 
-    amendments_xml = root.xpath(xpath, namespaces=NSMAP)
+def validate_arguments(args):
+    """Validate command line arguments and return error code if invalid."""
+    if not args.xml_file.exists():
+        logger.error(f'XML file does not exist: {args.xml_file}')
+        return 1
 
-    logger.info(f'No. of amendments found in xml: {len(amendments_xml)}')
+    if not args.xml_file.is_file():
+        logger.error(f'XML path is not a file: {args.xml_file}')
+        return 1
 
-    filename = 'API_html_diff.html'
+    if not os.access(args.xml_file, os.R_OK):
+        logger.error(f'XML file is not readable: {args.xml_file}')
+        return 1
 
-    report = Report(root, amendments_list_json)
-    if args.sp:
-        report.create_table_for_sharepoint()
-    else:
-        report.html_tree.write(
-            filename,
-            method='html',
-            encoding='utf-8',
-            doctype='<!DOCTYPE html>',
-        )
+    if args.json and not args.json.exists():
+        logger.error(f'JSON file does not exist: {args.json}')
+        return 1
 
-        webbrowser.open(Path(filename).resolve().as_uri())
+    if args.output:
+        output_dir = args.output.parent
+        if not output_dir.exists():
+            try:
+                output_dir.mkdir(parents=True, exist_ok=True)
+            except Exception as e:
+                logger.error(f'Cannot create output directory {output_dir}: {e}')
+                return 1
+
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

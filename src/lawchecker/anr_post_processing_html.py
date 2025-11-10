@@ -5,6 +5,8 @@ import sys
 import traceback
 
 import requests
+from requests.exceptions import RequestException
+from lawchecker.check_web_amdts import SESSION, DEFAULT_TIMEOUT
 from lxml import etree as ET
 from lxml.etree import iselement
 
@@ -41,9 +43,13 @@ def fetch_eligible_members():
     # TODO: cache the response for a certain period of time
 
     url = "https://data.parliament.uk/membersdataplatform/services/mnis/members/query/House=Commons|IsEligible=true/"
-    response = requests.get(url)
-    if response.status_code == 200:
+    try:
+        response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+        response.raise_for_status()
         members_tree = ET.fromstring(response.content)
+    except RequestException:
+        logger.info("Failed to fetch data from MNIS API.")
+        return set()
         # Extract <DisplayAs> text for each <Member> in the API response
         return {
             member.find("DisplayAs").text  # TODO: would it be better to use .findtext()?

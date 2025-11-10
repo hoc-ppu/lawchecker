@@ -59,10 +59,10 @@ except KeyError:
 DEFAULT_OUTPUT_NAME = 'Added_Names_Report.html'
 
 
-XSLT_MARSHAL_PARAM_NAME = 'marsh-path'
+# XSLT_MARSHAL_PARAM_NAME = 'marsh-path'
+# XSL_1_NAME = 'anr_spo_rest.py'
+# XSL_2_NAME = 'anr_post_processing_html.py'
 
-XSL_1_NAME = 'anr_spo_rest.py'
-XSL_2_NAME = 'anr_post_processing_html.py'
 AN_HTML_TEMPLATE = 'anr_template.html'
 COMPARE_REPORT_TEMPLATE_NAME = 'compare_report_template.html'
 TEMPLATES_FOLDER = 'templates'
@@ -75,6 +75,8 @@ match RUNTIME_ENV:
     case RtEnv.EXE:
         PARENT_FOLDER = Path(sys.executable).parent
     case RtEnv.APP:
+        # I'm not sure that this is needed anymore as templates are now in
+        # lawchecker.app/Contents/Resources/lib/python3.12/lawchecker/templates
         PARENT_FOLDER = Path('../Resources')
     case _:
         # assume running as python script via usual interpreter
@@ -98,15 +100,10 @@ def get_template_path(template_name: str) -> Path:
     try:
         # Try using importlib.resources first (works in all environments)
         template_files = files('lawchecker') / 'templates'
-        msg = f'Template files path: {template_files}'
-        logger.info(msg)
-        print(msg)
         return Path(str(template_files / template_name))
     except Exception:
-        msg = 'Could not load template using importlib.resources'
-        logger.info(msg)
-        print(msg)
         # Fallback
+        logger.warning('Could not load template using importlib.resources')
         return PARENT_FOLDER / TEMPLATES_FOLDER / template_name
 
 
@@ -114,8 +111,8 @@ HTML_TEMPLATE = get_template_path(AN_HTML_TEMPLATE)
 
 COMPARE_REPORT_TEMPLATE = get_template_path(COMPARE_REPORT_TEMPLATE_NAME)
 
-print(f'HTML_TEMPLATE: {HTML_TEMPLATE}')
-print(f'COMPARE_REPORT_TEMPLATE: {COMPARE_REPORT_TEMPLATE}')
+logger.info(f'{HTML_TEMPLATE=}')
+logger.info(f'{COMPARE_REPORT_TEMPLATE=}')
 
 if not COMPARE_REPORT_TEMPLATE.exists():
     COMPARE_REPORT_TEMPLATE = PARENT_FOLDER.parent.parent.joinpath(

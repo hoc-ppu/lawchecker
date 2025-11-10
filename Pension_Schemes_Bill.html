@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>Check Amendments</title>
+  <link rel="stylesheet" href="https://designsystem.parliament.uk/apps/commons-business/v1.0/css/design-system.css">
+  <link rel="stylesheet" href="https://designsystem.parliament.uk/apps/commons-business/v1.0/css/businesspapers.css">
+
+  <style type="text/css">
+    .container-fluid{
+      max-width: 1400px;
+    }
+    body {
+      font-family: National, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Open Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    }
+
+    a.hidden-until-hover{
+      text-decoration: none;
+    }
+    a.hidden-until-hover:hover {
+      text-decoration: underline;
+    }
+
+    .red {
+      color: var(--red) !important;
+    }
+
+    /* stuff in the design system that is not in the design system */
+    .table{
+      border:none;
+      /* overflow-wrap: break-word; */
+      /* display:block; */
+      margin-bottom:15px;
+      max-width:100%;
+      /* table-layout: fixed; */
+      /* overflow-x:auto */
+    }
+    .table td,
+    .table th{
+      border:1px solid #cbc9cd;
+      padding:10px
+    }
+    .table th{
+      background-color:#ebe9e8;
+      font-weight:500
+    }
+    .table:last-child{
+      margin-bottom:0
+    }
+    /* end fix for design system */
+
+    table.diff {
+      font-family: Courier, monospace;
+    }
+
+    #intro table td,
+    #intro table th {
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+
+    table.diff td,
+    table.diff th {
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+
+    .dataframe tr td:first-child {
+      font-size: 1rem;
+    }
+
+    .diff_header {
+      background-color: #E7DFF4
+    }
+    .wrap{
+      overflow-wrap: break-word;
+      max-width: 100%;
+      overflow-x: auto;
+      margin-top: 2rem;
+      margin-bottom: 2rem;
+    }
+    .wrap table{
+      margin-top: 1rem;
+    }
+    .wrap table th:first-child{
+      width: 100px;
+    }
+
+    td.diff_header {
+      text-align: right
+    }
+
+    .diff_next { background-color: #625A75; }
+    .diff_next * { color: white }
+    .diff_add { background-color: #96DCBE }
+    .diff_chg { background-color: #ffff77 }
+    .diff_sub { background-color: #F7CBCC }
+
+    .card { background-color: initial; }
+
+    .amendments-check h2 {
+      /* margin-top: 2rem; */
+    }
+
+    .dont-break-out {
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      hyphens: auto;
+    }
+
+    /* -------------------- added names table -------------------- */
+    .an-table {
+      /* width: 100%; */
+      /* table-layout: fixed; */
+      /* border-collapse: collapse; */
+    }
+    .sticky-head th{
+      /* background: white; */
+      position: sticky;
+      top: 0; /* Don't forget this, required for the stickiness */
+      z-index: 1;
+    }
+
+    /* .an-table th,
+    .an-table td {
+      padding: 8px;
+      border: 1px solid #ddd;
+    } */
+
+    /* .an-table th {
+      background-color: #f2f2f2;
+    } */
+
+    .an-table th:first-child {
+      width: 10%;
+    }
+
+    .an-table th:nth-child(2) {
+      width: 39%;
+    }
+    .an-table th:nth-child(3) {
+      width: 39%;
+    }
+
+    .an-table th:last-child {
+      width: 12%;
+    }
+
+    span.col-12.mb-2:last-child{
+      margin-bottom: 0 !important;
+    }
+    @media (min-width: 992px){
+      span.col-12.mb-2:nth-last-child(2){
+        margin-bottom: 0 !important;
+      }
+    }
+
+
+
+    /* --------------- Start collapsible sections ---------------- */
+    .collapsible {
+      margin-bottom: 10px;
+    }
+
+    .collapsible-header {
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .collapsible-content {
+      display: block;
+      padding: 10px;
+    }
+
+    .arrow {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-top: 0.5rem solid transparent;
+      border-bottom: 0.5rem solid transparent;
+      border-left: 0.5rem solid #333;
+      margin-right: 1rem;
+      transition: transform 0.3s ease-in-out;
+      transform: rotate(90deg);
+    }
+
+    .collapsible.closed .arrow {
+      transform: rotate(0deg);
+    }
+
+    .collapsible-small{
+      padding: 0;
+      margin: 0;
+    }
+    /* ---------------- End collapsible sections ----------------- */
+    #toggle-refs {
+      margin-bottom:18px;
+    }
+
+    /* --------------------- tocbot styling ---------------------- */
+    .inner-content-scroll{
+      max-height: 100vh;
+      overflow: auto;
+    }
+    .js-toc .toc-list-item{
+      padding-top: 0.25rem;
+    }
+    .is-collapsible {
+      max-height: 3000px;
+      overflow: hidden;
+      transition: all 300ms ease-in-out;
+    }
+    .is-collapsed {
+      max-height: 0;
+    }
+
+  </style>
+</head>
+
+<body>
+  <main id="main-content">
+    <article>
+      <div class="container-fluid">
+        <div class="row block">
+          <div class="col-md-3 block-page order-md-last">
+            <div class="sticky-top inner-content-scroll">
+              <h3 id="toc-heading" class="heading-level-3" data-toc-skip>Contents</h3>
+              <nav class="js-toc toc" id="toc" data-toggle="toc" aria-labelledby="toc-heading"></nav>
+            </div>
+          </div>
+          <div class="col-md-9 js-toc-content">
+            <div class="block-page amendments-check" id="content-goes-here">
+              <h1>Check Amendments on Bills.parliament.uk</h1>
+
+            <div class="wrap"><section id="intro"><h2>Introduction</h2><p>This report summarises differences between amendments in the bills API and the amendments in the LawMaker document XML official list documents. The document is:<br><strong>Pension Schemes Bill</strong></p></section><table class="sticky-head table-responsive-md table"><thead><tr><th scope="col"></th><th scope="col">Pension Schemes Bill</th></tr></thead><tbody><tr><td>Bill Title</td><td>Pension Schemes Bill</td></tr><tr><td>Published date</td><td>Thursday 11 September 2025</td></tr><tr><td>List Type</td><td>Amendment Paper</td></tr></tbody></table></div><div></div><div></div><section class="card">
+<div class="card-inner collapsible">
+  <div class="collapsible-header">
+    <h2 data-heading-label="Missing amendments" id="card-1"><span class="arrow"> </span>Missing amendments<small class="text-muted"> [hide]</small></h2>
+  </div>
+  <div class="collapsible-content">
+    <div class="content">
+      <div class="secondary-info">
+      <!-- This is where secondary info goes -->
+      <p>Listed below are any Amendments (&amp; New Clauses etc.) which are present in the XML from LawMaker but not present in Amendments avaliable via the API. This means that they are almost certainly also missing from bills.parliament. </p><p>Missing content: <strong>11</strong><br>230 (opc207), 232 (opc208), 236 (opc214), 229 (opc296), 235 (opc211), 239 (opc297), 231 (opc209), 234 (opc213), 233 (opc210), 237 (opc212), 238 (opc326)</p></div>
+    </div>
+    <div class="info">
+      <div class="info-inner">
+        <!-- Tertiary info -->
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="card">
+<div class="card-inner collapsible">
+  <div class="collapsible-header">
+    <h2 data-heading-label="Check Names" id="card-2"><span class="arrow"> </span>Check Names<small class="text-muted"> [hide]</small></h2>
+  </div>
+  <div class="collapsible-content">
+    <div class="content">
+      <div class="secondary-info">
+      <!-- This is where secondary info goes -->
+      <p><strong>Zero</strong> amendments have name changes.</p><div></div></div>
+    </div>
+    <div class="info">
+      <div class="info-inner">
+        <!-- Tertiary info -->
+      <div class="collapsible collapsible-small closed">
+  <div class="collapsible-header collapsible-small">
+    <p><span class="arrow"> </span><span><strong>68</strong> amendments have correct names: <small class="text-muted"> [show]</small></span></p>
+  </div>
+  <p class="collapsible-content" style="display: none;">268 (hoc69), 277 (hoc73), 215 (opc173), 216 (opc174), 217 (opc141), 218 (opc171), 219 (opc137), 220 (opc142), 221 (opc138), 222 (opc148), 223 (opc157), 224 (opc158), NC11 (opc166), NC12 (opc309), NC13 (opc308), NC14 (opc307), NC15 (opc304), NC16 (opc306), NC17 (opc305), NC20 (opc293), NC21 (opc339), NC22 (opc325), NC23 (opc1), NC24 (opc177), NC25 (opc178), NC26 (opc336), NC27 (opc333), NC28 (opc334), NC29 (opc335), NC30 (opc276), NC1 (hoc3), NC2 (hoc5), NC3 (hoc6), NC4 (hoc7), NC5 (hoc10), NC7 (hoc13), NC8 (hoc17), NC9 (hoc18), NC10 (hoc19), NC18 (hoc20), NC19 (hoc21), NC31 (hoc26), NC32 (hoc27), NC33 (hoc28), NC34 (hoc29), NC35 (hoc30), NC36 (hoc38), NC37 (hoc43), NC38 (hoc46), NC39 (hoc50), NC40 (hoc51), NC41 (hoc52), NC42 (hoc53), NC43 (hoc54), NC44 (hoc56), NC45 (hoc55), NC46 (hoc70), NC47 (hoc75), 241 (opc337), 255 (hoc40), 256 (hoc41), 225 (opc120), 226 (opc327), 227 (opc121), 228 (opc246), 242 (opc330), 243 (opc294), 263 (hoc57)</p>
+</div></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="card">
+<div class="card-inner collapsible">
+  <div class="collapsible-header">
+    <h2 data-heading-label="Star Check" id="card-3"><span class="arrow"> </span>Star Check<small class="text-muted"> [hide]</small></h2>
+  </div>
+  <div class="collapsible-content">
+    <div class="content">
+      <div class="secondary-info">
+      <!-- This is where secondary info goes -->
+      <p>All amendments have correct stars</p></div>
+    </div>
+    <div class="info">
+      <div class="info-inner">
+        <!-- Tertiary info -->
+      <div class="collapsible collapsible-small closed">
+  <div class="collapsible-header collapsible-small">
+    <p><span class="arrow"> </span><span><strong>68</strong> amendments have correct stars: <small class="text-muted"> [show]</small></span></p>
+  </div>
+  <p class="collapsible-content" style="display: none;">268 (No Star), 277 (No Star), 215 (No Star), 216 (No Star), 217 (No Star), 218 (No Star), 219 (No Star), 220 (No Star), 221 (No Star), 222 (No Star), 223 (No Star), 224 (No Star), NC11 (No Star), NC12 (No Star), NC13 (No Star), NC14 (No Star), NC15 (No Star), NC16 (No Star), NC17 (No Star), NC20 (No Star), NC21 (No Star), NC22 (No Star), NC23 (No Star), NC24 (No Star), NC25 (No Star), NC26 (No Star), NC27 (No Star), NC28 (No Star), NC29 (No Star), NC30 (No Star), NC1 (No Star), NC2 (No Star), NC3 (No Star), NC4 (No Star), NC5 (No Star), NC7 (No Star), NC8 (No Star), NC9 (No Star), NC10 (No Star), NC18 (No Star), NC19 (No Star), NC31 (No Star), NC32 (No Star), NC33 (No Star), NC34 (No Star), NC35 (No Star), NC36 (No Star), NC37 (No Star), NC38 (No Star), NC39 (No Star), NC40 (No Star), NC41 (No Star), NC42 (No Star), NC43 (No Star), NC44 (No Star), NC45 (No Star), NC46 (No Star), NC47 (No Star), 241 (No Star), 255 (No Star), 256 (No Star), 225 (No Star), 226 (No Star), 227 (No Star), 228 (No Star), 242 (No Star), 243 (No Star), 263 (No Star)</p>
+</div></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="card">
+<div class="card-inner collapsible">
+  <div class="collapsible-header">
+    <h2 data-heading-label="Changed amendments" id="card-4"><span class="arrow"> </span>Changed amendments<small class="text-muted"> [hide]</small></h2>
+  </div>
+  <div class="collapsible-content">
+    <div class="content">
+      <div class="secondary-info">
+      <!-- This is where secondary info goes -->
+      <p><strong class="red">1</strong> amendments have incorrect content in the API: </p>
+<p class="h5"><a href="https://bills.parliament.uk/bills/3982/stages/20096/amendments/10026044" target="_blank">NC14</a>:</p>
+
+    <table class="diff" id="difflib_chg_to0__top" cellspacing="0" cellpadding="0" rules="groups">
+        <colgroup></colgroup> <colgroup></colgroup> <colgroup></colgroup>
+        <colgroup></colgroup> <colgroup></colgroup> <colgroup></colgroup>
+        <thead><tr><th class="diff_next"><br></th><th colspan="2" class="diff_header">Test</th><th class="diff_next"><br></th><th colspan="2" class="diff_header">Api Amendments</th></tr></thead>
+        <tbody>
+            <tr><td class="diff_next" id="difflib_chg_to0__0"><a href="#difflib_chg_to0__0">f</a></td><td class="diff_header" id="from0_1">1</td><td>To move the following Clause—</td><td class="diff_next"><a href="#difflib_chg_to0__0">f</a></td><td class="diff_header" id="to0_1">1</td><td>To move the following Clause—</td></tr>
+            <tr><td class="diff_next"><a href="#difflib_chg_to0__1">n</a></td><td class="diff_header" id="from0_2">2</td><td><span class="diff_sub">“</span></td><td class="diff_next"><a href="#difflib_chg_to0__1">n</a></td><td class="diff_header"></td><td></td></tr>
+            <tr><td class="diff_next" id="difflib_chg_to0__1"></td><td class="diff_header" id="from0_3">3</td><td>Amendments of the Financial Services and Markets Act 2000</td><td class="diff_next"></td><td class="diff_header" id="to0_2">2</td><td><span class="diff_add">“</span>Amendments of the Financial Services and Markets Act 2000</td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_4">4</td><td>(1) The Financial Services and Markets Act 2000 is amended as follows.</td><td class="diff_next"></td><td class="diff_header" id="to0_3">3</td><td>(1) The Financial Services and Markets Act 2000 is amended as follows.</td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_5">5</td><td>(2) In section 1A (the Financial Conduct Authority), in subsection (6), before paragraph (ca) insert—</td><td class="diff_next"></td><td class="diff_header" id="to0_4">4</td><td>(2) In section 1A (the Financial Conduct Authority), in subsection (6), before paragraph (ca) insert—</td></tr>
+            <tr><td class="diff_next"><a href="#difflib_chg_to0__2">n</a></td><td class="diff_header" id="from0_6">6</td><td><span class="diff_sub">“</span></td><td class="diff_next"><a href="#difflib_chg_to0__2">n</a></td><td class="diff_header"></td><td></td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_7">7</td><td>(cze) Chapter 3A of Part 2 of the Pension Schemes Act 2025 (default arrangements);”</td><td class="diff_next"></td><td class="diff_header" id="to0_5">5</td><td><span class="diff_add">“</span>(cze) Chapter 3A of Part 2 of the Pension Schemes Act 2025 (default arrangements);”</td></tr>
+            <tr><td class="diff_next" id="difflib_chg_to0__2"></td><td class="diff_header" id="from0_8">8</td><td><span class="diff_sub">. </span>(3) In section 204A (meaning of “relevant requirement” and “appropriate regulator”</td><td class="diff_next"></td><td class="diff_header" id="to0_6">6</td><td>(3) In section 204A (meaning of “relevant requirement” and “appropriate regulator”</td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_9">9</td><td>)—</td><td class="diff_next"></td><td class="diff_header" id="to0_7">7</td><td>)—</td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_10">10</td><td>(a) in subsection (2), before paragraph (b) insert—</td><td class="diff_next"></td><td class="diff_header" id="to0_8">8</td><td>(a) in subsection (2), before paragraph (b) insert—</td></tr>
+            <tr><td class="diff_next"><a href="#difflib_chg_to0__top">t</a></td><td class="diff_header" id="from0_11">11</td><td><span class="diff_sub">“</span></td><td class="diff_next"><a href="#difflib_chg_to0__top">t</a></td><td class="diff_header"></td><td></td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_12">12</td><td>(ad) by or under Chapter 3A of Part 2 of the Pension Schemes Act 2025 (default arrangements),”</td><td class="diff_next"></td><td class="diff_header" id="to0_9">9</td><td><span class="diff_add">“</span>(ad) by or under Chapter 3A of Part 2 of the Pension Schemes Act 2025 (default arrangements),”</td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_13">13</td><td><span class="diff_sub">; </span>(b) in subsection (6), before paragraph (b) insert—</td><td class="diff_next"></td><td class="diff_header" id="to0_10">10</td><td>(b) in subsection (6), before paragraph (b) insert—</td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_14">14</td><td><span class="diff_sub">“</span></td><td class="diff_next"></td><td class="diff_header"></td><td></td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_15">15</td><td>(ad) by or under Chapter 3A of Part 2 of the Pension Schemes Act 2025 (default arrangements);”</td><td class="diff_next"></td><td class="diff_header" id="to0_11">11</td><td><span class="diff_add">“</span>(ad) by or under Chapter 3A of Part 2 of the Pension Schemes Act 2025 (default arrangements);”</td></tr>
+            <tr><td class="diff_next"></td><td class="diff_header" id="from0_16">16</td><td><span class="diff_sub">.”</span></td><td class="diff_next"></td><td class="diff_header"></td><td></td></tr>
+        </tbody>
+    </table>
+</div>
+    </div>
+    <div class="info">
+      <div class="info-inner">
+        <!-- Tertiary info -->
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="card">
+<div class="card-inner collapsible">
+  <div class="collapsible-header">
+    <h2 data-heading-label="Decision Check" id="card-5"><span class="arrow"> </span>Decision Check<small class="text-muted"> [hide]</small></h2>
+  </div>
+  <div class="collapsible-content">
+    <div class="content">
+      <div class="secondary-info">
+      <!-- This is where secondary info goes -->
+      <p>The XML file does not appear to be a proceedings paper so no decisions have been checked.</p></div>
+    </div>
+    <div class="info">
+      <div class="info-inner">
+        <!-- Tertiary info -->
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="card">
+<div class="card-inner collapsible">
+  <div class="collapsible-header">
+    <h2 data-heading-label="Explanatory Statements" id="card-6"><span class="arrow"> </span>Explanatory Statements<small class="text-muted"> [hide]</small></h2>
+  </div>
+  <div class="collapsible-content">
+    <div class="content">
+      <div class="secondary-info">
+      <!-- This is where secondary info goes -->
+      <p>All explanatory statements in the API match those in the XML 😀</p></div>
+    </div>
+    <div class="info">
+      <div class="info-inner">
+        <!-- Tertiary info -->
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+</div>
+          </div>
+        </div>
+      </div>
+
+    </article>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tocbot/4.27.4/tocbot.min.js"></script>
+  <script>
+
+    // tocbot settings
+    const tocbot_settings = {
+      // Where to render the table of contents.
+      tocSelector: '.js-toc',
+      // Where to grab the headings to build the table of contents.
+      contentSelector: '.js-toc-content',
+      // Which headings to grab inside of the contentSelector element.
+      headingSelector: 'h2, h3',
+      // For headings inside relative or absolute positioned containers within content.
+      hasInnerContainers: true,
+      // ignore headings that are hidden in DOM
+      ignoreHiddenElements: true,
+      collapseDepth: 0,
+    };
+
+    if (window.innerWidth < 768){
+      tocbot_settings.headingSelector = 'h2';
+    }
+
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const collapsibleHeaders = document.querySelectorAll(".collapsible-header");
+
+      collapsibleHeaders.forEach(function(header) {
+        header.addEventListener("click", function() {
+          const parent = this.parentElement;
+          parent.classList.toggle("closed");
+
+          const showHide = this.querySelector("small");
+          // console.log(showHide);
+          if (showHide !== null) {
+            showHide.textContent = parent.classList.contains("closed") ? " [show]" : " [hide]";
+          }
+
+          const content = this.nextElementSibling;
+          content.style.display = parent.classList.contains("closed") ? "none" : "block";
+
+          tocbot.refresh(tocbot_settings);
+
+        });
+      });
+
+      const refs = document.querySelectorAll(".show-or-hide-refs");
+
+      const h3s = document.querySelectorAll("h3");
+
+      const toggleRefsBtn = document.getElementById("toggle-refs");
+
+      toggleRefsBtn.addEventListener("click", function() {
+
+        toggleRefsBtn.textContent = toggleRefsBtn.textContent === "Hide x ref only changes" ? "Show x ref only changes" : "Hide x ref only changes";
+
+
+        refs.forEach(function(ref) {
+          ref.toggleAttribute("hidden");
+        });
+
+        h3s.forEach(function(h3) {
+          h3.classList.remove("js-toc-ignore");
+          element = h3;
+          while (element.parentElement) {
+            element = element.parentElement;
+            if (element.hasAttribute("hidden")) {
+              h3.classList.add("js-toc-ignore");
+              break;
+            }
+          }
+        });
+
+        tocbot.refresh(tocbot_settings);
+
+      });
+    });
+
+    tocbot.init(tocbot_settings);
+
+    window.addEventListener('resize', function() {
+      // Your code to execute on window resize
+      if (window.innerWidth < 768){
+        tocbot_settings.headingSelector = 'h2';
+      } else {
+        tocbot_settings.headingSelector = 'h2, h3';
+      }
+      tocbot.refresh(tocbot_settings);
+    });
+  </script>
+</body>
+
+</html>

@@ -26,7 +26,7 @@ _Reports/2023-06-28__18-15
 # ignore junk folders and files
 junk/
 junk*.*
-
+JSONCache/
 # we don't need PDFs i don't think
 *.pdf
 

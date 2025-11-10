@@ -5,6 +5,13 @@ dependencies = [
     "lxml",
     "requests",
     "python-dotenv",
+    "pywebview[ssl]; sys_platform != 'darwin'",
+    "pywebview<6; sys_platform == 'darwin'",
+    "pyobjc-core<11; sys_platform == 'darwin'",
+    "pyobjc-framework-cocoa<11; sys_platform == 'darwin'",
+    "pyobjc-framework-quartz<11; sys_platform == 'darwin'",
+    "pyobjc-framework-security<11; sys_platform == 'darwin'",
+    "pyobjc-framework-webkit<11; sys_platform == 'darwin'",
 ]
 requires-python = ">=3.11"
 keywords = [
@@ -21,7 +28,7 @@ keywords = [
 
 dynamic = ["version"]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "ruff",
     "pytest",
