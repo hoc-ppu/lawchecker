@@ -1556,6 +1556,29 @@ class Report:
             )
         )
 
+    def json_summary(self) -> dict[str, Any]:
+        """
+        Create a summary of the report in JSON format.
+        """
+
+        summary: dict[str, Any] = {
+            'missing_amendments': [str(item) for item in self.missing_api_amdts],
+            'incorrect_amendments': [item.ref for item in self.incorrect_amdt_in_api],
+            'name_changes': [
+                {
+                    'ref': item.ref,
+                    'added': item.added,
+                    'removed': item.removed,
+                }
+                for item in self.name_changes
+            ],
+            'incorrect_stars': self.incorrect_stars,
+            'incorrect_decisions': self.incorrect_decisions,
+            'incorrect_explanatory_statements': self.incorrect_ex_statements,
+        }
+
+        return summary
+
     # def create_csv(self):
     #     # TODO: this needs some fixing
     #     if self.all_clear():
@@ -2379,6 +2402,11 @@ Examples:
         help='Do not save JSON response to file when querying API',
     )
     parser.add_argument(
+        '--summary',
+        action='store_true',
+        help='Save a JSON summary of amendments to a file',
+    )
+    parser.add_argument(
         '--no-browser',
         action='store_true',
         help='Do not attempt to open the report in a web browser',
@@ -2464,9 +2492,19 @@ def main():
 
         # Determine output filename
         if args.output:
-            output_file = args.output
+            output_file: Path = args.output
         else:
-            output_file = args.xml_file.with_suffix('.html')
+            output_file: Path = args.xml_file.with_suffix('.html')
+
+        if args.summary:
+            summary_json_file = output_file.with_name(
+                output_file.stem + '_summary.json'
+            )
+            with summary_json_file.open('w') as f:
+                json.dump(report.json_summary(), f, ensure_ascii=False, indent=2)
+            logger.info(f'Saved summary JSON file to: {summary_json_file}')
+        else:
+            logger.info('Skipping summary JSON file as --summary not specified.')
 
         # Generate appropriate output
         if args.sp:
