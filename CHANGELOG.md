@@ -1,5 +1,25 @@
 # Lawchecker Change Log
 
+## 2.3.0 (2025-11-10)
+
+### Added
+- JSON summary output for web amendments checking
+- Template files now properly included in Python package for distribution via pipx
+
+### Improved
+- Sponsor matching and reporting accuracy in web amendments
+- Web amendments CLI with better error handling and user feedback
+- Template path resolution for various installation methods
+
+### Fixed
+- False positive with quote character normalization
+- Template files not accessible when installing via pipx
+
+### Changed
+- Updated pywebview dependency for better stability
+- Improved error messages and validation
+- Relocated templates to be inside the Python package structure
+
 ## 2.2.0 (2025-10-28)
 
 - New: Enhances web amendment checking by adding dnum support and improving error handling
