@@ -1,4 +1,4 @@
-import { useState, useEffect, Dispatch, SetStateAction } from "react";
+import { useState, Dispatch, SetStateAction } from "react";
 import Sidebar from "./Sidebar";
 import Body from "./Body";
 // import { SectionOpenContext } from "./SectionOpenContext";
@@ -20,14 +20,6 @@ const App: React.FC = () => {
     PageActiveState,
     Dispatch<SetStateAction<PageActiveState>>
   ] = useState(defaultPageOpenState);
-
-  useEffect(() => {
-    // Check if pywebview is available, then call the API
-    if (window.pywebview) {
-      window.pywebview.api.set_v_info();
-      console.log("set_v_info called");
-    }
-  }, []);
 
   return (
     <div className="page">

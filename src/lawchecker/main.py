@@ -46,28 +46,28 @@ logger.info('Main imports complete')
 window: Window | None = None
 
 
-def set_version_info(window_local: Window | None = None):
-    # logger.info(f"{window_local=}")
-    if not window_local:
-        window_local = window
-    if not window_local:
-        logger.error('No window object.')
-        return
+# def set_version_info(window_local: Window | None = None):
+#     # logger.info(f"{window_local=}")
+#     if not window_local:
+#         window_local = window
+#     if not window_local:
+#         logger.error('No window object.')
+#         return
 
-    # match settings.RUNTIME_ENV:
-    #     case settings.RtEnv.EXE:
-    #         version_path = Path(sys._MEIPASS, "VERSION")  # type: ignore
-    #     case settings.RtEnv.APP:
-    #         version_path = Path("../Resources/VERSION")
-    #     case _:
-    #         version_path = Path("VERSION")
+#     # match settings.RUNTIME_ENV:
+#     #     case settings.RtEnv.EXE:
+#     #         version_path = Path(sys._MEIPASS, "VERSION")  # type: ignore
+#     #     case settings.RtEnv.APP:
+#     #         version_path = Path("../Resources/VERSION")
+#     #     case _:
+#     #         version_path = Path("VERSION")
 
-    version_str = __version__
+#     version_str = __version__
 
-    logger.info(f'{version_str=}')
+#     logger.info(f'{version_str=}')
 
-    # window_local.evaluate_js(f"updateVersionInfo('{version_str}')")
-    window_local.evaluate_js(f'window.pywebview.state.setVersionInfo("{version_str}")')
+#     # window_local.evaluate_js(f"updateVersionInfo('{version_str}')")
+#     window_local.evaluate_js(f'window.pywebview.state.setVersionInfo("{version_str}")')
 
 
 class Api:
@@ -87,6 +87,9 @@ class Api:
 
         self.api_amend_xml: Path | None = None
         self.api_amend_json: Any = None
+
+    def get_version(self) -> str:
+        return __version__
 
     def _open_file_dialog(self, file_type='') -> Path | None:
         # select a file
@@ -610,13 +613,6 @@ class Api:
         logger.info('Report written')
 
         webbrowser.open(Path(file_path).resolve().as_uri())
-
-    def set_v_info(self):
-        logger.info('set_v_info called')
-        set_version_info(common.RunTimeEnv.webview_window)
-
-    # ! def added_names_report(self):
-    # !    added_names_report.main()
 
 
 def get_entrypoint():
