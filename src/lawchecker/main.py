@@ -106,7 +106,7 @@ class Api:
         try:
             # result is None if the user cancels the dialog
             result = active_window.create_file_dialog(
-                webview.OPEN_DIALOG, allow_multiple=False, file_types=file_types
+                webview.FileDialog.OPEN, allow_multiple=False, file_types=file_types
             )
         except AttributeError:
             # occasionally on macos, if the user switches applications
@@ -147,7 +147,7 @@ class Api:
         active_window = cast(Window, common.RunTimeEnv.webview_window)
 
         result = active_window.create_file_dialog(
-            webview.FOLDER_DIALOG, directory=str(Path.home())
+            webview.FileDialog.FOLDER, directory=str(Path.home())
         )
 
         if result is None:
@@ -251,7 +251,7 @@ class Api:
         active_window = cast(Window, common.RunTimeEnv.webview_window)
 
         result = active_window.create_file_dialog(
-            webview.OPEN_DIALOG,
+            webview.FileDialog.OPEN,
             directory=str(default_location),
             # Allow all files instead of just XML. This is because when users
             # download the data from sharepoint it is saved as .txt. It is
@@ -277,7 +277,7 @@ class Api:
         active_window = cast(Window, common.RunTimeEnv.webview_window)
 
         result = active_window.create_file_dialog(
-            webview.FOLDER_DIALOG, directory=str(default_location)
+            webview.FileDialog.FOLDER, directory=str(default_location)
         )
 
         if result is None:
