@@ -739,6 +739,9 @@ class AmdtContainer(Mapping):
             self.container_type = get_container_type(list_type_text)
             # self.meta_list_type = list_type.text  # type: ignore
 
+        except AttributeError:
+            logger.warning(f"Can't find the list type form the metadata in the XML.")
+
         except Exception as e:
             warning_msg = (
                 f"Can't find List Type meta data. Check {self.resource_identifier}"

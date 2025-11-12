@@ -9,6 +9,19 @@ export interface MenuItem {
   menuItemControles: string;
 }
 
+async function getVersion(): Promise<string> {
+  try {
+    if (window.pywebview) {
+      return await window.pywebview.api.get_version();
+    } else {
+      return "pywebview not available";
+    }
+  } catch (error) {
+    console.error("Error getting version:", error);
+    return "Error getting version";
+  }
+}
+
 interface SidebarProps {
   pageActiveState: PageActiveState;
   setPageActiveState: Dispatch<SetStateAction<PageActiveState>>;
@@ -21,21 +34,18 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [versionInfo, setVersionInfo] =
     React.useState<string>("No version info");
 
-  // TODO: Fix this
   useEffect(() => {
-    try {
-      if (!window.pywebview) {
-        console.warn("window.pywebview is not available");
-        return;
+    const fetchVersion = async () => {
+      try {
+        const version = await getVersion();
+        setVersionInfo(version);
+      } catch (error) {
+        console.error("Error fetching version:", error);
+        setVersionInfo("Error loading version");
       }
-      if (!window.pywebview.state) window.pywebview.state = {};
+    };
 
-      // Expose setVersionInfo in order to call it from Python
-      window.pywebview.state.setVersionInfo = setVersionInfo;
-    } catch (error) {
-      console.error("Error in Sidebar useEffect", error);
-    }
-    return;
+    fetchVersion();
   }, []);
 
   return (
