@@ -74,6 +74,7 @@ DASHBOARD_DATA_FOLDER = 'Dashboard_Data'
 match RUNTIME_ENV:
     case RtEnv.EXE:
         PARENT_FOLDER = Path(sys.executable).parent
+        logger.info(f'{PARENT_FOLDER=}')
     case RtEnv.APP:
         # I'm not sure that this is needed anymore as templates are now in
         # lawchecker.app/Contents/Resources/lib/python3.12/lawchecker/templates
@@ -100,10 +101,21 @@ def get_template_path(template_name: str) -> Path:
     try:
         # Try using importlib.resources first (works in all environments)
         template_files = files('lawchecker') / 'templates'
-        return Path(str(template_files / template_name))
+        templates_path = Path(str(template_files / template_name))
+        if not templates_path.exists():
+            raise FileNotFoundError(f'Template file not found: {templates_path}')
+        return templates_path
     except Exception:
         # Fallback
-        logger.warning('Could not load template using importlib.resources')
+        logger.info(
+            'Could not load template using importlib.resources. Falling back to PARENT_FOLDER method.'
+        )
+        templates_path = PARENT_FOLDER / TEMPLATES_FOLDER / template_name
+        if not templates_path.exists():
+            logger.error(
+                f'Required template file not found: {templates_path}.'
+                ' You will not be able to generate reports without it.'
+            )
         return PARENT_FOLDER / TEMPLATES_FOLDER / template_name
 
 

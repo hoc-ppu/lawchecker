@@ -2153,15 +2153,40 @@ def get_amendments_detailed_json(
     stage_id: int,
     stage_description: str = '',
     api_bill_short_title: str = '',
+    store_json_path: Path | None = None,
 ) -> JSONObject:
-    """'unique cache json'"""
-    filePathRoot = Path(__file__).parent / 'JSONCache'
-    os.makedirs(filePathRoot, exist_ok=True)
-    with open(
-        filePathRoot / (create_friendly_name(api_bill_short_title) + '_summary.json'),
-        'w',
-    ) as f:
-        json.dump(amendments_summary_json, f, indent=2)
+    """
+    Fetch detailed amendment information from the Bills API.
+
+    Takes a list of amendment summaries and retrieves full details for each
+    amendment by making concurrent API requests. Optionally saves the summary
+    data to a JSON file.
+
+    Args:
+        amendments_summary_json: List of amendment summary objects from the API.
+        bill_id: The unique identifier for the bill.
+        stage_id: The unique identifier for the bill stage.
+        stage_description: Human-readable description of the stage (e.g., 'Committee').
+        api_bill_short_title: The short title of the bill.
+        store_json_path: Optional path to save the summary JSON data.
+
+    Returns:
+        A dictionary containing the bill metadata and a list of detailed amendment
+        objects under the 'items' key.
+
+    Raises:
+        May log errors for failed requests but continues processing remaining amendments.
+    """
+    # filePathRoot = Path(__file__).parent / 'JSONCache'
+    # os.makedirs(filePathRoot, exist_ok=True)
+
+    if store_json_path is not None:
+        with open(
+            # filePathRoot / (create_friendly_name(api_bill_short_title) + '_summary.json'),
+            store_json_path,
+            'w',
+        ) as f:
+            json.dump(amendments_summary_json, f, indent=2)
     amendment_ids = [
         amendment.get('amendmentId') for amendment in amendments_summary_json
     ]
@@ -2231,7 +2256,11 @@ def get_amendments_detailed_json(
 #     return json_amendments
 
 
-def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]:
+def get_amendments_summary_json(
+    bill_id: int,
+    stage_id: int,
+    store_json_path: Path | None = None,
+) -> list[JSONObject]:
     # run the first query synchronously to get the total count
     url = AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=0)
     response_json = get_json_sync(url)
@@ -2257,16 +2286,23 @@ def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]
         responses = progress_bar(pool.map(get_json_sync, urls), len(urls))
         print()  # newline after progress bar
 
-    with open(Path(__file__).parent / 'responses.json', 'w') as f:
-        json.dump(responses, f, indent=2)
+    if store_json_path is not None:
+        with open(
+            store_json_path,
+            'w',
+        ) as f:
+            json.dump(responses, f, indent=2)
+
+    # with open(Path(__file__).parent / 'responses.json', 'w') as f:
+    #     json.dump(responses, f, indent=2)
 
     # json_amendments += [response.get('items') for response in responses]
     for respose in responses:
         if respose.get('items'):
             json_amendments += respose.get('items')
 
-    with open(Path(__file__).parent / 'responses2.json', 'w') as f:
-        json.dump(json_amendments, f, indent=2)
+    # with open(Path(__file__).parent / 'responses2.json', 'w') as f:
+    #     json.dump(json_amendments, f, indent=2)
 
     return json_amendments
 

@@ -5,7 +5,11 @@ a = Analysis(
     ['src\\lawchecker\\main.py'],
     pathex=[],
     binaries=[],
-    datas=[('.\\icon\\icon.ico', '.'), ('.\\.env', '.'), ('.\\ui_bundle\\index.html', 'ui\\')],
+    datas=[
+        ('.\\icon\\icon.ico', '.'),
+        ('.\\.env', '.'),
+        ('.\\ui_bundle\\index.html', 'ui\\'),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

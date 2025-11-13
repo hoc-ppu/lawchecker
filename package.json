@@ -8,7 +8,7 @@
     "bundle": "vite build",
     "build": "npm run clean && npm run bundle && run-script-os",
     "build:macos": "python build-macos.py -q py2app",
-    "build:windows": "pyinstaller --log-level=WARN lawChecker.spec",
+    "build:windows": "pyinstaller --log-level=WARN lawChecker.spec && robocopy \"src\\lawchecker\\templates\" \"dist\\templates\" /E",
     "clean": "run-script-os",
     "clean:default": "rm ui_bundle/index.html 2>/dev/null; rm -rf dist 2>/dev/null; rm -rf build 2>/dev/null; ",
     "clean:windows": "if exist ui_bundle/index.html del ui_bundle/index.html 2>nul & if exist dist rd /S /Q dist & if exist build rd /S /Q build",

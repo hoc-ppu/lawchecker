@@ -91,6 +91,9 @@ class Api:
     def get_version(self) -> str:
         return __version__
 
+    def print_from_js(self, string: str) -> None:
+        print(string)
+
     def _open_file_dialog(self, file_type='') -> Path | None:
         # select a file
 
@@ -474,11 +477,15 @@ class Api:
         """
         if not file:
             # do we need an error here?
-            logger.info('No XML file selected.')
+            logger.notice('No XML file selected.')
             return
 
         if not isinstance(file, Path):
             file = Path(file)
+
+        if not file.exists():
+            logger.error(f'File does not exist: {file}')
+            return
 
         logger.info(f'file path: {file}')
 
@@ -681,6 +688,7 @@ def main():
 
     try:
         logger.info(sys._MEIPASS)  # type: ignore
+        logger.info(Path(__file__).resolve())
     except AttributeError:
         pass
 
@@ -704,7 +712,7 @@ def main():
 
     common.RunTimeEnv.webview_window = cast(Window, window)
 
-    print('Loaded')
+    print('Nearly there...')
     logger.info('Main window created')
 
     debug = not APP_FROZEN  # no debug in build app

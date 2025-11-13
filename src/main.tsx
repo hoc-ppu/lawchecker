@@ -37,6 +37,7 @@ const waitForEvent = (eventName: string, timeout = 1000) => {
 waitForEvent("pywebviewready")
   .then((msg) => {
     console.log(msg);
+    window.pywebview.api.print_from_js("Loaded");
     createRoot(document.getElementById("root")!).render(
       <StrictMode>
         <App />
