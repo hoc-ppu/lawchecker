@@ -480,6 +480,8 @@ class Api:
         if not isinstance(file, Path):
             file = Path(file)
 
+        logger.info(f'file path: {file}')
+
         json_amdts = None
 
         with ProgressModal() as modal:

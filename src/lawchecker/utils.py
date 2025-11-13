@@ -355,6 +355,9 @@ def normalise_text(text: str) -> str:
     text = text.replace(' —', '—')
     text = text.replace('— ', '—')
 
+    # not worried about newlines after semi-colons
+    text = text.replace(';\n', '; ')
+
     text = text.replace('\u00a0', ' ')  # replace non-breaking space with normal space
     text = text.replace('\u2007', ' ')  # replace a figure space with normal space
 
