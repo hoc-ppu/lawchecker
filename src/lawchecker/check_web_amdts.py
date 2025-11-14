@@ -2494,13 +2494,16 @@ def main():
             logger.info('Creating SharePoint table...')
             report.create_table_for_sharepoint()
         else:
-            logger.info(f'Writing HTML report to: {output_file}')
             report.html_tree.write(
                 str(output_file),
                 method='html',
                 encoding='utf-8',
                 doctype='<!DOCTYPE html>',
             )
+
+            msg = f'Wrote HTML report to: {output_file}'
+            print(msg)
+            logger.info(msg)
 
             if not args.no_browser:
                 # Open in browser if possible
