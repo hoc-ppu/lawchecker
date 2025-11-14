@@ -38,6 +38,7 @@ def clean(string: str, no_space=False, file_name_safe=False) -> str:
 
     # Bill title cleaning
     string = string.replace('[hl]', '').strip()
+    # should we also replace '[lords]' here?
     string = re.sub(r' bill$', '', string)
 
     # Cleanup
