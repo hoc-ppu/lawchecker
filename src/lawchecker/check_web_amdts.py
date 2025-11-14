@@ -2096,51 +2096,6 @@ def save_json_to_file(json_data: dict[str, JSON], file_path: Path) -> None:
         logger.error(repr(e))
 
 
-# def get_amendments_json(
-#     bill_id: int,
-#     stage_id: int,
-#     stage_description: str = '',
-#     api_bill_short_title: str = '',
-# ) -> dict[str, JSON]:
-#     json_summary_amendments = get_amendments_summary_json(bill_id, stage_id)
-
-#     amendment_ids = [
-#         amendment.get('amendmentId') for amendment in json_summary_amendments
-#     ]
-
-#     def _request_data(
-#         amendment_id: str,
-#     ) -> requests.Response:
-#         """Query the API."""
-
-#         url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
-
-#         return requests.get(url)
-
-#     with ThreadPoolExecutor(max_workers=40) as pool:
-#         # create a progress bar and return a list
-#         responses = progress_bar(
-#             pool.map(
-#                 lambda amendment_id: _request_data(amendment_id),
-#                 amendment_ids,
-#             ),
-#             len(amendment_ids),
-#         )
-#         print()  # newline after progress bar
-
-#     json_amendments_list: list[JSONType] = [response.json() for response in responses]
-
-#     json_output = {
-#         'shortTitle': api_bill_short_title,
-#         'billId': bill_id,
-#         'stageId': stage_id,
-#         'stageDescription': stage_description,
-#         'items': json_amendments_list,
-#     }
-
-#     return json_output
-
-
 def create_friendly_name(text: str, lowercase: bool = True) -> str:
     # Remove all non-alphanumeric characters (excluding underscores if needed)
     cleaned = re.sub(r'[^A-Za-z0-9]', '', text)
@@ -2153,14 +2108,12 @@ def get_amendments_detailed_json(
     stage_id: int,
     stage_description: str = '',
     api_bill_short_title: str = '',
-    store_json_path: Path | None = None,
 ) -> JSONObject:
     """
     Fetch detailed amendment information from the Bills API.
 
     Takes a list of amendment summaries and retrieves full details for each
-    amendment by making concurrent API requests. Optionally saves the summary
-    data to a JSON file.
+    amendment by making concurrent API requests.
 
     Args:
         amendments_summary_json: List of amendment summary objects from the API.
@@ -2168,7 +2121,6 @@ def get_amendments_detailed_json(
         stage_id: The unique identifier for the bill stage.
         stage_description: Human-readable description of the stage (e.g., 'Committee').
         api_bill_short_title: The short title of the bill.
-        store_json_path: Optional path to save the summary JSON data.
 
     Returns:
         A dictionary containing the bill metadata and a list of detailed amendment
@@ -2177,16 +2129,7 @@ def get_amendments_detailed_json(
     Raises:
         May log errors for failed requests but continues processing remaining amendments.
     """
-    # filePathRoot = Path(__file__).parent / 'JSONCache'
-    # os.makedirs(filePathRoot, exist_ok=True)
 
-    if store_json_path is not None:
-        with open(
-            # filePathRoot / (create_friendly_name(api_bill_short_title) + '_summary.json'),
-            store_json_path,
-            'w',
-        ) as f:
-            json.dump(amendments_summary_json, f, indent=2)
     amendment_ids = [
         amendment.get('amendmentId') for amendment in amendments_summary_json
     ]
