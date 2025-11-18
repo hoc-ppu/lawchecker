@@ -2069,7 +2069,7 @@ def also_query_bills_api(
         _short_title = clean_filename(api_bill_short_title, file_name_safe=True)
         _stage = clean_filename(api_stage_description, file_name_safe=True)
         file_name = f'{_short_title}_{_stage}_amdts.json'
-        file_name = create_friendly_name(file_name, lowercase=False)
+        # file_name = create_friendly_name(file_name, lowercase=False)
         xml_file_parent = amend_xml_path.parent
         file_path = xml_file_parent / file_name
 
