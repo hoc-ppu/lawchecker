@@ -18,9 +18,8 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   const [saveJsonIsChecked, setSaveJsonIsChecked] = useState(true);
 
   const handleLmXml = async () => {
-    const result = await window.pywebview.api.open_file_dialog(
-      "com_amend_api_xml"
-    );
+    const result =
+      await window.pywebview.api.open_file_dialog("com_amend_api_xml");
     setLmXml(result);
     setPrettyLmXml(addWordBreaksToPath(result));
   };
@@ -37,7 +36,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   const handleOpenApiAmdtsFile = async () => {
     console.log("Select JSON file clicked");
     const path = await window.pywebview.api.open_file_dialog(
-      "existing_json_amdts"
+      "existing_json_amdts",
     );
     setPrettyApiAmdtsPath(addWordBreaksToPath(path));
   };
@@ -114,7 +113,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
                   console.log("Get Amendments clicked: ", lmXml);
                   window.pywebview.api.get_api_amendments_using_xml_for_params(
                     lmXml,
-                    Boolean(saveJsonIsChecked)
+                    Boolean(saveJsonIsChecked),
                   );
                 }}
               />
@@ -180,7 +179,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
                   console.log("billId", typeof billId);
                   window.pywebview.api.get_api_amendments_with_ids(
                     billId,
-                    stageId
+                    stageId,
                   );
                 }}
               />
@@ -210,9 +209,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
       <Card step="Step&nbsp;3" info="Check the amendments API">
         <p>
           Create a report dealing all the differences between amendments in the
-          XML file and amendments on Bill.parliament.uk. Alternatively create a
-          table with a row summarising the differences. This can be coppied to
-          SharePoint.
+          XML file and amendments on Bill.parliament.uk.
         </p>
         <Button
           id="api_report_in_browser"

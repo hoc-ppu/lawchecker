@@ -1,4 +1,5 @@
 import argparse
+import asyncio
 import csv
 import json
 import logging
@@ -9,25 +10,28 @@ import sys
 import urllib.parse
 import webbrowser
 from collections.abc import Mapping
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Iterable, NamedTuple
 
-import requests
 from lxml import etree, html
 from lxml.etree import QName, _Element, iselement
 from lxml.html import HtmlElement
-from requests.adapters import HTTPAdapter
-from requests.exceptions import RequestException
-from urllib3.util.retry import Retry
 
-from lawchecker import __version__, common, pp_xml_lxml, templates, utils
+from lawchecker import (
+    __version__,
+    bills_api,
+    common,
+    lawchecker_logger,
+    pp_xml_lxml,
+    templates,
+    utils,
+)
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_bill_numbering import clean as clean_filename
-from lawchecker.lawchecker_logger import ch, logger
+from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import (
     AMENDMENT_DETAILS_URL_TEMPLATE,
     AMENDMENTS_URL_TEMPLATE,
@@ -48,23 +52,23 @@ JSONType = JSONObject | JSONList
 # Shared requests.Session with retries/timeouts to reduce transient failures
 DEFAULT_TIMEOUT = 10  # seconds
 
-SESSION = requests.Session()
-RETRY_STRATEGY = Retry(
-    total=3,
-    backoff_factor=0.5,
-    status_forcelist=[429, 500, 502, 503, 504],
-    allowed_methods=['HEAD', 'GET', 'OPTIONS'],
-)
-ADAPTER = HTTPAdapter(max_retries=RETRY_STRATEGY)
-SESSION.mount('https://', ADAPTER)
-SESSION.mount('http://', ADAPTER)
-# prevent socket reuse which can trigger EOF errors from some servers/proxies
-SESSION.headers.update(
-    {
-        'Connection': 'close',
-        'User-Agent': 'LawChecker/1.0',
-    }
-)
+# SESSION = requests.Session()
+# RETRY_STRATEGY = Retry(
+#     total=3,
+#     backoff_factor=0.5,
+#     status_forcelist=[429, 500, 502, 503, 504],
+#     allowed_methods=['HEAD', 'GET', 'OPTIONS'],
+# )
+# ADAPTER = HTTPAdapter(max_retries=RETRY_STRATEGY)
+# SESSION.mount('https://', ADAPTER)
+# SESSION.mount('http://', ADAPTER)
+# # prevent socket reuse which can trigger EOF errors from some servers/proxies
+# SESSION.headers.update(
+#     {
+#         'Connection': 'close',
+#         'User-Agent': 'LawChecker/1.0',
+#     }
+# )
 
 
 class ContainerType(StrEnum):
@@ -168,8 +172,15 @@ class AmdtRef:
 
     def __init__(self, num: str, dnum: str):
         # could num just be the empty string?
+        if not num and not dnum:
+            logger.warning(f'AmdtRef(num={num}, dnum={dnum})')
+            raise ValueError('Both num and dnum cannot be empty')
         if not dnum:
-            raise ValueError('dnum cannot be empty')
+            logger.info(f'Creating AmdtRef with empty dnum for num: {num}')
+            dnum = ''
+        if not num:
+            # this happens a lot in Lords running lists
+            num = ''
 
         self.num: str = num
         self.dnum: str = dnum
@@ -190,7 +201,8 @@ class AmdtRef:
 
     @property
     def long_ref(self) -> str:
-        return f'{self.num} ({self.dnum})' if self.num else self.dnum
+        # return f'{self.num} ({self.dnum})' if self.num else self.dnum
+        return f'{self.num} ({self.dnum})'
 
     def __hash__(self) -> int:
         return hash((self.num, self.dnum))
@@ -213,7 +225,7 @@ def progress_bar(iterable: Iterable, total: int) -> list:
     count = 0
     bar_len = 50
 
-    sys.stdout.write('\n')
+    sys.stdout.write('\r')
 
     last_percent = 0
     for item in iterable:
@@ -221,33 +233,95 @@ def progress_bar(iterable: Iterable, total: int) -> list:
         count += 1
         filled_len = int(round(bar_len * count / total))
         percents = round(100.0 * count / total)
+
+        if percents == last_percent:
+            continue
+        last_percent = percents
+
         bar = '#' * filled_len + '-' * (bar_len - filled_len)
         sys.stdout.write(f'[{bar}] {percents}%\r')
         sys.stdout.flush()
 
-        if active_window is not None and percents != last_percent:
-            try:
-                active_window.evaluate_js(
-                    f'updateProgressBar("{progress_bar_id}", {percents})'
-                )
-            except Exception as e:
-                logger.error(f'Error updating progress bar: {e}')
+        if active_window is None:
+            continue
 
-        last_percent = percents
+        # consider window.evaluate_js which raises exceptions on js errors
+        active_window.run_js(f'updateProgressBar("{progress_bar_id}", {percents})')
 
     sys.stdout.write('\n')
 
     return output
 
 
-def get_json_sync(url: str) -> JSONObject:
-    try:
-        response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
-        response.raise_for_status()
-        return response.json()
-    except RequestException as e:
-        logger.error(f'HTTP error fetching JSON from {url}: {e}')
-        raise
+async def async_progress_bar(
+    tasks: Iterable,
+    error_prefix: str = 'Task failed',
+    bar_len: int = 50,
+    log_level: int = logging.ERROR,
+) -> list:
+    """Execute async tasks with a console progress bar.
+
+    Args:
+        tasks: Iterable of async tasks/coroutines to execute.
+        error_prefix: Prefix for error log messages when a task fails.
+        bar_len: Length of the progress bar in characters.
+        log_level: Logging level for error messages (default: logging.ERROR).
+
+    Returns:
+        List of results, with exceptions for failed tasks.
+    """
+
+    # also add the progress bar to the webview
+    active_window = common.RunTimeEnv.webview_window
+    progress_bar_id = ''
+
+    if active_window is not None:
+        progress_bar_id = active_window.evaluate_js('newProgressBar()')
+        logger.info(f'Progress bar id: {progress_bar_id}')
+
+    tasks_list = list(tasks)
+    responses = []
+    total = len(tasks_list)
+    count = 0
+
+    print('\n', end='', flush=True)
+    last_percents: int = -1
+    for coro in asyncio.as_completed(tasks_list):
+        try:
+            result = await coro
+            responses.append(result)
+        except Exception as e:
+            logger.log(log_level, f'{error_prefix}: {repr(e)}')
+            responses.append(e)
+
+        count += 1
+        filled_len = int(round(bar_len * count / total))
+        percents = int(round(100.0 * count / total))
+        if percents != last_percents:
+            last_percents = percents
+            bar = '#' * filled_len + '-' * (bar_len - filled_len)
+            sys.stdout.write(f'[{bar}] {percents}%\r')
+            sys.stdout.flush()
+
+        if active_window is None:
+            continue
+
+        # consider window.evaluate_js which raises exceptions on js errors
+        active_window.run_js(f'updateProgressBar("{progress_bar_id}", {percents})')
+
+    sys.stdout.write('\n')
+
+    return responses
+
+
+# def get_json_sync(url: str) -> JSONObject:
+#     try:
+#         response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+#         response.raise_for_status()
+#         return response.json()
+#     except RequestException as e:
+#         logger.error(f'HTTP error fetching JSON from {url}: {e}')
+#         raise
 
 
 class Sponsor:
@@ -396,15 +470,18 @@ class Amendment:
         )
         amendment_text = '<div>' + '\n'.join(amendment_text_gen) + '</div>'
         html_element = html.fromstring(amendment_text)
-        # add space after any span with a class of "sub-para-num" this will be important later
+
+        # add space after any span with a class of
+        # "sub-para-num" this will be important later
         for span in html_element.xpath(".//span[@class='sub-para-num']"):
             if span.tail:
                 span.tail = f' {span.tail}'
             else:
                 span.tail = ' '
-        amendment_text = utils.normalise_text(
-            xp.text_content(utils.clean_whitespace(html_element))
-        )
+        # amendment_text = utils.normalise_text(
+        #     xp.text_content(utils.clean_json_html_amdt(html_element))
+        # )
+        amendment_text = utils.normalise_text(xp.text_content(html_element))
 
         explanatory_text_html = amendment_json.get('explanatoryText', '')
         if explanatory_text_html:
@@ -504,7 +581,7 @@ class Amendment:
                 )
             if not dnum.strip():
                 raise InvalidDataError('dNum attribute is empty or whitespace only')
-            logger.info(f'dNum: {dnum}')
+            # logger.info(f'dNum: {dnum}')
 
         except IndexError:
             logger.warning('No dNum attribute found in amendment content')
@@ -531,23 +608,23 @@ class Amendment:
 
         add_quotes_to_quoted_elements(amendment_content)
 
-        if (
-            amendment_content.get('GUID', None)
-            == '_2788704c-65ff-4413-aa67-644d7e32ea50'
-        ):
-            logger.info('Found thing!')
-            cleaned_whitespace = utils.clean_whitespace(amendment_content)
+        # if (
+        #     amendment_content.get('GUID', None)
+        #     == '_2788704c-65ff-4413-aa67-644d7e32ea50'
+        # ):
+        #     logger.info('Found thing!')
+        #     cleaned_whitespace = utils.clean_lm_xml_amdt(amendment_content)
 
-            logger.info(etree.tostring(cleaned_whitespace))
-            text_content = xp.text_content(cleaned_whitespace)
+        #     logger.info(etree.tostring(cleaned_whitespace, encoding='unicode'))
+        #     text_content = xp.text_content(cleaned_whitespace)
 
-            logger.info(f'Text content: {text_content}')
+        #     logger.info(f'Text content: {text_content}')
 
-            normalised_text = utils.normalise_text(text_content)
-            logger.info(f'Normalised text: {normalised_text}')
+        #     normalised_text = utils.normalise_text(text_content)
+        #     logger.info(f'Normalised text: {normalised_text}')
 
         amendment_text = utils.normalise_text(
-            xp.text_content(utils.clean_whitespace(amendment_content))
+            xp.text_content(utils.clean_lm_xml_amdt(amendment_content))
         )
 
         star = Star(amendment_xml.get(QName(UKL, 'statusIndicator'), default=''))
@@ -555,8 +632,8 @@ class Amendment:
         _id = amendment_xml.xpath('.//*/@GUID[1]', namespaces=NSMAP)[0]
         # print(f"ID: {_id}")
 
-        if amdt_no.casefold().strip() == 'nc2':
-            logger.info(f'Sponsors from XML: {repr(sponsors)}')
+        # if amdt_no.casefold().strip() == 'nc2':
+        #     logger.info(f'Sponsors from XML: {repr(sponsors)}')
 
         return cls(
             amendment_text,
@@ -674,7 +751,12 @@ class AmdtContainer(Mapping):
             logger.error('No amendments found in JSON data')
             return cls([])
 
-        for amendment in amendment_dicts:  # type: ignore
+        for i, amendment in enumerate(amendment_dicts):  # type: ignore
+            # amendmet_dicts can be completely empty
+            # ... possibly http error when getting the amendments
+            if len(amendment) == 0:
+                logger.warning(f'Empty amendment JSON data at index {i}')
+                continue
             try:
                 amendment = Amendment.from_json(amendment)
                 amendments.append(amendment)
@@ -696,7 +778,7 @@ class AmdtContainer(Mapping):
         cls,
         xml_element: _Element,
         container_type: ContainerType = ContainerType.UNKNOWN,
-        resource_identifier: str = 'Test',
+        resource_identifier: str = 'XML',
     ) -> 'AmdtContainer':
         amendments: list[Amendment] = []
 
@@ -750,7 +832,7 @@ class AmdtContainer(Mapping):
             logger.warning(f'Problem parsing XML. {warning_msg}: {repr(e)}')
 
         try:
-            print(len(root_element.xpath('//xmlns:TLCConcept', namespaces=NSMAP)))
+            # print(len(root_element.xpath('//xmlns:TLCConcept', namespaces=NSMAP)))
             bill_title = root_element.xpath(
                 # TODO: if this works add it to the compare amendments documents
                 "//xmlns:TLCConcept[@eId='varBillTitle']/@showAs",
@@ -908,11 +990,16 @@ class Report:
         """
 
         msg = 'Amendments in XML and not in API:'
-        logger.info(f'{msg} {self.xml_amdts.amdt_set - self.json_amdts.amdt_set}')
+        in_xml_but_not_api = self.xml_amdts.amdt_set - self.json_amdts.amdt_set
+        logger.info(f'{msg} {[item.short_ref for item in in_xml_but_not_api]}')
+
         msg = 'Amendments in API and not in XML:'
-        logger.info(f'{msg} {self.json_amdts.amdt_set - self.xml_amdts.amdt_set}')
+        in_api_but_not_xml = self.json_amdts.amdt_set - self.xml_amdts.amdt_set
+        logger.info(f'{msg} {[item.short_ref for item in in_api_but_not_xml]}')
+
         msg = 'Amendments which appear in both:'
-        logger.info(f'{msg} {self.xml_amdts.amdt_set & self.json_amdts.amdt_set}')
+        appears_in_both_set = self.xml_amdts.amdt_set & self.json_amdts.amdt_set
+        logger.info(f'{msg} {[item.short_ref for item in appears_in_both_set]}')
 
         self.added_and_removed_amdts(self.xml_amdts, self.json_amdts)
         self.check_stars_in_api(self.xml_amdts, self.json_amdts)
@@ -969,7 +1056,7 @@ class Report:
         # ------------------------- intro section ------------------------ #
         into = (
             'This report summarises differences between amendments in the '
-            'bills API and the amendments in the LawMaker document'
+            '<a href="https://bills-api.parliament.uk/index.html">bills API</a> and the amendments in the LawMaker document'
             ' XML official list documents. The document is:'
             f'<br><strong>{self.xml_amdts.meta_bill_title}</strong>'
         )
@@ -1101,8 +1188,8 @@ class Report:
         info = (
             '<p>Listed below are any Amendments (& New Clauses etc.) which are'
             ' present in the XML from LawMaker but not present in Amendments'
-            ' avaliable via the API. This means that they are almost certainly'
-            ' also missing from bills.parliament. </p>'
+            ' avaliable via the API. This means that they '
+            ' also missing from the Bills website. </p>'
         )
 
         card = templates.Card('Missing amendments')
@@ -1264,9 +1351,14 @@ class Report:
                 )
                 changed_amdts += f"<p class='h5'>{num_a}:</p>\n{item.html_diff}\n"
 
-        card = templates.Card('Changed amendments')
+        info = (
+            '<p><strong>Note:</strong> There can be false'
+            ' positives. Some whitespace differences are ignored.</p>'
+        )
+
+        card = templates.Card('Incorrect amendments')
         card.secondary_info.extend(
-            html.fragments_fromstring(changed_amdts, no_leading_text=True)
+            html.fragments_fromstring(f'{info}\n{changed_amdts}', no_leading_text=True)
         )
 
         return card.html
@@ -1389,24 +1481,29 @@ class Report:
                 )
 
     def added_and_removed_amdts(
-        self, old_doc: 'AmdtContainer', new_doc: 'AmdtContainer'
+        self, xml_amdts: 'AmdtContainer', json_amdts: 'AmdtContainer'
     ):
         """Find the amendment numbers missing from the API"""
 
+        # self.xml_amdts, self.json_amdts)
+        # old_doc: 'AmdtContainer', new_doc: 'AmdtContainer'
+
         logger.info(
             'Finding amendments missing from the API. '
-            f'Old doc has {len(old_doc.amendments)} amendments, '
-            f'new doc has {len(new_doc.amendments)} amendments'
+            f'XML doc has {len(xml_amdts.amendments)} amendments, '
+            f'JSON doc has {len(json_amdts.amendments)} amendments'
         )
 
-        self.missing_api_amdts = list(old_doc.amdt_set.difference(new_doc.amdt_set))
+        self.missing_api_amdts = list(
+            xml_amdts.amdt_set.difference(json_amdts.amdt_set)
+        )
         logger.info(f'Found {len(self.missing_api_amdts)} missing API amendments.')
 
         # we don't need amendments in the API but not in the document
         # self.added_amdts = list(new_doc.amdt_set.difference(old_doc.amdt_set))
 
     def diff_names(self, xml_amdt: Amendment, json_amdt: Amendment):
-        logger.debug(f'Finding differences in names for {xml_amdt.key}')
+        # logger.debug(f'Finding differences in names for {xml_amdt.key}')
         # look for duplicate names. Only need to do this for the new_amdt.
         self.duplicate_names_in_api = find_duplicate_sponsors(json_amdt.sponsors)
         self.duplicate_names_in_xml = find_duplicate_sponsors(xml_amdt.sponsors)
@@ -1452,7 +1549,7 @@ class Report:
         if dif_html_str is not None:
             self.name_changes_in_context.append(ChangedAmdt(xml_amdt.key, dif_html_str))
 
-    def diff_amdt_content(self, new_amdt: Amendment, old_amdt: Amendment):
+    def diff_amdt_content(self, xml_amdt: Amendment, json_amdt: Amendment):
         """
         Create an HTML string containing a tables showing the differences
         between old_amdt//amendmentContent and new_amdt//amendmentContent.
@@ -1460,50 +1557,53 @@ class Report:
         amendmentContent is the element which contains the text of the
         amendment. It does not contain the sponsor information.
         """
+        # new_amdt = xml_amdt
+        # old_amdt = json_amdt
+        # called as self.diff_amdt_content(xml_amdt, json_amend)
 
         # When consecutive ”” make sure no new line between
 
-        new_amdt_content_fixed_quotes = utils.fix_consecutive_quotes(
-            new_amdt.amendment_text
+        xml_amdt_content_fixed_quotes = utils.fix_consecutive_quotes(
+            xml_amdt.amendment_text
         )
-        old_amdt_content_fixed_quotes = utils.fix_consecutive_quotes(
-            old_amdt.amendment_text
+        json_amdt_content_fixed_quotes = utils.fix_consecutive_quotes(
+            json_amdt.amendment_text
         )
 
-        new_amdt_content = new_amdt_content_fixed_quotes.split('\n')
-        old_amdt_content = old_amdt_content_fixed_quotes.split('\n')
+        xml_amdt_content = xml_amdt_content_fixed_quotes.split('\n')
+        json_amdt_content = json_amdt_content_fixed_quotes.split('\n')
 
-        if len(new_amdt_content) == 0 or len(old_amdt_content) == 0:
+        if len(xml_amdt_content) == 0 or len(json_amdt_content) == 0:
             # use the long ref
-            logger.warning(f'{new_amdt.key.long_ref}: has no content')
+            logger.warning(f'{xml_amdt.key.long_ref}: has no content')
             return
 
         # sometimes the line breaks are different due to ref elements etc.
-        # so first we will compare the text content normalised and with the
-        # line breaks removed
-        new_amdt_content_no_lines = utils.normalise_text(' '.join(new_amdt_content))
-        old_amdt_content_no_lines = utils.normalise_text(' '.join(old_amdt_content))
+        # so first we will compare the text content with the line breaks
+        # and other non-space whitespace removed
+        xml_content_no_whitespace = re.sub(r'[^\S\s]+', '', ''.join(xml_amdt_content))
+        json_content_no_whitespace = re.sub(r'[^\S\s]+', '', ''.join(json_amdt_content))
 
-        # if new_amdt.num == '18':
-        #     print(new_amdt_content_no_lines)
-        #     print(old_amdt_content_no_lines)
+        # if xml_amdt.num == '18':
+        #     print(xml_amdt_content_no_lines)
+        #     print(json_amdt_content_no_lines)
 
-        if new_amdt_content_no_lines == old_amdt_content_no_lines:
+        if xml_content_no_whitespace == json_content_no_whitespace:
             # use the long ref
             logger.debug(
-                f'{new_amdt.key.long_ref}: content the same when line breaks removed.'
+                f'{xml_amdt.key.long_ref}: content the same when line breaks removed.'
             )
             return
 
         dif_html_str = utils.html_diff_lines(
-            new_amdt_content,
-            old_amdt_content,
+            xml_amdt_content,
+            json_amdt_content,
             fromdesc=self.xml_amdts.resource_identifier,
             todesc=self.json_amdts.resource_identifier,
         )
         if dif_html_str is not None:
             # short ref
-            self.incorrect_amdt_in_api.append(ChangedAmdt(new_amdt.key, dif_html_str))
+            self.incorrect_amdt_in_api.append(ChangedAmdt(xml_amdt.key, dif_html_str))
 
     def diff_decision(self, xml_amdt: Amendment, api_amdt: Amendment):
         """
@@ -1954,7 +2054,17 @@ class Report:
         webbrowser.open(file_path.resolve().as_uri())
 
 
-def also_query_bills_api(
+def sync_query_bills_api(
+    amend_xml_path: Path, save_json: bool = True
+) -> dict[str, JSON] | None:
+    """
+    Synchronous wrapper for async_query_bills_api.
+    """
+
+    return asyncio.run(async_query_bills_api(amend_xml_path, save_json))
+
+
+async def async_query_bills_api(
     amend_xml_path: Path, save_json: bool = True
 ) -> dict[str, JSON] | None:
     """
@@ -1983,24 +2093,33 @@ def also_query_bills_api(
         logger.error("Could not find bill title in amendment XML. Can't query API.")
         logger.error(repr(e))
         return
-    # TODO: remember to normalise the bill title
-    try:
-        # url encode the title
-        bill_title = urllib.parse.quote(bill_title)
-        url = f'https://bills-api.parliament.uk/api/v1/Bills?SearchTerm={bill_title}&SortOrder=DateUpdatedDescending'
-        logger.info(f'Querying: {url}')
-        response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
-        response.raise_for_status()
-        response_json: JSONObject = response.json()
-    except RequestException as e:
-        logger.error(f'Error querying the API: {e}')
-        return
+
+    # try:
+    #     # url encode the title
+    #     bill_title = urllib.parse.quote(bill_title)
+    #     url = f'https://bills-api.parliament.uk/api/v1/Bills?SearchTerm={bill_title}&SortOrder=DateUpdatedDescending'
+    #     logger.info(f'Querying: {url}')
+    #     response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+    #     response.raise_for_status()
+    #     response_json: JSONObject = response.json()
+    # except RequestException as e:
+    #     logger.error(f'Error querying the API: {e}')
+    #     return
+
+    async with bills_api.BillsApiClient() as client:
+        # TODO: remember to normalise the bill title
+        _bill_title = urllib.parse.quote(bill_title)
+        try:
+            bills = await client.get_bills(search_term=_bill_title)
+        except Exception as e:
+            logger.error(f'Error querying the API asynchronously: {e}')
+            return
 
     # file_name = "amendments_details.json"
-    # json.dump(response_json, open(file_name, "w"), ensure_ascii=False, indent=2)
+    # json.dump(response_json, open(file_name, "w"), indent=2, ensure_ascii=False)
     # logger.info(Path(file_name).resolve())
 
-    bills: list = response_json.get('items', [])
+    # bills: list = response_json.get('items', [])
 
     if not bills:
         logger.error(f'No bills found in the API with the title "{bill_title}"')
@@ -2011,7 +2130,8 @@ def also_query_bills_api(
             ' Using the first bill found.'
         )
 
-    bill_json = bills[0]
+    # bill_json = bills[0]
+    bill = bills[0]
 
     # try to get the stage from the xml
     stage: str | None = utils.get_stage_from_amdts_xml(amdt_xml_root)
@@ -2020,11 +2140,11 @@ def also_query_bills_api(
         return
 
     # TODO: fix this
-    api_stage_description = bill_json.get('currentStage', {}).get('description', '')
-    api_bill_short_title = bill_json.get('shortTitle', '')
 
-    bill_id: int | None = bill_json.get('billId', None)
-    stage_id: int | None = bill_json.get('currentStage', {}).get('id', None)
+    api_stage_description = bill.current_stage_description
+    api_bill_short_title = bill.short_title
+    bill_id: int | None = bill.bill_id
+    stage_id: int | None = bill.current_stage_id
 
     if stage.casefold().strip() != api_stage_description.casefold().strip():
         logger.info(
@@ -2056,14 +2176,17 @@ def also_query_bills_api(
         logger.error('Could not get bill ID or stage ID from the API.')
         return
 
-    amendments_summary_json = get_amendments_summary_json(bill_id, stage_id)
-    amdts_json = get_amendments_detailed_json(
-        amendments_summary_json,
-        bill_id,
-        stage_id,
-        api_stage_description,
-        api_bill_short_title,
-    )
+    async with bills_api.BillsApiClient() as client:
+        amendments_summary_json = await get_amendments_summary_json(
+            bill_id, stage_id, client
+        )
+        amdts_json = get_amendments_detailed_json(
+            amendments_summary_json,
+            bill_id,
+            stage_id,
+            api_stage_description,
+            api_bill_short_title,
+        )
 
     if save_json:
         _short_title = clean_filename(api_bill_short_title, file_name_safe=True)
@@ -2075,7 +2198,7 @@ def also_query_bills_api(
 
         try:
             with open(file_path, 'w') as f:
-                json.dump(amdts_json, f, indent=2)
+                json.dump(amdts_json, f, indent=2, ensure_ascii=False)
             logger.notice(f'Amendments details saved to file: {file_path}')
         except Exception as e:
             logger.error(f'Could not save amendments JSON to file: {file_path}')
@@ -2090,7 +2213,7 @@ def save_json_to_file(json_data: dict[str, JSON], file_path: Path) -> None:
     """
     try:
         with open(file_path, 'w') as f:
-            json.dump(json_data, f, indent=2)
+            json.dump(json_data, f, indent=2, ensure_ascii=False)
         logger.notice(f'Amendments details saved to file: {file_path}')
     except Exception as e:
         logger.error(f'Could not save amendments JSON to file: {file_path}')
@@ -2103,10 +2226,11 @@ def create_friendly_name(text: str, lowercase: bool = True) -> str:
     return cleaned.lower() if lowercase else cleaned
 
 
-def get_amendments_detailed_json(
+async def get_amendments_detailed_json(
     amendments_summary_json: list[JSONObject],
     bill_id: int,
     stage_id: int,
+    client: bills_api.BillsApiClient,
     stage_description: str = '',
     api_bill_short_title: str = '',
 ) -> JSONObject:
@@ -2128,47 +2252,64 @@ def get_amendments_detailed_json(
         objects under the 'items' key.
 
     Raises:
-        May log errors for failed requests but continues processing remaining amendments.
+        May log errors for failed requests but continues processing
+        remaining amendments.
     """
+    json_amendments_list: list[JSONType] = []
 
     amendment_ids = [
-        amendment.get('amendmentId') for amendment in amendments_summary_json
+        amendment.get('amendmentId', 0) for amendment in amendments_summary_json
     ]
     logger.info(f'{len(amendment_ids)=}')
-    logger.info(f'{amendment_ids=}')
+    # logger.info(f'{amendment_ids=}')
 
-    def _request_data(amendment_id: str):
-        """Query the API using the shared SESSION and return response or None."""
-        url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
-        try:
-            resp = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
-            resp.raise_for_status()
-            return resp
-        except Exception as e:
-            logger.error(f'Error fetching amendment {amendment_id}: {e}')
-            return None
+    tasks = [
+        client.get_amendment_json(bill_id, stage_id, amdt_id)
+        for amdt_id in amendment_ids
+    ]
 
-    max_workers = min(10, max(2, len(amendment_ids)))
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        # create a progress bar and return a list
-        responses = progress_bar(
-            pool.map(lambda amendment_id: _request_data(amendment_id), amendment_ids),
-            len(amendment_ids),
-        )
-        print()  # newline after progress bar
+    results = await async_progress_bar(
+        tasks, error_prefix='Amendment detail fetch failed'
+    )
 
-    logger.info(f'{responses=}')
-    json_amendments_list: list[JSONType] = []
-    for response in responses:
-        if response is None:
-            # keep a placeholder empty object to maintain list lengths
-            json_amendments_list.append({})
+    for result in results:
+        if isinstance(result, Exception):
+            logger.error(f'Error fetching amendment detail: {result}')
             continue
-        try:
-            json_amendments_list.append(response.json())
-        except Exception as e:
-            logger.error(f'Error parsing JSON response: {e}')
-            json_amendments_list.append({})
+        json_amendments_list.append(result)
+
+    # def _request_data(amendment_id: str):
+    #     """Query the API using the shared SESSION and return response or None."""
+    #     url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments/{amendment_id}'
+    #     try:
+    #         resp = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+    #         resp.raise_for_status()
+    #         return resp
+    #     except Exception as e:
+    #         logger.error(f'Error fetching amendment {amendment_id}: {e}')
+    #         return None
+
+    # max_workers = min(10, max(2, len(amendment_ids)))
+    # with ThreadPoolExecutor(max_workers=max_workers) as pool:
+    #     # create a progress bar and return a list
+    #     responses = progress_bar(
+    #         pool.map(lambda amendment_id: _request_data(amendment_id), amendment_ids),
+    #         len(amendment_ids),
+    #     )
+    #     print()  # newline after progress bar
+
+    # logger.info(f'{responses=}')
+    # json_amendments_list: list[JSONType] = []
+    # for response in responses:
+    #     if response is None:
+    #         # keep a placeholder empty object to maintain list lengths
+    #         json_amendments_list.append({})
+    #         continue
+    #     try:
+    #         json_amendments_list.append(response.json())
+    #     except Exception as e:
+    #         logger.error(f'Error parsing JSON response: {e}')
+    #         json_amendments_list.append({})
 
     json_output = {
         'shortTitle': api_bill_short_title,
@@ -2181,33 +2322,17 @@ def get_amendments_detailed_json(
     return json_output
 
 
-# def get_amendments_summary_json(bill_id: int, stage_id: int) -> list[JSONObject]:
-#     i = 0
-#     json_amendments = []
-#     while True:
-#         skip = i * 20
-#         url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_id}/Stages/{stage_id}/Amendments?skip={skip}'
-
-#         response = requests.get(url)
-#         response_json = response.json()
-#         items = response_json['items']
-#         if len(items) == 0:
-#             break
-#         json_amendments += items
-
-#         i += 1
-
-#     return json_amendments
-
-
-def get_amendments_summary_json(
+async def get_amendments_summary_json(
     bill_id: int,
     stage_id: int,
+    client: bills_api.BillsApiClient,
     store_json_path: Path | None = None,
 ) -> list[JSONObject]:
     # run the first query synchronously to get the total count
-    url = AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=0)
-    response_json = get_json_sync(url)
+    # url = AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=0)
+    # response_json = get_json_sync(url)
+
+    response_json = client.get_amendments_json(bill_id, stage_id, skip=0, take=20)
 
     json_amendments: list[JSONObject] = response_json.get('items')  # type: ignore
 
@@ -2215,38 +2340,41 @@ def get_amendments_summary_json(
 
     print(f'Total Amendments found in API: {total_results}')
 
-    number_of_requests = math.ceil(total_results / 40)
+    number_of_requests = math.ceil(total_results / 20)
 
-    urls = [
-        AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=i * 40)
+    tasks = [
+        client.get_amendments_json(bill_id, stage_id, skip=i * 20, take=20)
         for i in range(1, number_of_requests)
     ]
-    logger.info(f'{urls=}')
 
-    responses: list[JSONObject] = []
-    max_workers = min(10, max(2, len(urls)))
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        # create a progress bar and return a list
-        responses = progress_bar(pool.map(get_json_sync, urls), len(urls))
-        print()  # newline after progress bar
+    # urls = [
+    #     AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=i * 40)
+    #     for i in range(1, number_of_requests)
+    # ]
+    logger.info(f'No. of tasks: {len(tasks)}')
 
-    if store_json_path is not None:
-        with open(
-            store_json_path,
-            'w',
-        ) as f:
-            json.dump(responses, f, indent=2)
+    results = await async_progress_bar(tasks, error_prefix='Amendment fetch failed')
 
-    # with open(Path(__file__).parent / 'responses.json', 'w') as f:
-    #     json.dump(responses, f, indent=2)
+    for result in results:
+        if isinstance(result, Exception):
+            logger.error(f'Error fetching amendments summary: {result}')
+            continue
+        json_amendments += result.get('items', [])  # type: ignore
 
-    # json_amendments += [response.get('items') for response in responses]
-    for respose in responses:
-        if respose.get('items'):
-            json_amendments += respose.get('items')
+    # responses: list[JSONObject] = []
+    # max_workers = min(10, max(2, len(urls)))
+    # with ThreadPoolExecutor(max_workers=max_workers) as pool:
+    #     # create a progress bar and return a list
+    #     responses = progress_bar(pool.map(get_json_sync, urls), len(urls))
+    #     print()  # newline after progress bar
 
-    # with open(Path(__file__).parent / 'responses2.json', 'w') as f:
-    #     json.dump(json_amendments, f, indent=2)
+    # if store_json_path is not None:
+    #     with open(store_json_path, 'w') as f:
+    #         json.dump(responses, f, indent=2, ensure_ascii=False)
+
+    # for response in responses:
+    #     if response.get('items', []):
+    #         json_amendments += response.get('items', [])
 
     return json_amendments
 
@@ -2413,6 +2541,7 @@ Examples:
 
 def setup_logging(verbosity: int):
     """Setup logging based on verbosity level."""
+
     if verbosity >= 2:
         level = logging.DEBUG
     elif verbosity == 1:
@@ -2421,11 +2550,15 @@ def setup_logging(verbosity: int):
         level = logging.WARNING
 
     # set the logging level for the console handler
-    ch.setLevel(level)
+    for handler in logger.handlers:
+        if not isinstance(handler, logging.StreamHandler):
+            continue
+        handler.setLevel(level)
     # logger.setLevel(level)  # dont need this as already set to DEBUG
 
 
 def main():
+    lawchecker_logger.setup_lawchecker_logging()
     try:
         args = parse_arguments()
 
@@ -2448,7 +2581,7 @@ def main():
         else:
             logger.info('Querying API for amendments data...')
             save_json = not args.no_save_json
-            amendments_list_json = also_query_bills_api(args.xml_file, save_json)
+            amendments_list_json = sync_query_bills_api(args.xml_file, save_json)
 
         if not amendments_list_json:
             logger.error('No amendments found from JSON file or API.')
@@ -2484,7 +2617,7 @@ def main():
                 output_file.stem + '_summary.json'
             )
             with summary_json_file.open('w') as f:
-                json.dump(report.json_summary(), f, ensure_ascii=False, indent=2)
+                json.dump(report.json_summary(), f, indent=2, ensure_ascii=False)
             logger.info(f'Saved summary JSON file to: {summary_json_file}')
         else:
             logger.info('Skipping summary JSON file as --summary not specified.')

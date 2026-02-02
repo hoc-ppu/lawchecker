@@ -12,7 +12,7 @@ from lxml import etree, html
 from lxml.etree import QName, _Element
 from lxml.html import HtmlElement
 
-from lawchecker import templates
+from lawchecker import lawchecker_logger, templates
 from lawchecker import xpath_helpers as xp
 from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, PARSER, UKL
@@ -624,6 +624,7 @@ class Report:
 
 
 def main():
+    lawchecker_logger.setup_lawchecker_logging()
     parser = argparse.ArgumentParser(
         description=(
             'Create an HTML document with various automated checks on amendments.'

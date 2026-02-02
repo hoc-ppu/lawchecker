@@ -9,13 +9,19 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from lawchecker import anr_post_processing_html, anr_spo_rest, settings
+from lawchecker import (
+    anr_post_processing_html,
+    anr_spo_rest,
+    lawchecker_logger,
+    settings,
+)
 from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import GLOBAL_VARS, HTML_TEMPLATE
 
 
 def main():
     # do cmd line version
+    lawchecker_logger.setup_lawchecker_logging()
 
     def _dir_path(path):
         # get directory

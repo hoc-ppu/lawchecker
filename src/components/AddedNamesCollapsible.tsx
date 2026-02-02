@@ -198,7 +198,7 @@ const AddedNamesCollapsible: React.FC<BodyProps> = (props) => {
               XML file(s) must be saved in a folder and you need to select that
               folder.
             </strong>{" "}
-            Do not try to select a single XML file.
+            Do not select a single XML file.
           </small>
         </p>
       </Card>

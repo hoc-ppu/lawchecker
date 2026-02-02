@@ -4,7 +4,7 @@ from copy import deepcopy
 from typing import Sequence
 
 from lxml import etree
-from lxml.etree import Element, QName, _Element
+from lxml.etree import Element, QName, _Element, iselement
 
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_bill_numbering import NSMAP
@@ -114,6 +114,8 @@ def is_inline_element(tag: str) -> bool:
     # https://docs.oasis-open.org/legaldocml/akn-core/v1.0/cos01/part2-specs/schemas/akomantoso30.xsd
     # //xsd:schema/xsd:group[@name="HTMLinline"]/xsd:choice
     # plus ref and def which are also inline
+
+    # I don't think the <inline> element is included... strangely...
     inlines = (
         'b',
         'i',
@@ -150,10 +152,49 @@ def drop_inline_elements(parent_element: _Element) -> _Element:
     return parent_copy
 
 
-def clean_whitespace(parent_element: _Element) -> _Element:
+def clean_json_html_amdt(parent_element: _Element) -> _Element:
+    """ "
+    Add a newline after p elements
+    """
+
+    # TODO: do we need this function at all?
+
+    parent_copy = deepcopy(parent_element)
+
+    for element in parent_copy.iter(Element):
+        tag = QName(element).localname
+
+        if tag == 'p':
+            # Add in newlines after each of these elements
+            try:
+                last_child = element[-1]
+            except IndexError:
+                last_child = None
+
+            if last_child is not None:
+                # add test for this.
+                if last_child.tail and not last_child.tail.endswith('\n'):
+                    last_child.tail = f'{last_child.tail}\n'
+                else:
+                    last_child.tail = '\n'
+            elif element.text:
+                element.text = f'{element.text.rstrip()}\n'
+            if (
+                element.tail
+                and not element.tail.isspace()
+                and not element.tail.endswith('\n')
+            ):
+                # occasionally paragraph elements have tail text. for instance in tables
+                # e.g. see Leasehold and Freehold Reform Bill from about January 2024
+                element.tail = f'{element.tail}\n'
+
+    return parent_copy
+
+
+def clean_lm_xml_amdt(parent_element: _Element) -> _Element:
     """
     Remove unwanted whitespace from parent_element and all its descendant
-    elements. Add a newline after parent_elements (which represent paragraphs)
+    elements. Add a newline after elements (which represent paragraphs)
     """
 
     parent_copy = drop_inline_elements(parent_element)
@@ -169,13 +210,29 @@ def clean_whitespace(parent_element: _Element) -> _Element:
     for element in parent_copy.iter(Element):
         tag = QName(element).localname
 
+        parent: Element | None = element.getparent()
+        parent_tag = ''
+        if parent is not None:
+            parent_tag = QName(parent).localname
+
         if tag == 'inline' and element.get('name') == 'AppendText' and element.text:
-            element.text = f'{element.text} '
+            no_following_sibling = element.getnext() is None
+
+            parent_is_mod = parent_tag == 'mod'
+
+            logger.info(f'inline element with text: {element.text}')
+            # logger.info(f'{parent_is_mod=}, {no_following_sibling=} {parent=}')
+            if no_following_sibling and parent_is_mod:
+                # AppendText at end of mod element. Add newline
+                element.text = f'{element.text}\n'
+                logger.info('Added newline to AppendText inline element')
+            else:
+                element.text = f'{element.text} '
 
         # if is_inline_element(tag):
         #     continue
 
-        # remove whitespace
+        # remove some leading and trailing spaces
         if element.text:
             element.text = element.text.lstrip()
         if element.tail:
@@ -223,8 +280,11 @@ def clean_whitespace(parent_element: _Element) -> _Element:
                 previous.text = f'{previous.text}\n'
 
         if tag == 'num' and element.text:
-            # Add in space after num element
-            element.text = f'{element.text} '
+            if parent_tag == 'part':
+                element.text = f'{element.text}\n'
+            else:
+                # Add in space after num element
+                element.text = f'{element.text} '
             # if '(1)' in element.text:
             #     logger.info('Found number one')
             #     logger.info(etree.tostring(element))
@@ -245,8 +305,8 @@ def diff_xml_content(
     """
 
     # remove the unnecessary whitespace before comparing the text content
-    cleaned_old_xml = clean_whitespace(old_xml)
-    cleaned_new_xml = clean_whitespace(new_xml)
+    cleaned_old_xml = clean_lm_xml_amdt(old_xml)
+    cleaned_new_xml = clean_lm_xml_amdt(new_xml)
 
     if ignore_refs:
         # when ignore refs is True, remove refs from the xml
@@ -319,10 +379,10 @@ def html_diff_lines(
     fromdesc: str = '',
     todesc: str = '',
     context=True,
-    numlines=3,
+    numlines=2,
 ) -> str | None:
-    fromlines = [normalise_text(line) for line in fromlines if line.strip()]
-    tolines = [normalise_text(line) for line in tolines if line.strip()]
+    fromlines = [normalise_spaces(line) for line in fromlines if line.strip()]
+    tolines = [normalise_spaces(line) for line in tolines if line.strip()]
 
     if fromlines == tolines:
         return None
@@ -346,23 +406,79 @@ def html_diff_lines(
 
 
 def normalise_text(text: str) -> str:
-    text = text.replace('”', '”\n')  # should this go here?
-    text = text.replace('\n”', '”')  # should this go here?
-    text = text.replace(' ”', '”')  # should this go here?
-    text = text.replace('“ ', '“')  # should this go here?
+    return normalise_new_lines(normalise_spaces(text))
 
-    # I have decided that I don't care about whitespace around em dashes
-    text = text.replace(' —', '—')
-    text = text.replace('— ', '—')
+
+def normalise_new_lines(text: str) -> str:
+    """
+    Normalize newline placement in text for consistent formatting.
+
+    Adjusts newlines around quotation marks, em dashes, and semicolons to improve
+    text comparison. Adds newlines after closing quotes and em dashes, removes
+    newlines before opening quotes and after semicolons, collapses consecutive
+    newlines, and strips leading/trailing whitespace.
+
+    Args:
+        text: The text string to normalize.
+
+    Returns:
+        The text with normalized newline placement.
+    """
+    text = text.replace('”', '”\n')
+    text = text.replace('\n”', '”')
+    text = text.replace('“\n', '“')
+
+    # definition lists often start with two opening quote characters
+    text = text.replace('““', '\n““')
 
     # not worried about newlines after semi-colons
     text = text.replace(';\n', '; ')
 
-    text = text.replace('\u00a0', ' ')  # replace non-breaking space with normal space
-    text = text.replace('\u2007', ' ')  # replace a figure space with normal space
+    # let's add a new line after an em dash
+    text = text.replace('—', '—\n')
 
     text = re.sub(r'\n\n+', '\n', text)
-    text = re.sub(r'\s\s+', ' ', text)
+
+    text = '\n'.join(line.strip() for line in text.splitlines())
+
+    text = text.strip()
+
+    return text
+
+
+def normalise_spaces(text: str) -> str:
+    """
+    Normalize whitespace and special characters within text lines.
+
+    Removes spaces around quotation marks and em dashes, replaces non-breaking
+    spaces and figure spaces with regular spaces, collapses multiple consecutive
+    spaces into single spaces, and strips leading/trailing whitespace.
+
+    Args:
+        text: The text string to normalize.
+
+    Returns:
+        The normalized text string.
+    """
+
+    text = re.sub(r' +”', '”', text)
+    text = re.sub(r'“ +', '“', text)
+
+    # I have decided that I don't care about spaces around em dashes
+    text = re.sub(r' +— +', '—', text)
+    # text = text.replace('— ', '—')
+
+    text = text.replace('\u00a0', ' ')  # non-breaking space
+    text = text.replace('\u2007', ' ')  # figure space
+    text = text.replace('\u2009', ' ')  # Thin space
+    text = text.replace('\u200a', ' ')  # Hair space
+    text = text.replace('\u202f', ' ')  # Narrow no-break space
+    text = text.replace('\u2003', ' ')  # Em space
+    text = text.replace('\u2002', ' ')  # En space
+    text = text.replace('\u200b', ' ')  # Zero-width space
+    text = text.replace('\t', ' ')
+
+    text = re.sub(r'[^\S\n][^\S\n]+', ' ', text)
 
     text = text.strip()
 

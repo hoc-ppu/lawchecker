@@ -16,7 +16,7 @@ from lxml import etree, html
 from lxml.etree import _Element
 from lxml.html import HtmlElement
 
-from lawchecker import templates
+from lawchecker import lawchecker_logger, templates
 from lawchecker import xpath_helpers as xp
 from lawchecker.compare_bill_numbering import CompareBillNumbering
 from lawchecker.lawchecker_logger import logger
@@ -456,6 +456,9 @@ class Report:
 
 
 def main():
+    lawchecker_logger.setup_lawchecker_logging()
+
+    lawchecker_logger.setup_lawchecker_logging()
     parser = argparse.ArgumentParser(
         description=('Create an HTML report comparing LawMaker bill versions.')
     )

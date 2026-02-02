@@ -12,7 +12,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
-import requests
+import httpx
 
 try:
     import webview
@@ -28,6 +28,7 @@ from lawchecker import (
     added_names_report,
     check_web_amdts,
     common,
+    lawchecker_logger,
     pp_xml_lxml,
     settings,
 )
@@ -638,7 +639,7 @@ def get_entrypoint():
 
         for _ in range(20):
             try:
-                get = requests.get(url, timeout=0.05)
+                get = httpx.get(url, timeout=0.05)
                 if get.status_code == 200:
                     return url
             except Exception:
@@ -670,6 +671,7 @@ def get_entrypoint():
 
 
 def main():
+    lawchecker_logger.setup_lawchecker_logging()
     logger.info('Starting Lawchecker main function')
     # with open("what.txt", "w") as f:
     #     for k, v in sys.__dict__.items():

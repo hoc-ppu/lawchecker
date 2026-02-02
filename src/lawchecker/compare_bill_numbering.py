@@ -11,6 +11,7 @@ from lxml import etree
 from lxml.etree import _Element
 from lxml.html import HtmlElement
 
+from lawchecker import lawchecker_logger
 from lawchecker.lawchecker_logger import logger
 from lawchecker.templates import Table
 
@@ -333,6 +334,7 @@ class CompareBillNumbering:
 
 
 def cli():
+    lawchecker_logger.setup_lawchecker_logging()
     parser = argparse.ArgumentParser(
         description=(
             'Takes in UK Bill XML files and generates CSV files(s)'

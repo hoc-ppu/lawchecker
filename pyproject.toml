@@ -3,7 +3,7 @@ name = "lawchecker"
 license = "MIT"
 dependencies = [
     "lxml",
-    "requests",
+    "httpx",
     "python-dotenv",
     "pywebview[ssl]",
     "charset-normalizer"
