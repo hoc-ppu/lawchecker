@@ -756,7 +756,15 @@ class BillsApiClient:
             base_url: Base URL for the Bills API
         """
         self.base_url = base_url
-        self.session = httpx.AsyncClient(timeout=httpx.Timeout(15.0, connect=5.0))
+        self.session = httpx.AsyncClient(
+            timeout=httpx.Timeout(15.0, connect=5.0),
+            limits=httpx.Limits(
+                max_keepalive_connections=20,
+                max_connections=100,
+                keepalive_expiry=30.0,
+            ),
+            http2=True,
+        )
 
     async def close(self) -> None:
         """Close the HTTP session."""

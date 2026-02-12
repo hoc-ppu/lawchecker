@@ -109,6 +109,24 @@ class ChangedAmdt:
         return self.ref.short_ref
 
 
+@dataclass
+class ReportMetadata:
+    """Optional metadata to include in the HTML report intro section.
+
+    This class allows callers (e.g., monster) to pass additional context
+    about the report generation, such as LawMaker project info and API
+    stage matching details.
+    """
+
+    lm_project_title: str | None = None
+    lm_stage: str | None = None
+    api_stage_description: str | None = None
+    api_stage_id: int | None = None
+    api_bill_id: int | None = None
+    official_list_label: str | None = None
+    generation_timestamp: datetime | None = None
+
+
 class Decision:
     similar_decisions = [
         ['Agreed', 'Agreed To', 'Added', 'Agreed to on division'],
@@ -928,7 +946,10 @@ class Report:
         self,
         xml: Path | _Element,
         json_amdts: dict[str, JSON],
+        metadata: ReportMetadata | None = None,
     ):
+        self.metadata = metadata
+
         if isinstance(xml, Path):
             self.xml_file_path: Path | None = xml
         else:
@@ -1080,6 +1101,56 @@ class Report:
         )
 
         section.append(meta_data_table.html)
+
+        # Add optional metadata as an unordered list below the table
+        if self.metadata:
+            metadata_items: list[str] = []
+
+            if self.metadata.lm_project_title:
+                metadata_items.append(
+                    f'<li>LawMaker Project: {self.metadata.lm_project_title}</li>'
+                )
+            if self.metadata.lm_stage:
+                metadata_items.append(
+                    f'<li>LawMaker Stage: {self.metadata.lm_stage}</li>'
+                )
+            if self.metadata.api_stage_description:
+                # Build hyperlink if we have both bill_id and stage_id
+                if self.metadata.api_bill_id and self.metadata.api_stage_id:
+                    stage_url = (
+                        f'https://bills.parliament.uk/bills/'
+                        f'{self.metadata.api_bill_id}/stages/'
+                        f'{self.metadata.api_stage_id}/amendments'
+                    )
+                    stage_link = (
+                        f'<a href="{stage_url}" target="_blank">'
+                        f'{self.metadata.api_stage_description}</a>'
+                    )
+                    metadata_items.append(
+                        f'<li>Matched stage on parliament website (via bills API): {stage_link}</li>'
+                    )
+                else:
+                    metadata_items.append(
+                        f'<li>Matched stage on parliament website (via Bills API): '
+                        f'{self.metadata.api_stage_description}</li>'
+                    )
+            if self.metadata.official_list_label:
+                metadata_items.append(
+                    f'<li>Official List: {self.metadata.official_list_label}</li>'
+                )
+            if self.metadata.generation_timestamp:
+                dt = self.metadata.generation_timestamp
+                timestamp_str = (
+                    f'{dt.strftime("%a")} {dt.strftime("%d %B %Y %H:%M").lstrip("0")}'
+                )
+
+                metadata_items.append(f'<li>Report Generated: {timestamp_str}</li>')
+
+            if metadata_items:
+                metadata_list = html.fromstring(
+                    f'<ul class="metadata-list">{"".join(metadata_items)}</ul>'
+                )
+                section.append(metadata_list)
 
         return section
 
@@ -1353,7 +1424,7 @@ class Report:
 
         info = (
             '<p><strong>Note:</strong> There can be false'
-            ' positives. Some whitespace differences are ignored.</p>'
+            ' positives and some whitespace differences are ignored.</p>'
         )
 
         card = templates.Card('Incorrect amendments')
