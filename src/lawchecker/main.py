@@ -495,7 +495,7 @@ class Api:
         with ProgressModal() as modal:
             modal.update('Querying Bills API for amendments. Please wait...')
             try:
-                json_amdts = check_web_amdts.also_query_bills_api(file, save_json)
+                json_amdts = check_web_amdts.sync_query_bills_api(file, save_json)
                 if not json_amdts:
                     logger.error('No JSON returned from API.')
             except Exception as e:
@@ -532,27 +532,35 @@ class Api:
 
         with ProgressModal() as modal:
             modal.update('Querying Bills API for amendments. Please wait...')
-            try:
-                amendments_summary_json = check_web_amdts.get_amendments_summary_json(
-                    bill_id, stage_id
+            json_file_path = None
+            if save_json:
+                json_file_path = (
+                    Path(self.api_amend_xml).parent / f'{bill_id}_{stage_id}_amdts.json'
                 )
-                print(len(amendments_summary_json))
-                json_amdts = check_web_amdts.get_amendments_detailed_json(
-                    amendments_summary_json, bill_id_int, stage_id_int
-                )
-                if not json_amdts:
-                    logger.error('No JSON returned from API.')
-            except Exception as e:
-                logger.error(f'Error querying API: {e}')
-            else:
-                if save_json:
-                    file_path = (
-                        Path(self.api_amend_xml).parent
-                        / f'{bill_id}_{stage_id}_amdts.json'
-                    )
-                    check_web_amdts.save_json_to_file(json_amdts, file_path)
+            self.api_amend_json = check_web_amdts.sync_query_bills_api_from_ids(
+                bill_id_int, stage_id_int, save_json, json_file_path
+            )
+            # try:
+            #     amendments_summary_json = check_web_amdts.get_amendments_summary_json(
+            #         bill_id, stage_id
+            #     )
+            #     print(len(amendments_summary_json))
+            #     json_amdts = check_web_amdts.get_amendments_detailed_json(
+            #         amendments_summary_json, bill_id_int, stage_id_int
+            #     )
+            #     if not json_amdts:
+            #         logger.error('No JSON returned from API.')
+            # except Exception as e:
+            #     logger.error(f'Error querying API: {e}')
+            # else:
+            #     if save_json:
+            #         file_path = (
+            #             Path(self.api_amend_xml).parent
+            #             / f'{bill_id}_{stage_id}_amdts.json'
+            #         )
+            #         check_web_amdts.save_json_to_file(json_amdts, file_path)
 
-                self.api_amend_json = json_amdts
+            #     self.api_amend_json = json_amdts
 
             modal.update('Query complete.')
 

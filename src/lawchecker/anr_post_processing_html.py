@@ -9,7 +9,7 @@ from httpx import HTTPError
 from lxml import etree as ET
 from lxml.etree import iselement
 
-from lawchecker.check_web_amdts import DEFAULT_TIMEOUT, SESSION
+from lawchecker.check_web_amdts import DEFAULT_TIMEOUT
 from lawchecker.lawchecker_logger import logger
 
 
@@ -44,7 +44,7 @@ def fetch_eligible_members():
 
     url = 'https://data.parliament.uk/membersdataplatform/services/mnis/members/query/House=Commons|IsEligible=true/'
     try:
-        response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
+        response = httpx.get(url, timeout=DEFAULT_TIMEOUT)
         response.raise_for_status()
         members_tree = ET.fromstring(response.content)
     except HTTPError:

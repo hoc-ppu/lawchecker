@@ -446,6 +446,21 @@ def normalise_new_lines(text: str) -> str:
     return text
 
 
+def normalise_table_newlines(element: _Element) -> None:
+    """
+    Normalize newline placement in table cells for consistent formatting.
+    """
+
+    for elm in element.iter():
+        tag = QName(elm).localname
+        if tag != 'td':
+            continue
+        if not elm.tail:
+            elm.tail = '\n'
+        elif not elm.tail.endswith('\n'):
+            elm.tail = f'{elm.tail}\n'
+
+
 def normalise_spaces(text: str) -> str:
     """
     Normalize whitespace and special characters within text lines.

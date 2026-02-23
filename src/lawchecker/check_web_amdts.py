@@ -499,6 +499,7 @@ class Amendment:
         # amendment_text = utils.normalise_text(
         #     xp.text_content(utils.clean_json_html_amdt(html_element))
         # )
+        utils.normalise_table_newlines(html_element)
         amendment_text = utils.normalise_text(xp.text_content(html_element))
 
         explanatory_text_html = amendment_json.get('explanatoryText', '')
@@ -625,6 +626,7 @@ class Amendment:
             )
 
         add_quotes_to_quoted_elements(amendment_content)
+        utils.normalise_table_newlines(amendment_content)
 
         # if (
         #     amendment_content.get('GUID', None)
@@ -1248,7 +1250,6 @@ class Report:
                 if xml_amdt is None:
                     continue
                 missing_amdt_reference.append(xml_amdt.key.long_ref)
-                '--Satpal replaced parenthese'
 
             removed_content = (
                 f'Missing content: <strong>{len(self.missing_api_amdts)}</strong><br/>'
@@ -1259,8 +1260,8 @@ class Report:
         info = (
             '<p>Listed below are any Amendments (& New Clauses etc.) which are'
             ' present in the XML from LawMaker but not present in Amendments'
-            ' avaliable via the API. This means that they '
-            ' also missing from the Bills website. </p>'
+            ' available via the API. This means that they '
+            ' are also missing from the Bills website. </p>'
         )
 
         card = templates.Card('Missing amendments')
@@ -1270,6 +1271,30 @@ class Report:
                 f'{info}<p>{removed_content}</p>', no_leading_text=True
             )
         )
+
+        in_xml_but_not_api = self.xml_amdts.amdt_set - self.json_amdts.amdt_set
+        in_api_but_not_xml = self.json_amdts.amdt_set - self.xml_amdts.amdt_set
+        appears_in_both_set = self.xml_amdts.amdt_set & self.json_amdts.amdt_set
+
+        sec = templates.SmallCollapsableSection(
+            f'<span><strong>{len(in_api_but_not_xml)}</strong> '
+            ' are only on the website.'
+            '<small class="text-muted"> [show]</small></span>'
+        )
+        sec.collapsible.append(
+            html.fromstring(
+                '<span>Amendments in the XML but not on the website: '
+                f'{", ".join(item.short_ref for item in in_xml_but_not_api)}'
+                '<br/>Amendments on the website but not in the XML: '
+                f'{", ".join(item.short_ref for item in in_api_but_not_xml)}'
+                '<br/>Amendments which appear in both: '
+                f'{", ".join(item.short_ref for item in appears_in_both_set)}'
+                '<small><br><br><strong>Note:</strong> The website is checked via the API.</small></span>'
+            )
+        )
+
+        card.tertiary_info.append(sec.html)
+
         return card.html
 
     def added_and_removed_names_table(self) -> HtmlElement:
@@ -2179,9 +2204,8 @@ async def async_query_bills_api(
 
     async with bills_api.BillsApiClient() as client:
         # TODO: remember to normalise the bill title
-        _bill_title = urllib.parse.quote(bill_title)
         try:
-            bills = await client.get_bills(search_term=_bill_title)
+            bills = await client.get_bills(search_term=bill_title)
         except Exception as e:
             logger.error(f'Error querying the API asynchronously: {e}')
             return
@@ -2222,24 +2246,22 @@ async def async_query_bills_api(
             f'Stage in amendment XML ({stage}) does not match current stage in API ({api_stage_description}).'
         )
         # look thorugh all other stages to get the correct one
-        try:
-            url = f'https://bills-api.parliament.uk/api/v1/Bills/{bill_json["billId"]}/Stages'
-            response = SESSION.get(url, timeout=DEFAULT_TIMEOUT)
-            response.raise_for_status()
-            response_json = response.json()
-            stages = response_json.get('items', [])
-            for item in stages:  # type: ignore
-                description = item.get('description', '')
-                if description.casefold().strip() == stage.casefold().strip():
-                    api_stage_description = description
-                    stage_id = item.get('id', None)
-                    logger.notice(
-                        f'Stage found in API: {api_stage_description}. Stage ID: {stage_id}'
-                    )
-                    break
-        except Exception as e:
-            logger.error('Error getting stages from API.')
-            logger.error(repr(e))
+        async with bills_api.BillsApiClient() as client:
+            try:
+                stages = await client.get_bill_stages(bill_id)
+            except Exception as e:
+                logger.error('Error getting stages from API asynchronously.')
+                logger.error(repr(e))
+                return
+        for item in stages:
+            description = item.description
+            if description.casefold().strip() == stage.casefold().strip():
+                api_stage_description = description
+                stage_id = item.stage_id
+                logger.notice(
+                    f'Stage found in API: {api_stage_description}. Stage ID: {stage_id}'
+                )
+                break
 
     logger.notice(f'Bill ID: {bill_id} Stage ID: {stage_id}')
 
@@ -2251,12 +2273,14 @@ async def async_query_bills_api(
         amendments_summary_json = await get_amendments_summary_json(
             bill_id, stage_id, client
         )
-        amdts_json = get_amendments_detailed_json(
+        print('HERE!')
+        amdts_json = await get_amendments_detailed_json(
             amendments_summary_json,
             bill_id,
             stage_id,
+            client,
             api_stage_description,
-            api_bill_short_title,
+            str(api_bill_short_title),
         )
 
     if save_json:
@@ -2273,6 +2297,60 @@ async def async_query_bills_api(
             logger.notice(f'Amendments details saved to file: {file_path}')
         except Exception as e:
             logger.error(f'Could not save amendments JSON to file: {file_path}')
+            logger.error(repr(e))
+
+    return amdts_json
+
+
+def sync_query_bills_api_from_ids(
+    bill_id: int,
+    stage_id: int,
+    save_json: bool = True,
+    json_file_path: Path | None = None,
+) -> dict[str, JSON] | None:
+    """
+    Synchronous wrapper for async_query_bills_api_from_ids.
+    """
+
+    return asyncio.run(
+        async_query_bills_api_from_ids(bill_id, stage_id, save_json, json_file_path)
+    )
+
+
+async def async_query_bills_api_from_ids(
+    bill_id: int,
+    stage_id: int,
+    save_json: bool = True,
+    json_file_path: Path | None = None,
+) -> dict[str, JSON] | None:
+    """
+    Query the API for the bill XML files related to the amendment XML file.
+    """
+
+    async with bills_api.BillsApiClient() as client:
+        amendments_summary_json = await get_amendments_summary_json(
+            bill_id, stage_id, client
+        )
+        print('HERE!')
+        amdts_json = await get_amendments_detailed_json(
+            amendments_summary_json,
+            bill_id,
+            stage_id,
+            client,
+        )
+
+    if save_json and not json_file_path:
+        logger.warning(
+            'save_json is True but no json_file_path provided. JSON will not be saved to file.'
+        )
+
+    if save_json and json_file_path:
+        try:
+            with open(json_file_path, 'w') as f:
+                json.dump(amdts_json, f, indent=2, ensure_ascii=False)
+            logger.notice(f'Amendments details saved to file: {json_file_path}')
+        except Exception as e:
+            logger.error(f'Could not save amendments JSON to file: {json_file_path}')
             logger.error(repr(e))
 
     return amdts_json
@@ -2403,7 +2481,7 @@ async def get_amendments_summary_json(
     # url = AMENDMENTS_URL_TEMPLATE.format(bill_id=bill_id, stage_id=stage_id, skip=0)
     # response_json = get_json_sync(url)
 
-    response_json = client.get_amendments_json(bill_id, stage_id, skip=0, take=20)
+    response_json = await client.get_amendments_json(bill_id, stage_id, skip=0, take=20)
 
     json_amendments: list[JSONObject] = response_json.get('items')  # type: ignore
 
