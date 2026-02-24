@@ -747,6 +747,17 @@ class AmdtContainer(Mapping):
         self.amdt_set: set[AmdtRef] = set(self._dict.keys())
         # {utils.clean_amendment_number(amdt.num) for amdt in self.amendments}
 
+    @property
+    def has_decisions(self) -> bool:
+
+        if self.container_type == ContainerType.REPORT_DECISIONS:
+            return True
+
+        if self.container_type == ContainerType.COMMITTEE_DECISIONS:
+            return True
+
+        return False
+
     @classmethod
     def blank_container(cls) -> 'AmdtContainer':
         return cls([])
@@ -1472,15 +1483,7 @@ class Report:
     def render_decisions(self) -> HtmlElement:
         # -------------------- Decision check section -------------------- #
 
-        is_report_decisions = (
-            self.xml_amdts.container_type == ContainerType.REPORT_DECISIONS
-        )
-        is_committee_decisions = (
-            self.xml_amdts.container_type == ContainerType.COMMITTEE_DECISIONS
-        )
-
-        if not (is_report_decisions or is_committee_decisions):
-            # logger.debug(f"{repr(self.xml_amdts.container_type)=}")
+        if not self.xml_amdts.has_decisions:
             return self.render_no_decision_check()
 
         # build up text content
