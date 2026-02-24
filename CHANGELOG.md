@@ -1,5 +1,25 @@
 # Lawchecker Change Log
 
+## 2.4.0 (2026-02-24)
+
+### Added
+- `ReportMetadata` context model for web amendments reporting flow
+- XML decision-state property in web amendments processing
+
+### Improved
+- API querying architecture with synchronous wrappers around async internals
+- Newline normalization in generated table cell content to reduce false positives in XML/Web amendment diffing
+- Filename handling for generated reports
+- User feedback showing where reports are saved
+
+### Fixed
+- Newline handling around semicolon-delimited content
+- Unnecessary amendment JSON save step in web amendments pipeline
+
+### Changed
+- Migrated HTTP layer from `requests` to `httpx` with async support
+- Refactored logging usage across Python report/checking modules
+
 ## 2.3.0 (2025-11-10)
 
 ### Added
