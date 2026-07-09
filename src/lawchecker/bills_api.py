@@ -615,15 +615,17 @@ class PublicationDocument:
     """Publication document metadata."""
 
     id: int
-    title: str | None
+    filename: str | None
     content_type: str | None
+    content_length: int
 
     @classmethod
     def from_json(cls, data: dict[str, Any]) -> 'PublicationDocument':
         return cls(
             id=data.get('id', 0),
-            title=data.get('title'),
+            filename=data.get('filename'),
             content_type=data.get('contentType'),
+            content_length=data.get('contentLength', 0),
         )
 
 
@@ -817,7 +819,7 @@ class BillsApiClient:
                 response = await self.session.get(url, params=params)
                 response.raise_for_status()
                 return response
-            except (httpx.TimeoutException, httpx.NetworkError):
+            except httpx.HTTPError:
                 if attempt == max_retries:
                     logger.error(
                         f'Request failed after {max_retries + 1} attempts: {url}'
@@ -828,6 +830,8 @@ class BillsApiClient:
                         f'Request timeout/network error '
                         f'(attempt {attempt + 1}/{max_retries + 1}), final retry...'
                     )
+            except Exception as e:
+                logger.error(f'Unexpected error during request: {e}')
         # Should never reach here due to raise in exception handler
         raise RuntimeError('Unexpected code path in _make_request')
 

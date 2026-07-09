@@ -2276,7 +2276,7 @@ async def async_query_bills_api(
         amendments_summary_json = await get_amendments_summary_json(
             bill_id, stage_id, client
         )
-        print('HERE!')
+
         amdts_json = await get_amendments_detailed_json(
             amendments_summary_json,
             bill_id,
@@ -2334,7 +2334,7 @@ async def async_query_bills_api_from_ids(
         amendments_summary_json = await get_amendments_summary_json(
             bill_id, stage_id, client
         )
-        print('HERE!')
+
         amdts_json = await get_amendments_detailed_json(
             amendments_summary_json,
             bill_id,
