@@ -11,6 +11,7 @@ const App: React.FC = () => {
   const defaultPageOpenState: PageActiveState = {
     compareBillsCollapsible: false,
     compareAmendmentsCollapsible: false,
+    duplicateAmendmentsCollapsible: false,
     billNumberingCollapsible: false,
     addedNamesCollapsible: false,
     checkAmendmentAPICollapsible: false,
@@ -18,7 +19,7 @@ const App: React.FC = () => {
 
   const [pageActiveState, setPageActiveState]: [
     PageActiveState,
-    Dispatch<SetStateAction<PageActiveState>>
+    Dispatch<SetStateAction<PageActiveState>>,
   ] = useState(defaultPageOpenState);
 
   return (

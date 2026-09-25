@@ -301,7 +301,7 @@ def diff_xml_content(
 ) -> str | None:
     """
     Return an HTML string containing a tables showing the differences
-    between old_xml and new_xml.
+    between old_xml and new_xml, or None if there are no differences.
     """
 
     # remove the unnecessary whitespace before comparing the text content
@@ -538,3 +538,36 @@ def get_stage_from_amdts_xml(amdt_xml_root: _Element) -> str | None:
         except Exception as e:
             logger.warning(repr(e))
             return None
+
+
+def find_duplicates(lst: list[str]) -> list[str]:
+    """
+    Find and return a list of duplicate items in the given list.
+
+    This function takes a list of strings and returns a list of items that
+    appear more than once in the original list. The returned list contains
+    the duplicate items sorted in ascending order.
+    """
+
+    # Convert the list to a set to remove duplicates
+    unique_items = set(lst)
+
+    # If the length of the set is less than the length of the list,
+    # then there are duplicates
+    if len(unique_items) < len(lst):
+        sorted_items = sorted(list(unique_items))
+
+        # Create a dictionary to store the count of each item
+        item_counts = {}
+
+        # Count the number of occurrences of each item in the original list
+        for item in lst:
+            if item in item_counts:
+                item_counts[item] += 1
+            else:
+                item_counts[item] = 1
+
+        # Create a list of duplicates
+        return [item for item in sorted_items if item_counts[item] > 1]
+
+    return list()

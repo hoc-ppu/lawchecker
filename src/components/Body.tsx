@@ -2,6 +2,7 @@ import clerk_logo from "./../assets/clerk_logo.svg";
 import CompareBillsCollapsible from "./CompareBillsCollapsible";
 import BillNumberingCollapsible from "./BillNumberingCollapsible";
 import CompareAmendmentsCollapsible from "./CompareAmendmentsCollapsible";
+import DuplicateAmendmentsCollapsible from "./DuplicateAmendmentsCollapsible";
 import AmendmentsAPICollapsible from "./AmendmentsAPICollapsible";
 import AddedNamesCollapsible from "./AddedNamesCollapsible";
 import { PageActiveState } from "./App";
@@ -12,7 +13,7 @@ export interface BodyProps {
 
 const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
   const noActivePage = Object.values(pageActiveState).every(
-    (value) => value === false
+    (value) => value === false,
   ); /* Adjust the duration and easing as needed */
 
   return (
@@ -64,6 +65,7 @@ const Body: React.FC<BodyProps> = ({ pageActiveState }) => {
 
         <CompareBillsCollapsible pageActiveState={pageActiveState} />
         <BillNumberingCollapsible pageActiveState={pageActiveState} />
+        <DuplicateAmendmentsCollapsible pageActiveState={pageActiveState} />
         <CompareAmendmentsCollapsible pageActiveState={pageActiveState} />
         <AddedNamesCollapsible pageActiveState={pageActiveState} />
         <AmendmentsAPICollapsible pageActiveState={pageActiveState} />

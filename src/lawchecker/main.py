@@ -36,6 +36,7 @@ from lawchecker.compare_amendment_documents import Report
 from lawchecker.compare_bill_documents import Report as BillReport
 from lawchecker.compare_bill_documents import diff_in_vscode
 from lawchecker.compare_bill_numbering import CompareBillNumbering
+from lawchecker.duplicate_amendments import Report as DupReport
 from lawchecker.lawchecker_logger import logger
 from lawchecker.ui_feedback import ProgressModal, UILogHandler
 
@@ -85,6 +86,8 @@ class Api:
 
         self.com_amend_old_xml: Path | None = None
         self.com_amend_new_xml: Path | None = None
+
+        self.dup_amend_xml: Path | None = None
 
         self.api_amend_xml: Path | None = None
         self.api_amend_json: Any = None
@@ -136,6 +139,8 @@ class Api:
                 self.com_amend_old_xml = _file
             case 'com_amend_new_xml':
                 self.com_amend_new_xml = _file
+            case 'dup_amend_xml':
+                self.dup_amend_xml = _file
             case 'com_amend_api_xml':
                 self.api_amend_xml = _file
             case 'existing_json_amdts':
@@ -467,6 +472,38 @@ class Api:
         """
 
         self._create_html_compare('amendments', days_between_papers)
+
+    def dup_amend_html_report(self):
+
+        if not self.dup_amend_xml:
+            logger.error('No XML file selected.')
+            return
+
+        lm_xml = pp_xml_lxml.load_xml(str(self.dup_amend_xml))
+
+        if not lm_xml:
+            logger.error(f'XML file is not valid XML: {self.dup_amend_xml}')
+            return
+        report = DupReport(self.dup_amend_xml)
+
+        report_file_name = f'Comp_Amdts_{report.sup_doc.short_file_name}.html'
+
+        with ProgressModal() as modal:
+            modal.update(f'XML file path: {self.dup_amend_xml}', log=True)
+
+            out_html_path = self.dup_amend_xml.parent.joinpath(report_file_name)
+
+            report.html_tree.write(
+                str(out_html_path),
+                method='html',
+                encoding='utf-8',
+                doctype='<!DOCTYPE html>',
+            )
+
+            modal.update(f'HTML report created: {out_html_path}', log=True)
+            modal.update('Attempting to open in browser...')
+
+            webbrowser.open(out_html_path.resolve().as_uri())
 
     def get_api_amendments_using_xml_for_params(
         self,

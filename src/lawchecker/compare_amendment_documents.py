@@ -17,7 +17,7 @@ from lawchecker import xpath_helpers as xp
 from lawchecker.lawchecker_logger import logger
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE, NSMAP2, PARSER, UKL
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR, Star
-from lawchecker.utils import diff_xml_content, truncate_string
+from lawchecker.utils import diff_xml_content, find_duplicates, truncate_string
 
 # TODO: [x] put all sections in HTML document
 # Add messages for Nil return
@@ -34,6 +34,9 @@ from lawchecker.utils import diff_xml_content, truncate_string
 # [x] warn if bill titles don't match
 # [x] warn if old XML file and new XML file seem to be the wrong way around,
 #   i.e. if the old file seems newer than the new  file.
+# TODO: Amendment and SupDocument are also used in duplicate_amendments.py,
+# so consider taking out them out and putting them in a separate module for
+# shared use
 
 # think about changing 1 to A1 or Amendment 1... to make it look better in
 # Added and removed amendments. See
@@ -121,7 +124,7 @@ class SupDocument(Mapping):
                 logger.warning(repr(e))
                 self.problem_amendments += 1
 
-        self._dict = self._create_amdt_map()
+        self._dict: dict[str, Amendment] = self._create_amdt_map()
         self.amdt_set = set(self._dict.keys())
 
     def get_meta_data(self):
@@ -254,13 +257,13 @@ class Report:
         # populate the star check, name changes and changes to existing amendments
         for key, new_amdt in self.new_doc.items():
             if key not in self.old_doc:
-                # the star check only happens when there is no coresponding
-                # amendment in previous document
+                # star should be black if this amendment is new.
                 self.star_check(new_amdt, None)
                 continue
 
             old_amend = self.old_doc[key]
 
+            # star should either be white or not exist if this amendment is not new
             self.star_check(new_amdt, old_amend)
             self.diff_names(new_amdt, old_amend)
             self.diff_names_in_context(new_amdt, old_amend)
@@ -664,39 +667,6 @@ def main():
     )
 
     webbrowser.open(Path(filename).resolve().as_uri())
-
-
-def find_duplicates(lst: list[str]) -> list[str]:
-    """
-    Find and return a list of duplicate items in the given list.
-
-    This function takes a list of strings and returns a list of items that
-    appear more than once in the original list. The returned list contains
-    the duplicate items sorted in ascending order.
-    """
-
-    # Convert the list to a set to remove duplicates
-    unique_items = set(lst)
-
-    # If the length of the set is less than the length of the list,
-    # then there are duplicates
-    if len(unique_items) < len(lst):
-        sorted_items = sorted(list(unique_items))
-
-        # Create a dictionary to store the count of each item
-        item_counts = {}
-
-        # Count the number of occurrences of each item in the original list
-        for item in lst:
-            if item in item_counts:
-                item_counts[item] += 1
-            else:
-                item_counts[item] = 1
-
-        # Create a list of duplicates
-        return [item for item in sorted_items if item_counts[item] > 1]
-
-    return list()
 
 
 if __name__ == '__main__':

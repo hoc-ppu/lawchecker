@@ -74,6 +74,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             setPageActiveState={setPageActiveState}
           />
           <SidebarSubItem
+            title="Duplicate Amendments Check"
+            collapsibleId="duplicateAmendmentsCollapsible"
+            pageActiveState={pageActiveState}
+            // toggleCollapsible={toggleCollapsible}
+            setPageActiveState={setPageActiveState}
+          />
+          <SidebarSubItem
             title="Check Amendment Papers"
             collapsibleId="compareAmendmentsCollapsible"
             pageActiveState={pageActiveState}
