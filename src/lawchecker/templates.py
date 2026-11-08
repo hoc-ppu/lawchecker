@@ -96,6 +96,7 @@ class Card:
         self.heading_element = cast(HtmlElement, heading_element)
         heading_span = self.html.find('.//h2/span[@class="arrow"]')
         self.heading_span = cast(HtmlElement, heading_span)
+        self.card_inner = self.html[0]  # should be the first child
         secondary_info = self.html.find('.//div[@class="secondary-info"]')
         self.secondary_info = cast(HtmlElement, secondary_info)
         tertiary_info = self.html.find('.//div[@class="info-inner"]')
@@ -108,6 +109,7 @@ class Card:
         if (
             self.heading_span is None
             or heading_element is None
+            or self.card_inner is None
             or self.secondary_info is None
             or self.tertiary_info is None
             or self.small is None
@@ -125,6 +127,7 @@ class Card:
         else:
             self.small.text = ' [show]'  # type: ignore
             self.collapsible_content.set('style', 'display: none;')
+            self.card_inner.classes.add('closed')  # type: ignore
 
     # return card
 

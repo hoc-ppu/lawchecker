@@ -298,6 +298,7 @@ def diff_xml_content(
     fromdesc: str = '',
     todesc: str = '',
     ignore_refs: bool = False,
+    normalise_spaces: bool = True,
 ) -> str | None:
     """
     Return an HTML string containing a tables showing the differences
@@ -345,6 +346,7 @@ def diff_xml_content(
         tolines,
         fromdesc=fromdesc,
         todesc=todesc,
+        normalise_space=normalise_spaces,
     )
 
     # dif_html_str = html_diff.make_table(
@@ -380,9 +382,11 @@ def html_diff_lines(
     todesc: str = '',
     context=True,
     numlines=2,
+    normalise_space: bool = True,
 ) -> str | None:
-    fromlines = [normalise_spaces(line) for line in fromlines if line.strip()]
-    tolines = [normalise_spaces(line) for line in tolines if line.strip()]
+    if normalise_space:
+        fromlines = [normalise_spaces(line) for line in fromlines if line.strip()]
+        tolines = [normalise_spaces(line) for line in tolines if line.strip()]
 
     if fromlines == tolines:
         return None

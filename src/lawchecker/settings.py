@@ -157,3 +157,8 @@ NSMAP2 = NSMAP.copy()
 NSMAP2[''] = XMLNS
 
 PARSER = etree.XMLParser(remove_pis=True, remove_comments=True)
+
+# ------------------------- duplicate/similar amendments -------------------- #
+
+# minimum SequenceMatcher.ratio() for two amendments to be reported as "similar"
+SIMILARITY_THRESHOLD = 0.98
