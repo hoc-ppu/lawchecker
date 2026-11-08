@@ -355,6 +355,9 @@ class Report:
 
         If there are sitting or printing days between the two documents:
         * Amendments which previously a star of any colour should now have no star.
+
+        In either case:
+        * Amendments which previously had no star should still have no star.
         """
 
         if old_amdt is None:
@@ -375,8 +378,14 @@ class Report:
                 )
 
         elif old_amdt.star == NO_STAR:
-            # do nothing
-            pass
+            # A standing amendment with no star should never get a star back.
+            # Only report it when it is wrong. Adding every correct no-star
+            # amendment to correct_stars would swamp that list (e.g. 228 in
+            # the Energy example), which is meant to show stars that changed.
+            if new_amdt.star != NO_STAR:
+                self.incorrect_stars.append(
+                    f'{new_amdt.num} has {new_amdt.star} ({NO_STAR} expected)'
+                )
 
         else:
             # there is an error with the star in the input XML

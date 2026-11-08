@@ -272,3 +272,48 @@ def test_black_star_to_no_star_when_days_between():
 
     report = compare.Report(black_star_amend, no_star_amend, days_between_papers=True)
     assert report.correct_stars == [f'NC52 ({NO_STAR})']
+
+
+@pytest.mark.parametrize(
+    'days_between_papers', [False, True], ids=['no_days_between', 'days_between']
+)
+def test_no_star_to_no_star(days_between_papers):
+    """A standing amendment with no star should still have no star.
+
+    This is correct, so nothing is reported in either list (correct_stars is
+    for stars that have changed)."""
+
+    no_star_amend = deepcopy(data_for_testing.dummy_amendment_with_no_star)
+    no_star_amend2 = deepcopy(no_star_amend)
+
+    report = compare.Report(
+        no_star_amend, no_star_amend2, days_between_papers=days_between_papers
+    )
+    assert report.incorrect_stars == []
+    assert report.correct_stars == []
+
+
+@pytest.mark.parametrize(
+    'days_between_papers', [False, True], ids=['no_days_between', 'days_between']
+)
+@pytest.mark.parametrize(
+    'starred_amend, star',
+    [
+        (data_for_testing.dummy_amendment_with_black_star, BLACK_STAR),
+        (data_for_testing.dummy_amendment_with_white_star, WHITE_STAR),
+    ],
+    ids=['black_star', 'white_star'],
+)
+def test_no_star_to_star(starred_amend, star, days_between_papers):
+    """A standing amendment with no star should never get a star back."""
+
+    # this is an incorrect case, whether or not there are days between papers
+
+    no_star_amend = deepcopy(data_for_testing.dummy_amendment_with_no_star)
+
+    report = compare.Report(
+        no_star_amend,
+        deepcopy(starred_amend),
+        days_between_papers=days_between_papers,
+    )
+    assert report.incorrect_stars == [f'NC52 has {star} ({NO_STAR} expected)']

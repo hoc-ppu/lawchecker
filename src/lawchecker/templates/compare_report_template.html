@@ -292,7 +292,11 @@
 
       const toggleRefsBtn = document.getElementById("toggle-refs");
 
-      toggleRefsBtn.addEventListener("click", function() {
+      // The toggle-refs button only exists in the Compare Bills report. This
+      // template is also used by the amendment reports, where it is null.
+      // Without this guard the line below throws and nothing after it in
+      // this handler runs.
+      if (toggleRefsBtn) toggleRefsBtn.addEventListener("click", function() {
 
         toggleRefsBtn.textContent = toggleRefsBtn.textContent === "Hide x ref only changes" ? "Show x ref only changes" : "Hide x ref only changes";
 
@@ -303,7 +307,7 @@
 
         h3s.forEach(function(h3) {
           h3.classList.remove("js-toc-ignore");
-          element = h3;
+          let element = h3;
           while (element.parentElement) {
             element = element.parentElement;
             if (element.hasAttribute("hidden")) {
