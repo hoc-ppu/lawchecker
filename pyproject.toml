@@ -58,6 +58,11 @@ select = ["E", "W", "B"]
 [tool.ruff.format]
 quote-style = "single"
 
+[tool.pytest.ini_options]
+# let tests import lawchecker from src/ (without installing it) and the
+# helper modules in tests/ (paper_builder, data_for_testing)
+pythonpath = ["src", "tests"]
+
 [tool.setuptools.dynamic]
 version = {attr = "lawchecker.__version__"}
 

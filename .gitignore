@@ -1,3 +1,6 @@
+# I have decided that I don't like committing uv.lock despite advice to the contrary
+uv.lock
+
 marks_examples/
 
 # mac junk
