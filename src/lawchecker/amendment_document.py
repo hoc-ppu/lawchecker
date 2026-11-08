@@ -35,6 +35,10 @@ class Amendment:
         if _num is not None and _num.text and _xml is not None:
             self.num: str = _num.text
             self.xml: _Element = _xml
+            # LawMaker's own reference for the amendment (e.g. HoC72, OPC275).
+            # Only used for display at the moment, e.g. to tell apart
+            # amendments that wrongly share a number. Not used for matching.
+            self.dnum: str = _num.get(QName(UKL, 'dnum'), default='')
         else:
             logger.warning(f'{_num=}, {_xml=}')
             raise ValueError(
@@ -92,6 +96,9 @@ class SupDocument(Mapping):
                 logger.warning(repr(e))
                 self.problem_amendments += 1
 
+        # amendment number -> every amendment with that number, for numbers
+        # used more than once. Filled in by _create_amdt_map.
+        self.duplicate_nums: dict[str, list[Amendment]] = {}
         self._dict: dict[str, Amendment] = self._create_amdt_map()
         self.amdt_set = set(self._dict.keys())
 
@@ -143,12 +150,31 @@ class SupDocument(Mapping):
             logger.info(f'Problem parsing XML. {warning_msg}')
 
     def _create_amdt_map(self) -> dict[str, Amendment]:
+        """
+        Map each amendment number to its amendment.
+
+        Amendment numbers should be unique. If several amendments share a
+        number, only the first (in document order) goes in the map, so a
+        report that looks amendments up by number will only see that one.
+        All of them are recorded in self.duplicate_nums so that reports can
+        warn about it, and all of them are still in self.amendments.
+        """
+
         _amdt_map: dict[str, Amendment] = {}
 
         for amendment in self.amendments:
             if amendment.num in _amdt_map:
-                logger.warning(f'Duplicate amendment number: {amendment.num}')
+                first = _amdt_map[amendment.num]
+                self.duplicate_nums.setdefault(amendment.num, [first])
+                self.duplicate_nums[amendment.num].append(amendment)
+                continue
             _amdt_map[amendment.num] = amendment
+
+        for num, amendments in self.duplicate_nums.items():
+            logger.warning(
+                f'{self.file_name} has {len(amendments)} amendments numbered'
+                f' {num}. Amendment numbers should be unique!'
+            )
 
         return _amdt_map
 

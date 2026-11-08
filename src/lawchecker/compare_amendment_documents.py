@@ -3,6 +3,7 @@
 import argparse
 import sys
 import webbrowser
+from html import escape
 from pathlib import Path
 from typing import NamedTuple
 
@@ -128,6 +129,7 @@ class Report:
         insert_point.extend(
             (
                 self.render_intro(),
+                self.render_duplicate_amdt_nums(),
                 self.render_added_and_removed_amdts(),
                 self.render_added_and_removed_names(),
                 self.render_stars(),
@@ -173,6 +175,51 @@ class Report:
         section.append(meta_data_table.html)
 
         return section
+
+    def render_duplicate_amdt_nums(self) -> HtmlElement:
+        """
+        Warn about amendment numbers used more than once in either paper.
+
+        Amendments are matched by number, so only the first amendment with a
+        given number is compared. The others are left out of every check
+        below, which is why this card goes near the top of the report.
+        """
+
+        docs_with_duplicates = [
+            doc for doc in (self.old_doc, self.new_doc) if doc.duplicate_nums
+        ]
+
+        if not docs_with_duplicates:
+            # nothing to show so just return an empty div
+            return html.Element('div')
+
+        def describe(amdt: Amendment) -> str:
+            dnum = amdt.dnum or 'no dnum'
+            proposer = amdt.names[0] if amdt.names else 'no proposer'
+            return f'{escape(dnum)}, {escape(proposer)}'
+
+        content = (
+            '<p>Amendment numbers should be unique. <span class="red">The'
+            ' numbers below are used more than once.</span> Only the first'
+            ' amendment with each number has been compared, so the others are'
+            ' not included in any of the checks in this report.</p>'
+        )
+
+        for doc in docs_with_duplicates:
+            content += f'<p><strong>{escape(doc.file_name)}</strong></p><ul>'
+            for num, amdts in doc.duplicate_nums.items():
+                described = '; '.join(describe(amdt) for amdt in amdts)
+                content += (
+                    f'<li>{escape(num)}: {len(amdts)} amendments ({described})</li>'
+                )
+            content += '</ul>'
+
+        card = templates.Card('Duplicate amendment numbers')
+        card.secondary_info.extend(
+            html.fragments_fromstring(content, no_leading_text=True)
+        )
+
+        return card.html
 
     def render_added_and_removed_amdts(self) -> HtmlElement:
         # ----------- Removed and added amendments section ----------- #

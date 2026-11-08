@@ -6,13 +6,13 @@ from unittest.mock import patch
 import data_for_testing
 import pytest
 from lxml import etree
-from lxml.etree import ElementTree, _Element
+from lxml.etree import ElementTree, QName, _Element
 
 # the below line is only needed if you don't pip install the package
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'src'))
 
 from lawchecker import compare_amendment_documents as compare
-from lawchecker.settings import NSMAP2
+from lawchecker.settings import NSMAP2, UKL
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR
 
 
@@ -317,3 +317,73 @@ def test_no_star_to_star(starred_amend, star, days_between_papers):
         days_between_papers=days_between_papers,
     )
     assert report.incorrect_stars == [f'NC52 has {star} ({NO_STAR} expected)']
+
+
+# ------------------- Test duplicate amendment numbers ------------------- #
+
+
+def _paper_with_duplicate_numbers() -> _Element:
+    """A paper with two different amendments that are both numbered NC52."""
+
+    # TODO: I think probably not good to copy and then change dummy_amendment_with_black_star...
+
+    paper = deepcopy(data_for_testing.dummy_amendment_with_black_star)
+    first = paper.find('.//component', namespaces=NSMAP2)
+    second = deepcopy(first)
+
+    num_path = 'amendment/amendmentBody/amendmentContent/tblock/num'
+    first.find(num_path, namespaces=NSMAP2).set(QName(UKL, 'dnum'), 'HoC1')
+    second.find(num_path, namespaces=NSMAP2).set(QName(UKL, 'dnum'), 'HoC2')
+    second.find('.//docIntroducer', namespaces=NSMAP2).text = 'Second Proposer'
+
+    first.getparent().append(second)
+    return paper
+
+
+def test_duplicate_amendment_numbers_are_recorded(caplog):
+    """No amendment is dropped, and the duplicates are recorded"""
+
+    sup_doc = compare.SupDocument(_paper_with_duplicate_numbers())
+
+    # both amendments are kept in the list...
+    assert len(sup_doc.amendments) == 2
+    first, second = sup_doc.amendments
+    assert [first.dnum, second.dnum] == ['HoC1', 'HoC2']
+
+    # ...but there is only one entry per number, and it is the first one
+    assert len(sup_doc) == 1
+    assert sup_doc['NC52'] is first
+
+    assert sup_doc.duplicate_nums == {'NC52': [first, second]}
+    assert 'Test has 2 amendments numbered NC52' in caplog.text
+
+
+def test_duplicate_amendment_numbers_card():
+    """The report warns about duplicate numbers and says which amendments"""
+
+    report = compare.Report(
+        _paper_with_duplicate_numbers(),
+        deepcopy(data_for_testing.dummy_amendment_with_white_star),
+    )
+
+    card_text = report.render_duplicate_amdt_nums().text_content()
+
+    assert 'Duplicate amendment numbers' in card_text
+    assert 'NC52: 2 amendments' in card_text
+    assert 'HoC1, Secretary Claire Coutinho' in card_text
+    assert 'HoC2, Second Proposer' in card_text
+
+
+def test_no_duplicate_amendment_numbers_no_card():
+    """With no duplicates, nothing is added to the report"""
+
+    report = compare.Report(
+        deepcopy(data_for_testing.dummy_amendment_with_black_star),
+        deepcopy(data_for_testing.dummy_amendment_with_white_star),
+    )
+
+    rendered = report.render_duplicate_amdt_nums()
+
+    assert rendered.tag == 'div'
+    assert len(rendered) == 0
+    assert rendered.text_content() == ''

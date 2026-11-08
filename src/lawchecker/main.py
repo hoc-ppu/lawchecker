@@ -486,7 +486,7 @@ class Api:
             return
         report = DupReport(self.dup_amend_xml)
 
-        report_file_name = f'Comp_Amdts_{report.sup_doc.short_file_name}.html'
+        report_file_name = f'Dup_Amdts_{report.sup_doc.short_file_name}.html'
 
         with ProgressModal() as modal:
             modal.update(f'XML file path: {self.dup_amend_xml}', log=True)

@@ -294,8 +294,6 @@
 
       // The toggle-refs button only exists in the Compare Bills report. This
       // template is also used by the amendment reports, where it is null.
-      // Without this guard the line below throws and nothing after it in
-      // this handler runs.
       if (toggleRefsBtn) toggleRefsBtn.addEventListener("click", function() {
 
         toggleRefsBtn.textContent = toggleRefsBtn.textContent === "Hide x ref only changes" ? "Show x ref only changes" : "Hide x ref only changes";
