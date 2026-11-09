@@ -8,11 +8,14 @@ import sys
 import time
 import traceback
 import webbrowser
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, cast
 
 import httpx
+from lxml import etree
 
 try:
     import webview
@@ -29,7 +32,6 @@ from lawchecker import (
     check_web_amdts,
     common,
     lawchecker_logger,
-    pp_xml_lxml,
     settings,
 )
 from lawchecker.compare_amendment_documents import Report
@@ -43,6 +45,57 @@ from lawchecker.ui_feedback import ProgressModal, UILogHandler
 APP_FROZEN = getattr(sys, 'frozen', False)
 
 logger.info('Main imports complete')
+
+
+@contextmanager
+def errors_shown_to_user(action: str) -> Iterator[None]:
+    """
+    Log any error raised in the with block, so that the user sees it in the
+    feedback dialog. Raised to the UI instead, nobody would see it.
+
+    The rest of the block is skipped and the method carries on after it.
+    `action` completes the message "Could not ...".
+
+    Use it inside `with ProgressModal()`, not outside, so that the dialog is
+    still open when the error is logged:
+
+        with ProgressModal() as modal, errors_shown_to_user('create the report'):
+            ...
+    """
+
+    try:
+        yield
+    except etree.XMLSyntaxError as e:
+        # the reports parse the XML files themselves, so bad XML shows up here
+        file_name = Path(e.filename).name
+        logger.error(f'Could not {action}. {file_name} is not a valid XML file. [{e}]')
+    except OSError as e:
+        # e.g. an XML file that cannot be read, or a folder that cannot be
+        # written to. The message includes the file path.
+        logger.error(f'Could not {action}. [{e}]')
+    except Exception as e:
+        # most likely a bug. logger.exception also logs the traceback
+        logger.exception(f'Could not {action}. [{e!r}]')
+
+
+def save_and_open(
+    html_tree: etree._ElementTree, out_html_path: Path, modal: ProgressModal
+) -> None:
+    """Save an HTML report and open it in the browser."""
+
+    # open() rather than html_tree.write(str(path)), because an error from
+    # open() includes the file path and an error from lxml does not
+    with open(out_html_path, 'wb') as f:
+        html_tree.write(f, method='html', encoding='utf-8', doctype='<!DOCTYPE html>')
+
+    modal.update(f'HTML report created: {out_html_path}', log=True)
+    modal.update('Attempting to open in browser...')
+
+    if not webbrowser.open(out_html_path.resolve().as_uri()):
+        logger.warning(
+            f'Could not open the report in a browser. [Open it from {out_html_path}]'
+        )
+
 
 # Reference to the active window will be stored here
 window: Window | None = None
@@ -355,52 +408,25 @@ class Api:
             logger.error('No new XML file selected.')
             return
 
-        # Check the Old and New XML files can both be parsed as XML
-        old_xml = pp_xml_lxml.load_xml(str(old_xml_path))
-        new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
-
-        # TODO: Improve the below
-        if not old_xml:
-            logger.error(f'Old XML file is not valid XML: {old_xml_path}')
-            return
-
-        if not new_xml:
-            logger.error(f'New XML file is not valid XML: {new_xml_path}')
-            return
-
-        if report_type == 'bills':
-            report = BillReport(
-                old_xml_path,
-                new_xml_path,
-            )
-            # TODO: should probably add the normalised truncated bill title
-            report_file_name = 'Comp_Bills.html'
-
-        elif report_type == 'amendments':
-            report = Report(
-                old_xml_path,
-                new_xml_path,
-                days_between_papers,
-            )
-            report_file_name = f'Comp_Amdts_{report.old_doc.short_file_name}.html'
-
-        with ProgressModal() as modal:
+        # Open the feedback dialog before building the report, because
+        # building it is the slow part. The XML files are only parsed once,
+        # by the report itself. errors_shown_to_user must come second, so
+        # the dialog is still open when an error is logged.
+        with ProgressModal() as modal, errors_shown_to_user('create the report'):
             modal.update(f'Old XML path: {old_xml_path}', log=True)
             modal.update(f'New XML path: {new_xml_path}', log=True)
+            modal.update('Creating the report. This can take a while for long papers.')
 
-            out_html_path = old_xml_path.parent.joinpath(report_file_name)
+            if report_type == 'bills':
+                report = BillReport(old_xml_path, new_xml_path)
+                # TODO: should probably add the normalised truncated bill title
+                report_file_name = 'Comp_Bills.html'
+            else:
+                report = Report(old_xml_path, new_xml_path, days_between_papers)
+                report_file_name = f'Comp_Amdts_{report.old_doc.short_file_name}.html'
 
-            report.html_tree.write(
-                str(out_html_path),
-                method='html',
-                encoding='utf-8',
-                doctype='<!DOCTYPE html>',
-            )
-
-            modal.update(f'HTML report created: {out_html_path}', log=True)
-            modal.update('Attempting to open in browser...')
-
-            webbrowser.open(out_html_path.resolve().as_uri())
+            out_html_path = old_xml_path.parent / report_file_name
+            save_and_open(report.html_tree, out_html_path, modal)
 
     def bill_create_html_compare(self):
         """Create the compare report for bills"""
@@ -419,25 +445,9 @@ class Api:
         old_xml_path = Path(self.com_bill_old_xml).resolve()
         new_xml_path = Path(self.com_bill_new_xml).resolve()
 
-        # Check the Old and New XML files can both be parsed as XML
-
-        old_xml = pp_xml_lxml.load_xml(str(old_xml_path))
-        new_xml = pp_xml_lxml.load_xml(str(new_xml_path))
-
-        if not old_xml:
-            logger.error(f'Old XML file is not valid XML: {old_xml_path}')
-            return
-
-        if not new_xml:
-            logger.error(f'New XML file is not valid XML: {new_xml_path}')
-            return
-
-        report = BillReport(
-            old_xml_path,
-            new_xml_path,
-        )
-
-        diff_in_vscode(report.old_doc.root, report.new_doc.root)
+        with errors_shown_to_user('compare the bills in VS Code'):
+            report = BillReport(old_xml_path, new_xml_path)
+            diff_in_vscode(report.old_doc.root, report.new_doc.root)
 
     def compare_bill_numbering(self):
         """
@@ -479,31 +489,16 @@ class Api:
             logger.error('No XML file selected.')
             return
 
-        lm_xml = pp_xml_lxml.load_xml(str(self.dup_amend_xml))
+        xml_path = self.dup_amend_xml
 
-        if not lm_xml:
-            logger.error(f'XML file is not valid XML: {self.dup_amend_xml}')
-            return
-        report = DupReport(self.dup_amend_xml)
+        # Open the feedback dialog before building the report (the slow part)
+        with ProgressModal() as modal, errors_shown_to_user('create the report'):
+            modal.update(f'XML file path: {xml_path}', log=True)
+            modal.update('Creating the report. This can take a while for long papers.')
 
-        report_file_name = f'Dup_Amdts_{report.sup_doc.short_file_name}.html'
-
-        with ProgressModal() as modal:
-            modal.update(f'XML file path: {self.dup_amend_xml}', log=True)
-
-            out_html_path = self.dup_amend_xml.parent.joinpath(report_file_name)
-
-            report.html_tree.write(
-                str(out_html_path),
-                method='html',
-                encoding='utf-8',
-                doctype='<!DOCTYPE html>',
-            )
-
-            modal.update(f'HTML report created: {out_html_path}', log=True)
-            modal.update('Attempting to open in browser...')
-
-            webbrowser.open(out_html_path.resolve().as_uri())
+            report = DupReport(xml_path)
+            report_file_name = f'Dup_Amdts_{report.sup_doc.short_file_name}.html'
+            save_and_open(report.html_tree, xml_path.parent / report_file_name, modal)
 
     def get_api_amendments_using_xml_for_params(
         self,
@@ -635,6 +630,8 @@ class Api:
     #     # logger.warning("main.create_api_csv called")
 
     def create_api_report(self):
+        # TODO: errors here are not shown to the user. Use ProgressModal,
+        # errors_shown_to_user and save_and_open, as the other reports do.
         if not self.data_is_avaliable():
             return
         report = check_web_amdts.Report(self.api_amend_xml, self.api_amend_json)

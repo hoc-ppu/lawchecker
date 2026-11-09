@@ -25,7 +25,6 @@ from lawchecker import (
     bills_api,
     common,
     lawchecker_logger,
-    pp_xml_lxml,
     templates,
     utils,
 )
@@ -2174,10 +2173,16 @@ async def async_query_bills_api(
         logger.error('No amendment XML file selected.')
         return
 
-    amend_xml = pp_xml_lxml.load_xml(str(amend_xml_path))
-
-    if not amend_xml:
-        logger.error(f'Amendment XML file is not valid XML: {amend_xml_path}')
+    try:
+        amend_xml = etree.parse(amend_xml_path)
+    except etree.XMLSyntaxError as e:
+        logger.error(f'{amend_xml_path.name} is not a valid XML file. [{e}]')
+        return
+    except OSError as e:
+        logger.error(f'Could not read {amend_xml_path.name}. [{e}]')
+        return
+    except Exception as e:
+        logger.error(f'Unexpected error reading {amend_xml_path.name}. [{e}]')
         return
 
     # find the bill title from the amendment XML

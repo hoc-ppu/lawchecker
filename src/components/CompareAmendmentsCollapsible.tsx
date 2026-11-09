@@ -16,17 +16,15 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
   };
 
   const handleOldXml = async () => {
-    let result = await window.pywebview.api.open_file_dialog(
-      "com_amend_old_xml"
-    );
+    let result =
+      await window.pywebview.api.open_file_dialog("com_amend_old_xml");
     result = addWordBreaksToPath(result);
     setOldXml(result);
   };
 
   const handleNewXml = async () => {
-    let result = await window.pywebview.api.open_file_dialog(
-      "com_amend_new_xml"
-    );
+    let result =
+      await window.pywebview.api.open_file_dialog("com_amend_new_xml");
     result = addWordBreaksToPath(result);
     setNewXml(result);
   };
@@ -86,7 +84,8 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
             checked={isChecked}
             onChange={handleCheckboxChange}
             // value=""
-            // id="flexCheckChecked"
+            // Need to keep the id here so user can click the label to toggle the checkbox
+            id="flexCheckChecked"
           />
           <label className="form-check-label" htmlFor="flexCheckChecked">
             Days between papers
