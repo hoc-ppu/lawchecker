@@ -4,6 +4,7 @@ Build small LawMaker amendment papers for tests.
 A test states only the details that matter to it, for example:
 
     paper = make_paper(
+        make_heading('FIRST DAY'),
         make_amendment('NC52', star='★'),
         make_amendment('NC53', dnum='HoC2', proposer='Bob Example'),
     )
@@ -80,14 +81,31 @@ def make_amendment(
     )
 
 
+def make_heading(text: str) -> str:
+    """
+    Return the XML for one heading (a <component>), as a string, e.g.
+    make_heading('FIRST DAY'). The text is written as it is, so spaces are
+    kept.
+    """
+
+    return (
+        '<component class="heading">'
+        '<interstitial>'
+        f'<block name="heading"><i>{escape(text)}</i></block>'
+        '</interstitial>'
+        '</component>'
+    )
+
+
 def make_paper(
-    *amendments: str,
+    *components: str,
     bill_title: str | None = None,
     house: str | None = None,
     stage: str | None = None,
 ) -> _Element:
     """
-    Return an amendment paper containing the given amendments, in order.
+    Return an amendment paper containing the given components (from
+    make_amendment and make_heading), in order.
 
     bill_title, house and stage go in the metadata, as in real papers, e.g.
     'Health Bill', 'House of Commons' and 'Report Stage'. Any left as None
@@ -106,7 +124,7 @@ def make_paper(
     return etree.fromstring(
         f'<akomaNtoso xmlns="{XMLNS}" xmlns:ukl="{UKL}">'
         f'<amendmentList>{meta}<collectionBody>'
-        f'{"".join(amendments)}'
+        f'{"".join(components)}'
         '</collectionBody></amendmentList>'
         '</akomaNtoso>'
     )

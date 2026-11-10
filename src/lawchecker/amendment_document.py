@@ -9,6 +9,7 @@ duplicate_amendments.py.
 """
 
 from collections.abc import Mapping
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -29,6 +30,18 @@ MetadataName = Literal[
     'House',
     'Stage',
 ]
+
+
+@dataclass(frozen=True)
+class Heading:
+    """
+    A heading on an amendment paper, e.g. 'SECOND DAY'.
+
+    Only the text is kept, so headings with the same text are equal. That is
+    how marshalling.py finds the same heading on two papers.
+    """
+
+    text: str
 
 
 class Amendment:
@@ -104,10 +117,34 @@ class SupDocument(Mapping):
         self.problem_amendments = 0
         self.amendments: list[Amendment] = []
 
-        for amdt_xml in xp.get_amendments(self.root):
+        # The amendments and headings, in paper order. Orders of the House
+        # and programme motions are left out: they come after the amendments.
+        # Amendments that cannot be read are left out, as in self.amendments.
+        self.sequence: list[Amendment | Heading] = []
+
+        # for amdt_xml in xp.get_amendments(self.root):
+        #     try:
+        #         amendment = Amendment(amdt_xml, self)
+        #         self.amendments.append(amendment)
+        #     except ValueError as e:
+        #         logger.warning(repr(e))
+        #         self.problem_amendments += 1
+
+        for component in xp.get_amendments_and_headings(self.root):
+            if component.get('class') == 'heading':
+                # all the text, with runs of spaces and line breaks made
+                # into single spaces, e.g. 'FIRST DAY ' becomes 'FIRST DAY'
+                text = ' '.join(xp.text_content(component).split())
+                if text:
+                    self.sequence.append(Heading(text))
+                else:
+                    logger.info(f'{self.file_name} has an empty heading. Ignoring it.')
+                continue
+
             try:
-                amendment = Amendment(amdt_xml, self)
+                amendment = Amendment(component, self)
                 self.amendments.append(amendment)
+                self.sequence.append(amendment)
             except ValueError as e:
                 logger.warning(repr(e))
                 self.problem_amendments += 1

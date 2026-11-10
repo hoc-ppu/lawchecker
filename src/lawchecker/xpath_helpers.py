@@ -36,6 +36,12 @@ get_amendments = XPath(
     expected_type=list[_Element],
 )
 
+# amendments and headings (e.g. 'FIRST DAY'), in paper order
+get_amendments_and_headings = XPath(
+    "//xmlns:component[xmlns:amendment or @class='heading']",
+    expected_type=list[_Element],
+)
+
 get_amendments_bodies = XPath(
     '//xmlns:component/xmlns:amendment/xmlns:amendmentBody',
     expected_type=list[_Element],
