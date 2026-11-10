@@ -1,11 +1,12 @@
 from pathlib import Path
 
 import pytest
-from paper_builder import make_amendment, make_paper
+from paper_builder import make_amendment, make_heading, make_paper
 
 from lawchecker import compare_amendment_documents as compare
-from lawchecker.amendment_document import SupDocument
+from lawchecker.amendment_document import Heading, SupDocument
 from lawchecker.compare_amendment_documents import ChangedNames, check_papers_match
+from lawchecker.marshalling import Group, Run
 
 # built from this file's location so the tests work from any directory
 EXAMPLES = Path(__file__).resolve().parent.parent / 'example_files' / 'amendments'
@@ -459,3 +460,279 @@ def test_real_papers(
     assert sorted(report.added_amdts) == added
     assert report.incorrect_stars == incorrect_stars
     assert [item.num for item in report.changed_amdts] == changed
+
+
+# ------------------- Amendment numbers and dnums ------------------------ #
+
+
+def test_same_number_different_dnum(caplog):
+    """Amendment 2 has a different dnum, so it may be a different amendment"""
+
+    report = compare.Report(
+        make_paper(make_amendment('1', dnum='HoC1'), make_amendment('2', dnum='HoC2')),
+        make_paper(make_amendment('1', dnum='HoC1'), make_amendment('2', dnum='HoC9')),
+    )
+
+    [pair] = report.same_num_different_dnum
+    assert (pair.old.dnum, pair.new.dnum) == ('HoC2', 'HoC9')
+    assert report.same_dnum_different_num == []
+
+    text = report.render_numbers_and_dnums().text_content()
+    assert 'These numbers are on both papers with different dnums' in text
+    assert '2: HoC2 on the older paper, HoC9 on the newer' in text
+    assert 'Some amendment numbers are on both papers with different dnums' in (
+        caplog.text
+    )
+
+
+def test_same_dnum_different_number(caplog):
+    """HoC33 was numbered 12 and is now 14"""
+
+    report = compare.Report(
+        make_paper(make_amendment('12', dnum='HoC33')),
+        make_paper(make_amendment('14', dnum='HoC33')),
+    )
+
+    [pair] = report.same_dnum_different_num
+    assert (pair.old.num, pair.new.num) == ('12', '14')
+    assert report.same_num_different_dnum == []
+
+    # the rest of the report still matches by number
+    assert report.removed_amdts == ['12']
+    assert report.added_amdts == ['14']
+
+    text = report.render_numbers_and_dnums().text_content()
+    assert 'same dnum but a different number on each paper' in text
+    assert 'HoC33: 12 on the older paper, 14 on the newer' in text
+    assert 'Some amendments have the same dnum but a different number' in caplog.text
+
+
+@pytest.mark.parametrize('old_dnum, new_dnum', [('', 'HoC9'), ('HoC1', ''), ('', '')])
+def test_empty_dnum_not_checked(old_dnum, new_dnum):
+    report = compare.Report(
+        make_paper(make_amendment('1', dnum=old_dnum)),
+        make_paper(make_amendment('1', dnum=new_dnum)),
+    )
+
+    assert report.same_num_different_dnum == []
+    assert report.same_dnum_different_num == []
+
+    rendered = report.render_numbers_and_dnums()
+    assert rendered.tag == 'div'
+    assert len(rendered) == 0
+
+
+def test_duplicate_number_first_amendment_used_for_dnums():
+    """The second amendment numbered 2 (HoC3) is not checked"""
+
+    report = compare.Report(
+        make_paper(make_amendment('2', dnum='HoC2')),
+        make_paper(make_amendment('2', dnum='HoC2'), make_amendment('2', dnum='HoC3')),
+    )
+
+    assert report.same_num_different_dnum == []
+    assert report.same_dnum_different_num == []
+
+
+# ---------------------- Amendment order (marshalling) ------------------- #
+
+
+def test_order_items():
+    """
+    The numbers and headings given to marshalling.align. Only the first
+    amendment with each number is used, as in the rest of the report.
+    """
+
+    doc = SupDocument(
+        make_paper(
+            make_heading('FIRST DAY'),
+            make_amendment('2', dnum='HoC2'),
+            make_amendment('1'),
+            make_amendment('2', dnum='HoC3'),
+        )
+    )
+
+    assert compare.order_items(doc) == [Heading('FIRST DAY'), '2', '1']
+
+
+def test_order():
+    report = compare.Report(
+        make_paper(make_amendment('1'), make_amendment('2'), make_amendment('3')),
+        make_paper(make_amendment('2'), make_amendment('1'), make_amendment('4')),
+    )
+
+    assert report.order is not None
+    assert report.order.unmoved == ['1']
+    assert report.order.moved == ['2']
+    assert report.order.added == ['4']
+    assert report.order.removed == ['3']
+
+
+@pytest.mark.parametrize(
+    'changed',
+    [{'stage': 'Committee Stage'}, {'bill_title': 'Energy Bill [HL]'}],
+    ids=['stage', 'bill'],
+)
+def test_papers_differ_no_order_or_dnum_check(changed):
+    """
+    On papers from different stages or bills, the same number is usually a
+    different amendment, so neither is done.
+    """
+
+    report = compare.Report(
+        make_paper(make_amendment('1', dnum='HoC1'), **COMMONS_REPORT_STAGE),
+        make_paper(
+            make_amendment('1', dnum='HoC9'), **(COMMONS_REPORT_STAGE | changed)
+        ),
+    )
+
+    assert report.order is None
+    assert report.same_num_different_dnum == []
+
+
+@pytest.mark.parametrize(
+    'changed',
+    [{'stage': None}, {'bill_title': None}],
+    ids=['no-stage', 'no-bill-title'],
+)
+def test_missing_metadata_order_still_made(changed):
+    """If the papers could not be checked, warn (see above) and carry on"""
+
+    report = compare.Report(
+        make_paper(make_amendment('1', dnum='HoC1'), **COMMONS_REPORT_STAGE),
+        make_paper(
+            make_amendment('1', dnum='HoC9'), **(COMMONS_REPORT_STAGE | changed)
+        ),
+    )
+
+    assert report.order is not None
+    assert report.order.unmoved == ['1']
+    assert len(report.same_num_different_dnum) == 1
+
+
+def test_papers_from_different_stages_real_no_order():
+    """All 195 numbers on both papers have different dnums, but no card"""
+
+    report = compare.Report(
+        EXAMPLES / 'english_dev_rm_pbc_1010.xml',
+        EXAMPLES / 'english_dev_rm_rep_1118.xml',
+    )
+
+    assert report.order is None
+    assert 'Amendment numbers and dnums' not in report.html_root.text_content()
+
+
+@pytest.mark.parametrize(
+    'old, new, counts',
+    [
+        # counts are moved, runs, groups, added, removed
+        ('energy_rm_rep_0904', 'energy_day_rep_0905', (0, 0, 0, 0, 1)),
+        ('datapro_rm_rep_0721', 'datapro_rm_rep_0825', (0, 0, 0, 0, 0)),
+        ('econactivity_rm_rep_0918', 'econactivity_rm_rep_0919', (0, 0, 0, 0, 0)),
+        (
+            'victims_prisoners_rm_rep_0906',
+            'victims_prisoners_rm_rep_0908',
+            (1, 1, 1, 0, 0),
+        ),
+        ('english_dev_rm_rep_1118', 'english_dev_rm_rep_1119', (44, 10, 1, 38, 3)),
+        ('health_rm_rep_0901', 'health_rm_rep_0902', (52, 27, 1, 33, 1)),
+        ('health_rm_rep_0902', 'health_rm_rep_0903', (7, 6, 5, 52, 0)),
+        ('health_rm_rep_0903', 'health_rm_rep_0904', (1, 1, 1, 1, 0)),
+        ('health_rm_rep_0904', 'health_day_rep_0907', (0, 0, 0, 0, 0)),
+        ('health_day_rep_0907', 'health_day_rep_0908', (0, 0, 0, 0, 166)),
+    ],
+)
+def test_order_real_papers(old, new, counts):
+    """
+    How the order changed on pairs of real papers, so that a change which
+    alters the results gets noticed. The expected values are what the
+    report found on 10 November 2026.
+    """
+
+    report = compare.Report(EXAMPLES / f'{old}.xml', EXAMPLES / f'{new}.xml')
+    order = report.order
+
+    assert order is not None
+    assert (
+        len(order.moved),
+        len(order.runs),
+        len(order.groups),
+        len(order.added),
+        len(order.removed),
+    ) == counts
+
+    # the same as the Added and removed amendments card
+    assert sorted(order.added) == sorted(report.added_amdts)
+    assert sorted(order.removed) == sorted(report.removed_amdts)
+
+    # the numbers and dnums agree on all of these
+    assert report.same_num_different_dnum == []
+    assert report.same_dnum_different_num == []
+
+
+def test_order_real_papers_swap():
+    """Amendments 2 and 1 swapped places. 1 is reported as moved."""
+
+    report = compare.Report(
+        EXAMPLES / 'victims_prisoners_rm_rep_0906.xml',
+        EXAMPLES / 'victims_prisoners_rm_rep_0908.xml',
+    )
+
+    assert report.order is not None
+    assert report.order.groups == [
+        Group(
+            runs=[Run(['1'], was_after='2', was_before='3')],
+            now_after='NC3',
+            now_before='2',
+        )
+    ]
+
+
+def test_order_real_papers_removed():
+    report = compare.Report(
+        EXAMPLES / 'english_dev_rm_rep_1118.xml',
+        EXAMPLES / 'english_dev_rm_rep_1119.xml',
+    )
+
+    assert report.order is not None
+    assert report.order.removed == ['NC3', '67', '68']
+
+
+def test_order_real_papers_moved_back():
+    """NC63 moved back to where it was on the 0902 paper"""
+
+    report = compare.Report(
+        EXAMPLES / 'health_rm_rep_0903.xml',
+        EXAMPLES / 'health_rm_rep_0904.xml',
+    )
+
+    assert report.order is not None
+    assert report.order.moved == ['NC63']
+
+
+def test_order_real_papers_first_day_removed():
+    """
+    Day One's business has gone. Its headings stay on the older paper only,
+    and Day Two's headings are on both papers, so they share rows.
+    """
+
+    report = compare.Report(
+        EXAMPLES / 'health_day_rep_0907.xml',
+        EXAMPLES / 'health_day_rep_0908.xml',
+    )
+
+    first_day, clauses_1_to_61, second_day, clauses_62_to_81 = [
+        item for item in report.old_doc.sequence if isinstance(item, Heading)
+    ]
+    assert first_day == Heading('FIRST DAY')
+    assert second_day == Heading('SECOND DAY')
+
+    assert report.order is not None
+    assert [
+        (row.old, row.new) for row in report.order.rows if row.kind == 'heading'
+    ] == [
+        (first_day, None),
+        (clauses_1_to_61, None),
+        (second_day, second_day),
+        (clauses_62_to_81, clauses_62_to_81),
+    ]

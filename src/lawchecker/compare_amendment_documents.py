@@ -13,8 +13,9 @@ from lxml.html import HtmlElement
 
 from lawchecker import lawchecker_logger, templates
 from lawchecker import xpath_helpers as xp
-from lawchecker.amendment_document import Amendment, SupDocument
+from lawchecker.amendment_document import Amendment, Heading, SupDocument
 from lawchecker.lawchecker_logger import logger
+from lawchecker.marshalling import Alignment, Item, align
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR
 from lawchecker.utils import diff_xml_content, find_duplicates
@@ -55,6 +56,9 @@ class PaperWarning(NamedTuple):
 
     summary: str  # one sentence
     detail: str
+    # True when the papers are known to differ (different stages or bills).
+    # False when the check could not be done (the metadata is missing).
+    papers_differ: bool = False
 
 
 def check_papers_match(
@@ -106,6 +110,7 @@ def check_papers_match(
                 ' numbers start again at each stage, so amendments with the same'
                 ' number on the two papers are probably different amendments,'
                 ' and this report will compare the wrong amendments.',
+                papers_differ=True,
             )
         )
 
@@ -122,10 +127,84 @@ def check_papers_match(
                 'These papers are for different bills.',
                 f'{old_doc.file_name} is for the {old_doc.meta_bill_title} and'
                 f' {new_doc.file_name} is for the {new_doc.meta_bill_title}.',
+                papers_differ=True,
             )
         )
 
     return warnings
+
+
+class AmdtPair(NamedTuple):
+    """The same amendment (or what may be) on the older and newer paper"""
+
+    old: Amendment
+    new: Amendment
+
+
+def check_numbers_and_dnums(
+    old_doc: SupDocument, new_doc: SupDocument
+) -> tuple[list[AmdtPair], list[AmdtPair]]:
+    """
+    Check, using dnums, that amendments matched by number are the same
+    amendment. A dnum is LawMaker's own reference for an amendment, e.g.
+    HoC72.
+
+    Returns two lists, in newer-paper order:
+    - Numbers on both papers with different dnums. These may be different
+      amendments (unusual, but possible in either House), and the report
+      would then compare the wrong ones.
+    - Dnums on both papers with different numbers: an amendment that has
+      been renumbered, which the report shows as removed and added.
+
+    Amendments with no dnum are not checked. Only the first amendment with
+    each number is used, as in the rest of the report.
+
+    This report matches amendments by number only, following Commons
+    conventions (numbers stay the same within a stage), and only uses dnums
+    for this check. check_web_amdts.py is different: its AmdtRef matches on
+    number and dnum together, because Lords running lists often have dnums
+    only (numbers are added late).
+    """
+
+    same_num_different_dnum = [
+        AmdtPair(old_doc[num], new_amdt)
+        for num, new_amdt in new_doc.items()
+        if num in old_doc
+        and old_doc[num].dnum
+        and new_amdt.dnum
+        and old_doc[num].dnum != new_amdt.dnum
+    ]
+
+    old_by_dnum = {amdt.dnum: amdt for amdt in old_doc.values() if amdt.dnum}
+    same_dnum_different_num = [
+        AmdtPair(old_by_dnum[new_amdt.dnum], new_amdt)
+        for new_amdt in new_doc.values()
+        if new_amdt.dnum in old_by_dnum
+        and old_by_dnum[new_amdt.dnum].num != new_amdt.num
+    ]
+
+    return same_num_different_dnum, same_dnum_different_num
+
+
+def order_items(doc: SupDocument) -> list[Item]:
+    """
+    The paper's amendment numbers and headings, in paper order, for
+    marshalling.align.
+
+    Commons only for now: amendments are matched by number, as in the rest
+    of this report, because Commons amendment numbers stay the same within a
+    stage. Lords running lists usually have dnums only (numbers are added
+    late), so Lords papers would need matching on dnum.
+
+    If several amendments share a number, only the first is used, as in the
+    rest of the report (see SupDocument.duplicate_nums).
+    """
+
+    return [
+        item if isinstance(item, Heading) else item.num
+        for item in doc.sequence
+        if isinstance(item, Heading) or doc[item.num] is item
+    ]
 
 
 class Report:
@@ -175,6 +254,16 @@ class Report:
 
         self.changed_amdts: list[ChangedAmdt] = []
 
+        # How the order of the amendments changed (see marshalling.py). None
+        # when the papers are from different stages or bills.
+        self.order: Alignment | None = None
+
+        # Amendments whose numbers and dnums don't agree between the papers
+        # (see check_numbers_and_dnums). Not checked when the papers are from
+        # different stages or bills.
+        self.same_num_different_dnum: list[AmdtPair] = []
+        self.same_dnum_different_num: list[AmdtPair] = []
+
         # populate above lists of changes
         self.gather_changes()
         # build up the html document
@@ -188,6 +277,28 @@ class Report:
         """
 
         self.added_and_removed_amdts(self.old_doc, self.new_doc)
+
+        # On papers from different stages or bills, the same number is
+        # usually a different amendment, so there is no point comparing the
+        # order or checking dnums. The paper warnings card already says so.
+        if not any(warning.papers_differ for warning in self.paper_warnings):
+            self.order = align(order_items(self.old_doc), order_items(self.new_doc))
+            self.same_num_different_dnum, self.same_dnum_different_num = (
+                check_numbers_and_dnums(self.old_doc, self.new_doc)
+            )
+
+        if self.same_num_different_dnum:
+            nums = ', '.join(pair.new.num for pair in self.same_num_different_dnum)
+            logger.warning(
+                'Some amendment numbers are on both papers with different dnums,'
+                f' so they may be different amendments. [{nums}]'
+            )
+        if self.same_dnum_different_num:
+            dnums = ', '.join(pair.new.dnum for pair in self.same_dnum_different_num)
+            logger.warning(
+                'Some amendments have the same dnum but a different number on'
+                f' each paper. [{dnums}]'
+            )
 
         # for each amendment in the document
         # populate the star check, name changes and changes to existing amendments
@@ -217,6 +328,7 @@ class Report:
                 self.render_intro(),
                 self.render_paper_warnings(),
                 self.render_duplicate_amdt_nums(),
+                self.render_numbers_and_dnums(),
                 self.render_added_and_removed_amdts(),
                 self.render_added_and_removed_names(),
                 self.render_stars(),
@@ -332,6 +444,52 @@ class Report:
             content += '</ul>'
 
         card = templates.Card('Duplicate amendment numbers')
+        card.secondary_info.extend(
+            html.fragments_fromstring(content, no_leading_text=True)
+        )
+
+        return card.html
+
+    def render_numbers_and_dnums(self) -> HtmlElement:
+        """
+        Warn about amendments whose numbers and dnums don't agree between
+        the papers (see check_numbers_and_dnums). Like duplicate numbers,
+        this affects every check in the report, so the card goes near the top.
+        """
+
+        if not (self.same_num_different_dnum or self.same_dnum_different_num):
+            # nothing to show so just return an empty div
+            return html.Element('div')
+
+        content = ''
+
+        if self.same_num_different_dnum:
+            content += (
+                '<p>These numbers are on both papers with different dnums, so'
+                ' they may be different amendments. This report compares'
+                ' amendments by number, so check them by hand.</p><ul>'
+            )
+            for old, new in self.same_num_different_dnum:
+                content += (
+                    f'<li>{escape(new.num)}: {escape(old.dnum)} on the older'
+                    f' paper, {escape(new.dnum)} on the newer</li>'
+                )
+            content += '</ul>'
+
+        if self.same_dnum_different_num:
+            content += (
+                '<p>These amendments have the same dnum but a different number'
+                ' on each paper, so this report shows each one as removed and'
+                ' added.</p><ul>'
+            )
+            for old, new in self.same_dnum_different_num:
+                content += (
+                    f'<li>{escape(new.dnum)}: {escape(old.num)} on the older'
+                    f' paper, {escape(new.num)} on the newer</li>'
+                )
+            content += '</ul>'
+
+        card = templates.Card('Amendment numbers and dnums')
         card.secondary_info.extend(
             html.fragments_fromstring(content, no_leading_text=True)
         )
