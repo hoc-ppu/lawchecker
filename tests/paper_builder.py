@@ -34,6 +34,9 @@ def make_amendment(
     proposer: str | None = 'Ann Example',
     supporters: tuple[str, ...] = (),
     instruction: str = 'Clause 1, page 1, line 1, leave out “example”',
+    quoted: str | None = None,
+    new_clause: str | None = None,
+    amends: str | None = None,
 ) -> str:
     """
     Return the XML for one amendment (a <component>), as a string.
@@ -42,7 +45,33 @@ def make_amendment(
         real papers). Star objects (e.g. BLACK_STAR) also work. Any other
         string is written as it is, for testing bad values in the XML.
     proposer: None gives an amendment with no sponsors at all.
+    quoted: text that the amendment would insert. It goes in a
+        <quotedStructure> straight after the instruction, as in real papers.
+    new_clause: the heading of a new clause. The amendment is then a new
+        clause, and instruction and quoted are not used.
+    amends: for an amendment to an amendment, the number of the amendment
+        it amends, e.g. 'NC10'.
     """
+
+    body_attrs = ''
+    instruction_xml = escape(instruction)
+
+    if new_clause is not None:
+        body_attrs += ' ukl:type="newClause"'
+        instruction_xml = (
+            '<mod>To move the following Clause—<quotedStructure><section><num/>'
+            f'<heading>{escape(new_clause)}</heading>'
+            '<subsection><content><p>The example clause.</p></content></subsection>'
+            '</section></quotedStructure></mod>'
+        )
+    elif quoted is not None:
+        instruction_xml = (
+            f'<mod>{instruction_xml}'
+            f'<quotedStructure><p>{escape(quoted)}</p></quotedStructure></mod>'
+        )
+
+    if amends is not None:
+        body_attrs += f' ukl:targetProvision={quoteattr("amnd_" + amends)}'
 
     if isinstance(star, Star):
         star = None if star.is_no_star else str(star)
@@ -69,11 +98,11 @@ def make_amendment(
     return (
         f'<component class="amendment"{star_attr}>'
         '<amendment name="hcamnd">'
-        '<amendmentBody>'
+        f'<amendmentBody{body_attrs}>'
         f'<amendmentHeading>{names}</amendmentHeading>'
         '<amendmentContent><tblock>'
         f'<num ukl:dnum={quoteattr(dnum)}>{escape(num)}</num>'
-        f'<block name="instruction">{escape(instruction)}</block>'
+        f'<block name="instruction">{instruction_xml}</block>'
         '</tblock></amendmentContent>'
         '</amendmentBody>'
         '</amendment>'

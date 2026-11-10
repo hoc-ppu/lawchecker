@@ -253,3 +253,108 @@ def test_headings_real_paper():
             ' CLAUSES AND NEW SCHEDULES; REMAINING PROCEEDINGS ON CONSIDERATION',
         ),
     ]
+
+
+# ------------------------------ Description ----------------------------- #
+
+
+def description(amendment_xml: str) -> str:
+    """The description of the only amendment on a made-up paper"""
+
+    [amendment] = SupDocument(make_paper(amendment_xml)).amendments
+    return amendment.description
+
+
+@pytest.mark.parametrize(
+    'amendment_xml, expected',
+    [
+        pytest.param(
+            make_amendment('1', instruction='Page 3, line 13, leave out Clause 4'),
+            'Page 3, line 13, leave out Clause 4',
+            id='instruction',
+        ),
+        pytest.param(
+            make_amendment(
+                '1',
+                instruction='Clause 12, page 8, line 5, at end insert—',
+                quoted='(c) the example',
+            ),
+            'Clause 12, page 8, line 5, at end insert',
+            id='up-to-the-dash',
+        ),
+        pytest.param(
+            # as amendment 128 on english_dev_rm_rep_1119: the inserted text
+            # starts in the instruction, and the rest is in the quote
+            make_amendment(
+                '1',
+                instruction='Clause 1, page 1, leave out “a” and insert “b, and',
+                quoted='(b) the example',
+            ),
+            'Clause 1, page 1, leave out “a” and insert “b, and',
+            id='quote-left-out',
+        ),
+        pytest.param(
+            make_amendment('1', instruction='  Clause 1,\n    page 1, line 1 '),
+            'Clause 1, page 1, line 1',
+            id='spaces-tidied',
+        ),
+        pytest.param(
+            make_amendment('NC1', new_clause='Application of CIL to householders'),
+            'Application of CIL to householders',
+            id='new-clause',
+        ),
+        pytest.param(
+            make_amendment('NC1', new_clause=''),
+            'To move the following Clause',
+            id='new-clause-no-heading',
+        ),
+        pytest.param(
+            make_amendment(
+                'NC10(a)', instruction='Line 10, at end insert—', amends='NC10'
+            ),
+            'To NC10: Line 10, at end insert',
+            id='amendment-to-an-amendment',
+        ),
+    ],
+)
+def test_description(amendment_xml, expected):
+    assert description(amendment_xml) == expected
+
+
+@pytest.mark.parametrize(
+    'paper, num, expected',
+    [
+        ('english_dev_rm_rep_1119', 'NC4', 'Application of CIL to householders'),
+        (
+            'english_dev_rm_rep_1119',
+            'NS1',
+            'Charges payable by undertakers executing works in maintainable highways',
+        ),
+        (
+            'english_dev_rm_rep_1119',
+            '128',
+            'Schedule 3, page 124, line 11, leave out from “the” to “for” in line 18'
+            ' and insert “combined authority in accordance with the Fire and Rescue'
+            ' National Framework, and',
+        ),
+        ('english_dev_rm_rep_1119', 'NC10(a)', 'To NC10: Line 10, at end insert'),
+        ('econactivity_rm_rep_0918', '2', 'Page 3, line 13, leave out Clause 4'),
+        # ukl:type is empty on this one
+        ('health_rm_rep_0903', '92', 'Clause 21, page 16, line 6, omit subsection (b)'),
+    ],
+)
+def test_description_real_papers(paper, num, expected):
+    sup_doc = SupDocument(EXAMPLES / f'{paper}.xml')
+
+    assert sup_doc[num].description == expected
+
+
+@pytest.mark.parametrize(
+    'path', sorted(EXAMPLES.glob('*.xml')), ids=lambda path: path.name
+)
+def test_every_real_amendment_has_a_description(path: Path):
+    sup_doc = SupDocument(path)
+
+    for amendment in sup_doc.amendments:
+        assert amendment.description, amendment.num
+        assert '—' not in amendment.description, amendment.num

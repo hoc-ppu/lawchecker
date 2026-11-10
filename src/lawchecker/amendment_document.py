@@ -11,6 +11,7 @@ duplicate_amendments.py.
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import datetime
+from functools import cached_property
 from pathlib import Path
 from typing import Literal
 
@@ -19,7 +20,7 @@ from lxml.etree import QName, _Element
 
 from lawchecker import xpath_helpers as xp
 from lawchecker.lawchecker_logger import logger
-from lawchecker.settings import NSMAP, NSMAP2, PARSER, UKL
+from lawchecker.settings import NSMAP, NSMAP2, PARSER, UKL, XMLNS
 from lawchecker.stars import Star
 from lawchecker.utils import truncate_string
 
@@ -81,6 +82,66 @@ class Amendment:
             ]
 
         return self._names
+
+    @cached_property
+    def description(self) -> str:
+        """
+        A short description of the amendment, e.g. for the side-by-side
+        order in the Check Amendment Papers report:
+        - A new clause or schedule: its heading, e.g. 'Application of CIL to
+          householders'.
+        - Any other amendment: its instruction, without the text it would
+          insert, up to the first '—', e.g. 'Clause 12, page 8, line 5, at
+          end insert'.
+        - An amendment to an amendment starts with what it amends, e.g.
+          'To NC10: Line 10, at end insert'.
+
+        Returns '' if the amendment has no instruction.
+        """
+
+        instruction = self.xml.find(
+            'amendmentContent/tblock/block[@name="instruction"]', namespaces=NSMAP2
+        )
+        if instruction is None:
+            return ''
+
+        description = ''
+
+        if self.xml.get(QName(UKL, 'type'), '') in ('newClause', 'newSchedule'):
+            # the heading of the new clause or schedule, e.g.
+            # <quotedStructure><section><num/><heading>...
+            heading = instruction.find('.//quotedStructure/*/heading', NSMAP2)
+            if heading is not None:
+                description = ''.join(heading.itertext())
+
+        if not description.strip():
+            description = _text_outside_quotes(instruction).split('—')[0]
+
+        description = ' '.join(description.split())
+
+        # e.g. ukl:targetProvision="amnd_NC10" on an amendment to NC10
+        target = self.xml.get(QName(UKL, 'targetProvision'), '')
+        if target.startswith('amnd_'):
+            description = f'To {target.removeprefix("amnd_")}: {description}'
+
+        return description
+
+
+def _text_outside_quotes(element: _Element) -> str:
+    """
+    The text of element, leaving out any quoted structures (the text that an
+    amendment would insert). Comments and processing instructions are left
+    out too.
+    """
+
+    parts = [element.text or '']
+
+    for child in element:
+        if isinstance(child.tag, str) and child.tag != f'{{{XMLNS}}}quotedStructure':
+            parts.append(_text_outside_quotes(child))
+        parts.append(child.tail or '')
+
+    return ''.join(parts)
 
 
 class SupDocument(Mapping):
