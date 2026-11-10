@@ -736,3 +736,260 @@ def test_order_real_papers_first_day_removed():
         (second_day, second_day),
         (clauses_62_to_81, clauses_62_to_81),
     ]
+
+
+# ------------------------- Moved amendments card ------------------------ #
+
+
+def card_lines(card) -> list[str]:
+    """
+    The text of a card, one line per paragraph, list item or <summary>.
+    List items start with '- ', indented by two spaces for each level.
+    """
+
+    lines = []
+    content = card.find('.//div[@class="secondary-info"]')
+
+    for element in content.iter('p', 'li', 'summary'):
+        if element.tag == 'li':
+            # the item's own text, without any list inside it
+            text = ''.join(element.xpath('text() | *[not(self::ul)]//text()'))
+            depth = len(list(element.iterancestors('ul')))
+            lines.append('  ' * (depth - 1) + '- ' + ' '.join(text.split()))
+        else:
+            lines.append(' '.join(element.text_content().split()))
+
+    return lines
+
+
+EXPLANATION = (
+    'These amendments are in a different place, compared with the amendments'
+    ' around them, from where they were on the older paper.'
+)
+
+
+@pytest.mark.parametrize(
+    'nums, expected',
+    [
+        ([], ''),
+        (['1'], '1'),
+        (['1', '2'], '1 and 2'),
+        (['1', '2', '3'], '1, 2 and 3'),
+    ],
+)
+def test_join_nums(nums, expected):
+    assert compare.join_nums(nums) == expected
+
+
+@pytest.mark.parametrize(
+    'after, before, expected',
+    [
+        ('2', '3', 'between 2 and 3'),
+        ('2', None, 'after 2'),
+        (None, '3', 'before 3'),
+    ],
+)
+def test_describe_place(after, before, expected):
+    assert compare.describe_place(after, before) == expected
+
+
+def test_describe_place_no_unmoved_amendment():
+    with pytest.raises(ValueError):
+        compare.describe_place(None, None)
+
+
+def test_first_heading():
+    assert compare.first_heading(()) == ''
+    assert (
+        compare.first_heading((Heading('FIRST DAY'), Heading('NEW CLAUSES')))
+        == 'FIRST DAY'
+    )
+
+
+def moved_card(old: list[str], new: list[str]) -> list[str]:
+    """
+    The Moved amendments card's lines for two made-up papers. Items starting
+    with 'NC' are amendments, anything else is a heading.
+    """
+
+    def paper(items: list[str]):
+        return make_paper(
+            *(
+                make_amendment(item) if item.startswith('NC') else make_heading(item)
+                for item in items
+            )
+        )
+
+    report = compare.Report(paper(old), paper(new))
+    return card_lines(report.render_moved_amdts())
+
+
+def test_moved_card_swap():
+    """NC2 is now before NC1, at the start of the paper"""
+
+    lines = moved_card(['NC1', 'NC2', 'NC3'], ['NC2', 'NC1', 'NC3'])
+
+    assert lines[0].startswith(EXPLANATION)
+    assert lines[1:] == [
+        'Of the 3 amendments on both papers, 1 has moved.',
+        '- 1 amendment is now before NC1',
+        '  - NC2 was between NC1 and NC3',
+    ]
+
+
+def test_moved_card_to_the_end():
+    lines = moved_card(['NC1', 'NC2', 'NC3'], ['NC2', 'NC3', 'NC1'])
+
+    assert lines[1:] == [
+        'Of the 3 amendments on both papers, 1 has moved.',
+        '- 1 amendment is now after NC3',
+        '  - NC1 was before NC2',
+    ]
+
+
+def test_moved_card_two_runs_to_one_place():
+    """NC2 and NC5 were in different places, and are now together"""
+
+    lines = moved_card(
+        ['NC1', 'NC2', 'NC3', 'NC4', 'NC5', 'NC6', 'NC7'],
+        ['NC1', 'NC3', 'NC4', 'NC6', 'NC7', 'NC2', 'NC5'],
+    )
+
+    assert lines[1:] == [
+        'Of the 7 amendments on both papers, 2 have moved.',
+        '- 2 amendments are now after NC7',
+        '  - NC2 was between NC1 and NC3',
+        '  - NC5 was between NC4 and NC6',
+    ]
+
+
+def test_moved_card_to_another_day():
+    """The heading they were under is shown, because it has changed"""
+
+    lines = moved_card(
+        ['FIRST DAY', 'NC1', 'NC2', 'NC3', 'NC4', 'SECOND DAY', 'NC5', 'NC6', 'NC7'],
+        ['FIRST DAY', 'NC1', 'NC4', 'SECOND DAY', 'NC5', 'NC6', 'NC2', 'NC3', 'NC7'],
+    )
+
+    assert lines[1:] == [
+        'Of the 7 amendments on both papers, 2 have moved.',
+        '- 2 amendments are now between NC6 and NC7, under SECOND DAY',
+        '  - NC2 and NC3 were between NC1 and NC4, under FIRST DAY',
+    ]
+
+
+def test_moved_card_within_a_day():
+    """The heading is the same, so it is only given once"""
+
+    lines = moved_card(
+        ['FIRST DAY', 'NC1', 'NC2', 'NC3', 'NC4', 'NC5'],
+        ['FIRST DAY', 'NC1', 'NC3', 'NC4', 'NC2', 'NC5'],
+    )
+
+    assert lines[1:] == [
+        'Of the 5 amendments on both papers, 1 has moved.',
+        '- 1 amendment is now between NC4 and NC5, under FIRST DAY',
+        '  - NC2 was between NC1 and NC3',
+    ]
+
+
+@pytest.mark.parametrize(
+    'old, new, expected',
+    [
+        pytest.param(
+            ['NC1', 'NC2'],
+            ['NC1', 'NC2', 'NC3'],
+            [
+                'No amendments have moved. The 2 amendments on both papers are'
+                ' in the same order.',
+                'Added amendments (1)',
+                'NC3',
+            ],
+            id='no-moves',
+        ),
+        pytest.param(
+            ['NC1'],
+            ['NC1'],
+            ['No amendments have moved.'],
+            id='one-amendment',
+        ),
+        pytest.param(
+            ['NC1', 'NC3'],
+            ['NC2'],
+            [
+                'No amendments are on both papers.',
+                'Added amendments (1)',
+                'NC2',
+                'Removed amendments (2)',
+                'NC1 NC3',
+            ],
+            id='none-on-both',
+        ),
+    ],
+)
+def test_moved_card_nothing_moved(old, new, expected):
+    assert moved_card(old, new) == expected
+
+
+def test_moved_card_papers_differ():
+    report = compare.Report(
+        make_paper(make_amendment('1'), **COMMONS_REPORT_STAGE),
+        make_paper(
+            make_amendment('1'),
+            **(COMMONS_REPORT_STAGE | {'stage': 'Committee Stage'}),
+        ),
+    )
+
+    assert card_lines(report.render_moved_amdts()) == [
+        'Not checked, because these papers are from different stages or for'
+        ' different bills (see above).'
+    ]
+
+
+def test_moved_card_real_papers_swap():
+    report = compare.Report(
+        EXAMPLES / 'victims_prisoners_rm_rep_0906.xml',
+        EXAMPLES / 'victims_prisoners_rm_rep_0908.xml',
+    )
+
+    assert card_lines(report.render_moved_amdts())[1:] == [
+        'Of the 6 amendments on both papers, 1 has moved.',
+        '- 1 amendment is now between NC3 and 2',
+        '  - 1 was between 2 and 3',
+    ]
+
+    # the card is straight after the Added and removed amendments card
+    labels = [
+        h2.get('data-heading-label')
+        for h2 in report.html_root.iter('h2')
+        if h2.get('data-heading-label')
+    ]
+    assert labels.index('Moved amendments') == (
+        labels.index('Added and removed amendments') + 1
+    )
+
+
+def test_moved_card_real_papers_days():
+    report = compare.Report(
+        EXAMPLES / 'health_rm_rep_0902.xml',
+        EXAMPLES / 'health_rm_rep_0903.xml',
+    )
+
+    lines = card_lines(report.render_moved_amdts())
+
+    assert lines[1:13] == [
+        'Of the 210 amendments on both papers, 7 have moved.',
+        '- 1 amendment is now between NC55 and NC57, under FIRST DAY',
+        '  - NC56 was between NC52 and NC58, under SECOND DAY',
+        '- 1 amendment is now between NC62 and NC64, under FIRST DAY',
+        '  - NC63 was between NC60 and NC68, under SECOND DAY',
+        '- 2 amendments are now between NC108 and NC118, under FIRST DAY',
+        '  - NC109 was between NC107 and NC110, under SECOND DAY',
+        '  - NC115 was between NC114 and NC116, under SECOND DAY',
+        '- 2 amendments are now between NC83 and NC88, under SECOND DAY',
+        '  - NC86 and NC87 were between NC85 and NC90, under FIRST DAY',
+        '- 1 amendment is now between NC126 and NC128, under SECOND DAY',
+        '  - NC127 was between NC122 and NC129, under FIRST DAY',
+    ]
+    assert lines[13] == 'Added amendments (52)'
+    assert len(lines) == 15  # the list of added amendments is the last line

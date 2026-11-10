@@ -3,6 +3,7 @@
 import argparse
 import sys
 import webbrowser
+from collections.abc import Sequence
 from html import escape
 from pathlib import Path
 from typing import NamedTuple
@@ -207,6 +208,46 @@ def order_items(doc: SupDocument) -> list[Item]:
     ]
 
 
+# --------- Phrases for the Moved amendments card (plain text) ---------- #
+
+
+def join_nums(nums: Sequence[str]) -> str:
+    """e.g. '1', '1 and 2', or '1, 2 and 3'"""
+
+    if len(nums) <= 1:
+        return ''.join(nums)
+    return f'{", ".join(nums[:-1])} and {nums[-1]}'
+
+
+def describe_place(after: str | None, before: str | None) -> str:
+    """
+    Where amendments are, from the nearest unmoved amendments either side,
+    e.g. 'between 2 and 3'. None means there is no unmoved amendment on that
+    side (the amendments are at the start or end of the paper).
+    """
+
+    if after and before:
+        return f'between {after} and {before}'
+    if after:
+        return f'after {after}'
+    if before:
+        return f'before {before}'
+    # marshalling.align always leaves at least one amendment unmoved, so
+    # there is always one on at least one side
+    raise ValueError('There is no unmoved amendment on either side')
+
+
+def first_heading(under: tuple[Heading, ...]) -> str:
+    """
+    The first heading in a block of headings, e.g. 'SECOND DAY' from SECOND
+    DAY followed by NEW CLAUSES AND NEW SCHEDULES RELATING TO... The others
+    are long, and the full headings are in the side-by-side view. Returns ''
+    when there are no headings.
+    """
+
+    return under[0].text if under else ''
+
+
 class Report:
     """
     Container for Amendment Report.
@@ -330,6 +371,7 @@ class Report:
                 self.render_duplicate_amdt_nums(),
                 self.render_numbers_and_dnums(),
                 self.render_added_and_removed_amdts(),
+                self.render_moved_amdts(),
                 self.render_added_and_removed_names(),
                 self.render_stars(),
                 self.render_changed_amdts(),
@@ -520,6 +562,104 @@ class Report:
             ]
         )
         return card.html
+
+    def render_moved_amdts(self) -> HtmlElement:
+        """
+        Summarise how the order of the amendments changed (see
+        marshalling.py): which amendments moved, where they are now and
+        where they were. The moves are grouped by where they are now. Added
+        and removed amendments are listed too, in paper order.
+        """
+
+        card = templates.Card('Moved amendments')
+
+        if self.order is None:
+            content = (
+                '<p>Not checked, because these papers are from different stages'
+                ' or for different bills (see above).</p>'
+            )
+        else:
+            content = self.moved_amdts_html(self.order)
+
+        card.secondary_info.extend(
+            html.fragments_fromstring(content, no_leading_text=True)
+        )
+
+        return card.html
+
+    def moved_amdts_html(self, order: Alignment) -> str:
+        """The content of the Moved amendments card"""
+
+        on_both = len(order.unmoved) + len(order.moved)
+        moved = len(order.moved)
+
+        if on_both == 0:
+            content = '<p>No amendments are on both papers.</p>'
+        elif moved == 0:
+            content = '<p>No amendments have moved.'
+            if on_both > 1:
+                content += (
+                    f' The {on_both} amendments on both papers are in the same order.'
+                )
+            content += '</p>'
+        else:
+            content = (
+                '<p>These amendments are in a different place, compared with the'
+                ' amendments around them, from where they were on the older'
+                ' paper. As few amendments as possible are counted as moved, so'
+                ' when a block of amendments moves, the block is listed, not'
+                ' everything around it. “Between” refers to amendments that'
+                ' have not moved.</p>'
+                f'<p>Of the {on_both} amendments on both papers, {moved}'
+                f' {"has" if moved == 1 else "have"} moved.</p>'
+                '<ul>'
+            )
+
+            for group in order.groups:
+                count = len(group.keys)
+                now_heading = first_heading(group.now_under)
+
+                # e.g. '2 amendments are now between NC83 and NC88, under
+                # SECOND DAY'
+                content += (
+                    f'<li><strong>{count} amendment{"" if count == 1 else "s"}'
+                    f'</strong> {"is" if count == 1 else "are"} now'
+                    f' {escape(describe_place(group.now_after, group.now_before))}'
+                )
+                if now_heading:
+                    content += f', under {escape(now_heading)}'
+                content += '<ul>'
+
+                for run in group.runs:
+                    # e.g. 'NC86 and NC87 were between NC85 and NC90, under
+                    # FIRST DAY'. The heading is only given if it is different.
+                    was_heading = first_heading(run.was_under)
+                    content += (
+                        f'<li>{escape(join_nums(run.keys))}'
+                        f' {"was" if len(run.keys) == 1 else "were"}'
+                        f' {escape(describe_place(run.was_after, run.was_before))}'
+                    )
+                    if was_heading and was_heading != now_heading:
+                        content += f', under {escape(was_heading)}'
+                    content += '</li>'
+
+                content += '</ul></li>'
+
+            content += '</ul>'
+
+        # the same amendments as the Added and removed amendments card, but in
+        # paper order and folded away
+        for label, nums in (
+            ('Added amendments', order.added),
+            ('Removed amendments', order.removed),
+        ):
+            if nums:
+                content += (
+                    f'<details><summary>{label} ({len(nums)})</summary>'
+                    f'<p>{escape(" ".join(nums))}</p></details>'
+                )
+
+        return content
 
     def added_and_removed_names_table(self) -> HtmlElement:
         if not self.name_changes:
