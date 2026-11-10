@@ -11,6 +11,7 @@ A test states only the details that matter to it, for example:
 Everything else gets a default. The XML is the minimum that SupDocument and
 the reports need. It is not a complete LawMaker paper, so the reports will
 log warnings about missing metadata (bill title, published date and so on).
+make_paper can add the bill title, house and stage.
 """
 
 from xml.sax.saxutils import escape, quoteattr
@@ -79,12 +80,32 @@ def make_amendment(
     )
 
 
-def make_paper(*amendments: str) -> _Element:
-    """Return an amendment paper containing the given amendments, in order."""
+def make_paper(
+    *amendments: str,
+    bill_title: str | None = None,
+    house: str | None = None,
+    stage: str | None = None,
+) -> _Element:
+    """
+    Return an amendment paper containing the given amendments, in order.
+
+    bill_title, house and stage go in the metadata, as in real papers, e.g.
+    'Health Bill', 'House of Commons' and 'Report Stage'. Any left as None
+    are left out of the XML.
+    """
+
+    references = ''
+    if bill_title is not None:
+        references += f'<TLCConcept eId="varBillTitle" showAs={quoteattr(bill_title)}/>'
+    if house is not None:
+        references += f'<TLCConcept eId="varHouse" showAs={quoteattr(house)}/>'
+    if stage is not None:
+        references += f'<TLCProcess eId="varStageVersion" showAs={quoteattr(stage)}/>'
+    meta = f'<meta><references>{references}</references></meta>' if references else ''
 
     return etree.fromstring(
         f'<akomaNtoso xmlns="{XMLNS}" xmlns:ukl="{UKL}">'
-        '<amendmentList><collectionBody>'
+        f'<amendmentList>{meta}<collectionBody>'
         f'{"".join(amendments)}'
         '</collectionBody></amendmentList>'
         '</akomaNtoso>'

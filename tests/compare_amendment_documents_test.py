@@ -1,10 +1,11 @@
 from pathlib import Path
 
 import pytest
+from paper_builder import make_amendment, make_paper
 
 from lawchecker import compare_amendment_documents as compare
-from lawchecker.compare_amendment_documents import ChangedNames
-from paper_builder import make_amendment, make_paper
+from lawchecker.amendment_document import SupDocument
+from lawchecker.compare_amendment_documents import ChangedNames, check_papers_match
 
 # built from this file's location so the tests work from any directory
 EXAMPLES = Path(__file__).resolve().parent.parent / 'example_files' / 'amendments'
@@ -42,6 +43,8 @@ def test_render_intro(energy_report):
             str(EXAMPLES / 'energy_day_rep_0905.xml'),
         ],
         ['Bill Title', 'Energy Bill [HL]', 'Energy Bill [HL]'],
+        ['House', 'House of Commons', 'House of Commons'],
+        ['Stage', 'Report Stage', 'Report Stage'],
         ['Published date', 'Monday 04 September 2023', 'Tuesday 05 September 2023'],
         ['List Type', '(Amendment Paper)', '(Amendment Paper)'],
     ]
@@ -249,6 +252,140 @@ def test_no_duplicate_amendment_numbers_no_card():
     assert rendered.tag == 'div'
     assert len(rendered) == 0
     assert rendered.text_content() == ''
+
+
+# ----------------- Papers from different stages or bills ---------------- #
+
+COMMONS_REPORT_STAGE = {
+    'bill_title': 'Health Bill',
+    'house': 'House of Commons',
+    'stage': 'Report Stage',
+}
+
+
+def test_same_stage_and_bill_no_warning():
+    """Papers from the same stage of the same bill: no warning and no card"""
+
+    report = compare.Report(
+        make_paper(make_amendment('1'), **COMMONS_REPORT_STAGE),
+        # differences in case and spacing are ignored
+        make_paper(
+            make_amendment('1'),
+            bill_title='health  bill',
+            house='House of Commons',
+            stage='Report stage',
+        ),
+    )
+
+    assert report.paper_warnings == []
+
+    rendered = report.render_paper_warnings()
+    assert rendered.tag == 'div'
+    assert len(rendered) == 0
+
+
+@pytest.mark.parametrize(
+    'changed, summary',
+    [
+        pytest.param(
+            {'stage': 'Committee Stage'},
+            'These papers are from different stages.',
+            id='stage',
+        ),
+        pytest.param(
+            {'house': 'House of Lords'},
+            'These papers are from different stages.',
+            id='house',
+        ),
+        pytest.param(
+            {'bill_title': 'Energy Bill [HL]'},
+            'These papers are for different bills.',
+            id='bill',
+        ),
+        pytest.param(
+            {'stage': None},
+            'Could not check that these papers are from the same stage.',
+            id='no-stage',
+        ),
+        pytest.param(
+            {'stage': ''},
+            'Could not check that these papers are from the same stage.',
+            id='empty-stage',
+        ),
+        pytest.param(
+            {'house': None},
+            'Could not check that these papers are from the same stage.',
+            id='no-house',
+        ),
+        pytest.param(
+            {'bill_title': None},
+            'Could not check that these papers are for the same bill.',
+            id='no-bill-title',
+        ),
+    ],
+)
+def test_paper_warnings(changed, summary, caplog):
+    """
+    The newer paper's metadata differs from the older paper's (or is
+    missing). There is one warning, in the report and in the log, and the
+    rest of the report is still made.
+    """
+
+    report = compare.Report(
+        make_paper(make_amendment('1'), **COMMONS_REPORT_STAGE),
+        make_paper(make_amendment('1'), **(COMMONS_REPORT_STAGE | changed)),
+    )
+
+    assert [warning.summary for warning in report.paper_warnings] == [summary]
+    assert summary in report.render_paper_warnings().text_content()
+    assert summary in caplog.text
+
+    assert report.no_name_changes == ['1']
+
+
+def test_papers_from_different_stages_real():
+    """A Committee Stage paper and a Report Stage paper of the same bill"""
+
+    report = compare.Report(
+        EXAMPLES / 'english_dev_rm_pbc_1010.xml',
+        EXAMPLES / 'english_dev_rm_rep_1118.xml',
+    )
+
+    [warning] = report.paper_warnings
+    assert warning.summary == 'These papers are from different stages.'
+    assert warning.detail.startswith(
+        'english_dev_rm_pbc_1010.xml is from the Committee Stage'
+        ' (House of Commons) and english_dev_rm_rep_1118.xml is from the'
+        ' Report Stage (House of Commons).'
+    )
+
+    # the card is in the report, straight after the intro
+    intro = report.html_root.find('.//section[@id="intro"]').getparent()
+    assert 'Are these the right papers?' in intro.getnext().text_content()
+
+
+@pytest.mark.parametrize(
+    'old, new',
+    [
+        ('energy_rm_rep_0904', 'energy_day_rep_0905'),
+        ('datapro_rm_rep_0721', 'datapro_rm_rep_0825'),
+        ('econactivity_rm_rep_0918', 'econactivity_rm_rep_0919'),
+        ('victims_prisoners_rm_rep_0906', 'victims_prisoners_rm_rep_0908'),
+        ('english_dev_rm_rep_1118', 'english_dev_rm_rep_1119'),
+        ('health_rm_rep_0901', 'health_rm_rep_0902'),
+        ('health_rm_rep_0902', 'health_rm_rep_0903'),
+        ('health_rm_rep_0903', 'health_rm_rep_0904'),
+        ('health_rm_rep_0904', 'health_day_rep_0907'),
+        ('health_day_rep_0907', 'health_day_rep_0908'),
+    ],
+)
+def test_real_papers_from_the_same_stage(old, new):
+    """None of the same-stage example pairs gives a warning"""
+
+    old_doc = SupDocument(EXAMPLES / f'{old}.xml')
+    new_doc = SupDocument(EXAMPLES / f'{new}.xml')
+
+    assert check_papers_match(old_doc, new_doc) == []
 
 
 # ---------------------------- Real papers ------------------------------- #

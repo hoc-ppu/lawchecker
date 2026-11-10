@@ -9,6 +9,9 @@ from lawchecker.amendment_document import SupDocument
 from lawchecker.settings import NSMAP2
 from paper_builder import make_amendment, make_paper
 
+# built from this file's location so the tests work from any directory
+EXAMPLES = Path(__file__).resolve().parent.parent / 'example_files' / 'amendments'
+
 # ---------------------------- Metadata ---------------------------------- #
 
 
@@ -41,6 +44,30 @@ def test_get_meta_data():
 
         warning_msg = "Can't find Bill Title meta data. Check test"
         assert sup_doc.meta_bill_title == warning_msg
+
+
+def test_house_and_stage():
+    sup_doc = SupDocument(EXAMPLES / 'english_dev_rm_pbc_1010.xml')
+
+    assert sup_doc.meta_house == 'House of Commons'
+    assert sup_doc.meta_stage == 'Committee Stage'
+    assert sup_doc.missing_meta == []
+
+
+def test_missing_meta():
+    """Metadata that is not found is listed, and shown as a warning message"""
+
+    sup_doc = SupDocument(make_paper(stage=''))
+
+    assert sup_doc.missing_meta == [
+        'List Type',
+        'Bill Title',
+        'Published Date',
+        'House',
+        'Stage',
+    ]
+    assert sup_doc.meta_house == "Can't find House meta data. Check Test"
+    assert sup_doc.meta_stage == "Can't find Stage meta data. Check Test"
 
 
 # ---------------------- Duplicate amendment numbers --------------------- #

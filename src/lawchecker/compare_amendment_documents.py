@@ -32,7 +32,7 @@ from lawchecker.utils import diff_xml_content, find_duplicates
 # put duplicate names back in output – not necessary as LM deduplicates names
 # test on more example documents
 # [x] warn if bill titles don't match
-# [x] warn if old XML file and new XML file seem to be the wrong way around,
+# [] warn if old XML file and new XML file seem to be the wrong way around,
 #   i.e. if the old file seems newer than the new  file.
 # think about changing 1 to A1 or Amendment 1... to make it look better in
 # Added and removed amendments. See
@@ -50,10 +50,90 @@ class ChangedAmdt(NamedTuple):
     html_diff: str
 
 
+class PaperWarning(NamedTuple):
+    """A reason the two papers may not be comparable"""
+
+    summary: str  # one sentence
+    detail: str
+
+
+def check_papers_match(
+    old_doc: SupDocument, new_doc: SupDocument
+) -> list[PaperWarning]:
+    """
+    Check that the two papers are from the same stage of the same bill.
+
+    Amendment numbers start again at each stage, so on papers from different
+    stages the same number usually means a different amendment, and the
+    rest of the report compares the wrong amendments. These are warnings
+    only: the report is still made. If the metadata needed is missing from
+    either paper, the warning says that the check could not be done.
+    """
+
+    def same(old_value: str, new_value: str) -> bool:
+        # ignore differences in case and spacing
+        return old_value.casefold().split() == new_value.casefold().split()
+
+    def missing(*names: str) -> str:
+        """The papers missing any of these metadata, e.g. 'a.xml and b.xml'"""
+        return ' and '.join(
+            doc.file_name
+            for doc in (old_doc, new_doc)
+            if any(name in doc.missing_meta for name in names)
+        )
+
+    def stage(doc: SupDocument) -> str:
+        return f'{doc.meta_stage} ({doc.meta_house})'
+
+    warnings: list[PaperWarning] = []
+
+    if papers := missing('House', 'Stage'):
+        warnings.append(
+            PaperWarning(
+                'Could not check that these papers are from the same stage.',
+                f'The house or stage is missing from the metadata in {papers}.',
+            )
+        )
+    elif not (
+        same(old_doc.meta_house, new_doc.meta_house)
+        and same(old_doc.meta_stage, new_doc.meta_stage)
+    ):
+        warnings.append(
+            PaperWarning(
+                'These papers are from different stages.',
+                f'{old_doc.file_name} is from the {stage(old_doc)} and'
+                f' {new_doc.file_name} is from the {stage(new_doc)}. Amendment'
+                ' numbers start again at each stage, so amendments with the same'
+                ' number on the two papers are probably different amendments,'
+                ' and this report will compare the wrong amendments.',
+            )
+        )
+
+    if papers := missing('Bill Title'):
+        warnings.append(
+            PaperWarning(
+                'Could not check that these papers are for the same bill.',
+                f'The bill title is missing from the metadata in {papers}.',
+            )
+        )
+    elif not same(old_doc.meta_bill_title, new_doc.meta_bill_title):
+        warnings.append(
+            PaperWarning(
+                'These papers are for different bills.',
+                f'{old_doc.file_name} is for the {old_doc.meta_bill_title} and'
+                f' {new_doc.file_name} is for the {new_doc.meta_bill_title}.',
+            )
+        )
+
+    return warnings
+
+
 class Report:
     """
     Container for Amendment Report.
     The report summarises changes changes between two LM XML official list documents.
+    Both papers should be from the same stage of the same bill (see
+    check_papers_match).
     There are assumed to be no published documents between the two documents,
     if there are then the star check will be inaccurate
     """
@@ -75,6 +155,12 @@ class Report:
 
         self.old_doc = SupDocument(old_file)
         self.new_doc = SupDocument(new_file)
+
+        # e.g. the papers are from different stages. Shown at the top of the
+        # report, but the report is still made.
+        self.paper_warnings = check_papers_match(self.old_doc, self.new_doc)
+        for warning in self.paper_warnings:
+            logger.warning(f'{warning.summary} [{warning.detail}]')
 
         self.removed_amdts: list[str] = []
         self.added_amdts: list[str] = []
@@ -129,6 +215,7 @@ class Report:
         insert_point.extend(
             (
                 self.render_intro(),
+                self.render_paper_warnings(),
                 self.render_duplicate_amdt_nums(),
                 self.render_added_and_removed_amdts(),
                 self.render_added_and_removed_names(),
@@ -157,6 +244,12 @@ class Report:
             ('Bill Title', self.old_doc.meta_bill_title, self.new_doc.meta_bill_title)
         )
         meta_data_table.add_row(
+            ('House', self.old_doc.meta_house, self.new_doc.meta_house)
+        )
+        meta_data_table.add_row(
+            ('Stage', self.old_doc.meta_stage, self.new_doc.meta_stage)
+        )
+        meta_data_table.add_row(
             ('Published date', self.old_doc.meta_pub_date, self.new_doc.meta_pub_date)
         )
         meta_data_table.add_row(
@@ -175,6 +268,30 @@ class Report:
         section.append(meta_data_table.html)
 
         return section
+
+    def render_paper_warnings(self) -> HtmlElement:
+        """
+        Warn that the papers may not be comparable, e.g. because they are
+        from different stages. This affects every check in the report, so
+        the card goes straight after the intro.
+        """
+
+        if not self.paper_warnings:
+            # nothing to show so just return an empty div
+            return html.Element('div')
+
+        content = ''.join(
+            f'<p><strong class="red">{escape(warning.summary)}</strong>'
+            f' {escape(warning.detail)}</p>'
+            for warning in self.paper_warnings
+        )
+
+        card = templates.Card('Are these the right papers?')
+        card.secondary_info.extend(
+            html.fragments_fromstring(content, no_leading_text=True)
+        )
+
+        return card.html
 
     def render_duplicate_amdt_nums(self) -> HtmlElement:
         """
@@ -310,8 +427,8 @@ class Report:
         if self.name_changes_in_context:
             changed_amdts.append(
                 html.fromstring(
-                    f'<p><strong>{len(self.name_changes_in_context)}</strong> amendments'
-                    ' have changed names: </p>\n'
+                    f'<p><strong>{len(self.name_changes_in_context)}</strong>'
+                    ' amendments have changed names: </p>\n'
                 )
             )
             for item in self.name_changes_in_context:
@@ -536,6 +653,7 @@ def main():
     parser = argparse.ArgumentParser(
         description=(
             'Create an HTML document with various automated checks on amendments.'
+            ' Both papers should be from the same stage of the same bill.'
         )
     )
 

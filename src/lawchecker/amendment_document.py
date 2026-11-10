@@ -11,15 +11,24 @@ duplicate_amendments.py.
 from collections.abc import Mapping
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 from lxml import etree
 from lxml.etree import QName, _Element
 
 from lawchecker import xpath_helpers as xp
 from lawchecker.lawchecker_logger import logger
-from lawchecker.settings import NSMAP2, PARSER, UKL
+from lawchecker.settings import NSMAP, NSMAP2, PARSER, UKL
 from lawchecker.stars import Star
 from lawchecker.utils import truncate_string
+
+MetadataName = Literal[
+    'List Type',
+    'Bill Title',
+    'Published Date',
+    'House',
+    'Stage',
+]
 
 
 class Amendment:
@@ -82,6 +91,13 @@ class SupDocument(Mapping):
         self.meta_list_type: str
         self.meta_bill_title: str
         self.meta_pub_date: str
+        self.meta_house: str  # e.g. 'House of Commons'
+        self.meta_stage: str  # e.g. 'Report Stage'
+
+        # The names of any metadata not found, e.g. ['Bill Title']. A value
+        # that is not found is set to a warning message to show in reports,
+        # so check this list before comparing values between papers.
+        self.missing_meta: list[MetadataName] = []
 
         self.get_meta_data()
 
@@ -103,27 +119,17 @@ class SupDocument(Mapping):
         self.amdt_set = set(self._dict.keys())
 
     def get_meta_data(self):
-        try:
-            list_type = self.root.find(".//block[@name='listType']", namespaces=NSMAP2)
-            self.meta_list_type = list_type.text  # type: ignore
-        except Exception as e:
-            warning_msg = f"Can't find List Type meta data. Check {self.file_name}"
-            self.meta_list_type = warning_msg
-            logger.warning(f'Problem parsing XML. {warning_msg}: {repr(e)}')
+
+        self.meta_list_type = self._get_metadata_display(
+            ".//xmlns:block[@name='listType']/text()", 'List Type'
+        )
+
+        self.meta_bill_title = self._get_metadata_display(
+            ".//xmlns:TLCConcept[@eId='varBillTitle']/@showAs", 'Bill Title'
+        )
 
         try:
-            bill_title = self.root.find(
-                ".//TLCConcept[@eId='varBillTitle']", namespaces=NSMAP2
-            )
-            # don't use .get here  as that defaults to None
-            self.meta_bill_title = bill_title.attrib['showAs']  # type: ignore
-            # [x] test
-        except Exception as e:
-            warning_msg = f"Can't find Bill Title meta data. Check {self.file_name}"
-            self.meta_bill_title = warning_msg
-            logger.warning(f'Problem parsing XML. {warning_msg}: {repr(e)}')
-
-        try:
+            # TODO consider using self._get_metadata_display here too
             # add a test for this
             published_date = self.root.find(
                 ".//FRBRManifestation/FRBRdate[@name='published']", namespaces=NSMAP2
@@ -145,9 +151,44 @@ class SupDocument(Mapping):
         except Exception as e:
             warning_msg = f"Can't find Published Date meta data. Check {self.file_name}"
             self.meta_pub_date = warning_msg
+            self.missing_meta.append('Published Date')
             if not isinstance(e, AttributeError):
                 warning_msg += f': {repr(e)}'
             logger.info(f'Problem parsing XML. {warning_msg}')
+
+        # Amendment numbers start again at each stage, so reports that
+        # compare two papers use these to check the papers are from the same
+        self.meta_house = self._get_metadata_display(
+            ".//xmlns:TLCConcept[@eId='varHouse']/@showAs", 'House'
+        )
+        self.meta_stage = self._get_metadata_display(
+            ".//xmlns:TLCProcess[@eId='varStageVersion']/@showAs", 'Stage'
+        )
+
+    def _get_metadata_display(self, xpath: str, name: MetadataName) -> str:
+        """
+        Extract metadata value from the element found by xpath.
+
+        xpath should select the text or attribute directly, e.g.
+        ".//xmlns:block[@name='listType']/text()" or
+        ".//xmlns:TLCConcept[@eId='varHouse']/@showAs"
+        Use the xmlns: prefix: without it nothing matches
+
+        If nothing is found (or it is empty), add name to self.missing_meta,
+        log it at INFO and return a warning message to show instead. Reports
+        that need the value (e.g. check_papers_match) give their own warning.
+        """
+
+        results = self.root.xpath(xpath, namespaces=NSMAP)
+        value = results[0].strip() if results and isinstance(results[0], str) else ''
+
+        if not value:
+            warning_msg = f"Can't find {name} meta data. Check {self.file_name}"
+            self.missing_meta.append(name)
+            logger.info(f'Problem parsing XML. {warning_msg}')
+            return warning_msg
+
+        return value
 
     def _create_amdt_map(self) -> dict[str, Amendment]:
         """

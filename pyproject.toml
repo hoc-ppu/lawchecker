@@ -5,7 +5,6 @@ dependencies = [
     "lxml",
     "httpx[http2]",
     "python-dotenv",
-    "pywebview[ssl]",
     "charset-normalizer"
 ]
 requires-python = ">=3.11"
@@ -31,8 +30,10 @@ dev = [
     "pyinstaller;sys_platform!='darwin'",
     "py2app;sys_platform=='darwin'",
 ]
+
+[project.optional-dependencies]
 gui = [
-    "pywebview",
+    "pywebview[ssl]",
 ]
 
 [build-system]

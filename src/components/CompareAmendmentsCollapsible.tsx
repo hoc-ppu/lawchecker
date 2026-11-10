@@ -52,7 +52,7 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
       </Card>
       <Card
         step="Step&nbsp;1"
-        info="Select the two amendment paper XML files that you would like to compare."
+        info="Select two amendment paper XML files from the same stage of the same bill."
       >
         {/* You can put more than one button in here */}
         <Button
