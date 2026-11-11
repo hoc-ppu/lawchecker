@@ -19,14 +19,15 @@ const DuplicateAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
     <Collapsible
       isOpenState={props.pageActiveState}
       stateId="duplicateAmendmentsCollapsible"
-      title="Check Amendment Papers"
+      title="Duplicate Amendments Check"
     >
       <Card step="Introduction" info="">
         {/* You can put more than one button in here */}
         <p>
-          You can create a report showing any amendments with duplicate
-          content.comparing consecutive versions of an amendment paper. You will
-          need the LM XML file for an amendment paper.
+          You can create a report on a single amendment paper, showing
+          amendments that have the same text, that make the same change in
+          different places, or that have very similar text. You will need the LM
+          XML file for the amendment paper.
         </p>
       </Card>
       <Card
@@ -53,7 +54,7 @@ const DuplicateAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
         </p>
       </Card>
 
-      <Card step="Step&nbsp;2" info="Create the duplicate Amendments report">
+      <Card step="Step&nbsp;2" info="Create the Duplicate Amendments report">
         <Button
           id="bill_compareInBrowser"
           text="Create Report"
