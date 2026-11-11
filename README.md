@@ -10,7 +10,8 @@ Automated checks/compares for UK Parliament legislative papers.
 You can create:
 - an HTML report which compares two Bill XML files
 - CSV files showing changes to clause (a.k.a. section) and schedule paragraph numbers
-- an HTML report which compares two Amendment paper XML files
+- an HTML report which compares two Amendment paper XML files, including which amendments have moved
+- an HTML report showing amendments in an Amendment paper XML file with the same or very similar text
 - an HTML added names report
 - an HTML report showing the differences between amendments in XML from LawMaker and from the Parliament website (via the bills API)
 
@@ -106,12 +107,12 @@ pip install -e ".[gui]" --group dev && npm install
 
 ## Usage
 Once installed there are several entry points. You can run these from the command line/terminal/powershell.
- - `gui` will start a graphical user interface (seen above) which lets you create all of the below reports.
+ - `gui` will start a graphical user interface (seen above) which lets you create all of the reports below, and the duplicate amendments report (which has no command of its own yet).
  - `compare_bills` creates a report detailing the differences between two Bill files. Type `compare_bills --help`  for usage info.
  - `bill_numbering` creates a CSV file showing changes to clause (a.k.a. section) and schedule paragraphs numbers. Type `bill_numbering --help`  for usage info.
- - `compare_report` creates a report detailing the differences between two Amendment paper XML files. Type `compare_report --help` for usage info.
+ - `compare_report` creates a report detailing the differences between two Amendment paper XML files. Both papers should be from the same stage of the same bill. Type `compare_report --help` for usage info.
  - `an_report` creates an added names report. Type `an_report --help` in your terminal or command prompt for help on how to use this.
- - `web_amendments` creates a report detailing the differences an amendment paper of proceedings paper and Amendments on the parliament webste. Type `web_amendments --help` for usage info.
+ - `web_amendments` creates a report detailing the differences between an amendment paper or proceedings paper and the amendments on the Parliament website. Type `web_amendments --help` for usage info.
 
 ### Examples
 
@@ -130,7 +131,7 @@ uv run compare_bills "example_files/bills/Data Protection and Digital Informatio
 See [examples.md](example_files/examples.md) for more
 
 ## Tests
-To run tests `uv run pytest tests/` (or if not using uv `pytest tests/` with your environment activated).
+To run the tests: `uv run pytest tests/` (or, if you are not using uv, `pytest tests/` with your environment activated).
 
 ## Create Standalone .exe or .app file
 

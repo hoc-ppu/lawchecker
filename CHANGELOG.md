@@ -1,5 +1,30 @@
 # Lawchecker Change Log
 
+## 2.5.0 (unreleased)
+
+### Added
+- Duplicate Amendments: a new report (in the GUI) on a single amendment paper. It lists amendments with the same text, amendments that make the same change at different places, and amendments with very similar text
+- Check Amendment Papers: "Moved amendments" card, listing the amendments that have moved since the older paper (been re-marshalled), grouped by where they are now, with where each run of them was before
+- Check Amendment Papers: "Side-by-side order" card, showing the order of both papers side by side, with a short description of each amendment. Long stretches of unmoved amendments fold away. Hovering over or clicking a moved amendment shows an arrow from where it was to where it is now
+- Check Amendment Papers: "Are these the right papers?" warning (in the report and the GUI dialog) when the papers are from different stages or different bills, or when that information is missing from a paper. The introduction table now shows each paper's house and stage
+- Check Amendment Papers: "Amendment numbers and dnums" warning when a number is in both papers with different dnums, or a dnum is in both papers with different numbers
+- Check Amendment Papers: "Duplicate amendment numbers" warning when a paper uses the same amendment number more than once. The first amendment with that number is the one compared
+- Example amendment papers for the English Devolution and Community Empowerment Bill and the Health Bill, with notes in `example_files/examples.md`
+
+### Fixed
+- Star check: standing amendments with no star in the older paper but a star in the newer one were not checked
+- Errors while creating the Compare Bills, Check Amendment Papers and Duplicate Amendments reports from the GUI are now shown in the feedback dialog
+- Clicking the "Days between papers" label in the GUI now ticks the box
+- A JavaScript error in the amendment reports, from a button that is only in the Compare Bills report
+- Web amendments: requests to the Bills API are now retried after any HTTP error, not only timeouts and network errors
+
+### Changed
+- The GUI (pywebview) is now an optional extra. Install with `pip install ".[gui]"` or `uv sync --extra gui`. Reinstalling with pip or pipx without `[gui]` installs only the command line tools
+- Check Amendment Papers: the "Added and removed names" card starts closed
+- Amendment paper classes (`SupDocument`, `Amendment`) moved to `amendment_document.py`, shared by the Check Amendment Papers and Duplicate Amendments reports
+- Tests rebuilt around small papers made in code (`tests/paper_builder.py`), with checks against the example papers
+- Removed `pp_xml_lxml.py`
+
 ## 2.4.0 (2026-02-24)
 
 ### Added

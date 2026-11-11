@@ -39,14 +39,14 @@ const CompareAmendmentsCollapsible: React.FC<BodyProps> = (props) => {
         {/* You can put more than one button in here */}
         <p>
           You can create a report comparing consecutive versions of an amendment
-          paper. This report will show you: Added and removed amendments, Added
-          and removed names, Any stars that have not been changed correctly, and
-          standing amendments with changes. You will need the LM XML files for
-          both the older paper and the newer paper.
+          paper. This report will show you: Added and removed amendments,
+          Marshalling changes, Added and removed names, Any stars that have not
+          been changed correctly, and standing amendments with changes. You will
+          need the LM XML files for both the older paper and the newer paper.
         </p>
         <p>
           If there are sitting days (or printing days) between the papers you
-          are comparing, tick Days between papers . This is needed for the star
+          are comparing, tick Days between papers. This is needed for the star
           check feature.{" "}
         </p>
       </Card>
