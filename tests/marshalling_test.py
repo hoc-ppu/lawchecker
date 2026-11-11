@@ -437,11 +437,11 @@ def test_random_papers(seed):
     alignment = align(old, new)
     rows = alignment.rows
 
-    # every item on each paper is in the rows once, in paper order
+    # every item in each paper is in the rows once, in paper order
     assert [row.old for row in rows if row.old is not None] == old
     assert [row.new for row in rows if row.new is not None] == new
 
-    # unmoved amendments share a row, and are in the same order on both papers
+    # unmoved amendments share a row, and are in the same order in both papers
     for row in rows:
         if row.kind == 'unmoved':
             assert row.old == row.new
@@ -463,7 +463,7 @@ def test_random_papers(seed):
         alignment.moved
     )
 
-    # the amendments in a run were next to each other on the older paper
+    # the amendments in a run were next to each other in the older paper
     for run in alignment.runs:
         start = common_old.index(run.keys[0])
         assert common_old[start : start + len(run.keys)] == run.keys

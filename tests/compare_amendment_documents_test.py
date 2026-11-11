@@ -6,7 +6,7 @@ from paper_builder import make_amendment, make_heading, make_paper
 from lawchecker import compare_amendment_documents as compare
 from lawchecker.amendment_document import Heading, SupDocument
 from lawchecker.compare_amendment_documents import ChangedNames, check_papers_match
-from lawchecker.marshalling import Group, Run
+from lawchecker.marshalling import Group, Row, RowKind, Run
 
 # built from this file's location so the tests work from any directory
 EXAMPLES = Path(__file__).resolve().parent.parent / 'example_files' / 'amendments'
@@ -188,7 +188,7 @@ STAR_RULES = [
 def test_star_check_standing_amendment(
     old_star, new_star, days_between_papers, correct, incorrect
 ):
-    """NC52 is on both papers. Is its star in the newer paper right?"""
+    """NC52 is in both papers. Is its star in the newer paper right?"""
 
     report = compare.Report(
         make_paper(make_amendment('NC52', star=old_star)),
@@ -209,7 +209,7 @@ def test_star_check_standing_amendment(
     ],
 )
 def test_star_check_new_amendment(new_star, correct, incorrect):
-    """NC52 is only on the newer paper, so it should have a black star"""
+    """NC52 is only in the newer paper, so it should have a black star"""
 
     report = compare.Report(
         make_paper(),
@@ -478,9 +478,9 @@ def test_same_number_different_dnum(caplog):
     assert report.same_dnum_different_num == []
 
     text = report.render_numbers_and_dnums().text_content()
-    assert 'These numbers are on both papers with different dnums' in text
-    assert '2: HoC2 on the older paper, HoC9 on the newer' in text
-    assert 'Some amendment numbers are on both papers with different dnums' in (
+    assert 'These numbers are in both papers with different dnums' in text
+    assert '2: HoC2 in the older paper, HoC9 in the newer' in text
+    assert 'Some amendment numbers are in both papers with different dnums' in (
         caplog.text
     )
 
@@ -502,8 +502,8 @@ def test_same_dnum_different_number(caplog):
     assert report.added_amdts == ['14']
 
     text = report.render_numbers_and_dnums().text_content()
-    assert 'same dnum but a different number on each paper' in text
-    assert 'HoC33: 12 on the older paper, 14 on the newer' in text
+    assert 'same dnum but a different number in each paper' in text
+    assert 'HoC33: 12 in the older paper, 14 in the newer' in text
     assert 'Some amendments have the same dnum but a different number' in caplog.text
 
 
@@ -611,7 +611,7 @@ def test_missing_metadata_order_still_made(changed):
 
 
 def test_papers_from_different_stages_real_no_order():
-    """All 195 numbers on both papers have different dnums, but no card"""
+    """All 195 numbers in both papers have different dnums, but no card"""
 
     report = compare.Report(
         EXAMPLES / 'english_dev_rm_pbc_1010.xml',
@@ -712,8 +712,8 @@ def test_order_real_papers_moved_back():
 
 def test_order_real_papers_first_day_removed():
     """
-    Day One's business has gone. Its headings stay on the older paper only,
-    and Day Two's headings are on both papers, so they share rows.
+    Day One's business has gone. Its headings stay in the older paper only,
+    and Day Two's headings are in both papers, so they share rows.
     """
 
     report = compare.Report(
@@ -764,7 +764,7 @@ def card_lines(card) -> list[str]:
 
 EXPLANATION = (
     'These amendments are in a different place, compared with the amendments'
-    ' around them, from where they were on the older paper.'
+    ' around them, from where they were in the older paper.'
 )
 
 
@@ -831,7 +831,7 @@ def test_moved_card_swap():
 
     assert lines[0].startswith(EXPLANATION)
     assert lines[1:] == [
-        'Of the 3 amendments on both papers, 1 has moved.',
+        'Of the 3 amendments in both papers, 1 has moved.',
         '- 1 amendment is now before NC1',
         '  - NC2 was between NC1 and NC3',
     ]
@@ -841,7 +841,7 @@ def test_moved_card_to_the_end():
     lines = moved_card(['NC1', 'NC2', 'NC3'], ['NC2', 'NC3', 'NC1'])
 
     assert lines[1:] == [
-        'Of the 3 amendments on both papers, 1 has moved.',
+        'Of the 3 amendments in both papers, 1 has moved.',
         '- 1 amendment is now after NC3',
         '  - NC1 was before NC2',
     ]
@@ -856,7 +856,7 @@ def test_moved_card_two_runs_to_one_place():
     )
 
     assert lines[1:] == [
-        'Of the 7 amendments on both papers, 2 have moved.',
+        'Of the 7 amendments in both papers, 2 have moved.',
         '- 2 amendments are now after NC7',
         '  - NC2 was between NC1 and NC3',
         '  - NC5 was between NC4 and NC6',
@@ -872,7 +872,7 @@ def test_moved_card_to_another_day():
     )
 
     assert lines[1:] == [
-        'Of the 7 amendments on both papers, 2 have moved.',
+        'Of the 7 amendments in both papers, 2 have moved.',
         '- 2 amendments are now between NC6 and NC7, under SECOND DAY',
         '  - NC2 and NC3 were between NC1 and NC4, under FIRST DAY',
     ]
@@ -887,7 +887,7 @@ def test_moved_card_within_a_day():
     )
 
     assert lines[1:] == [
-        'Of the 5 amendments on both papers, 1 has moved.',
+        'Of the 5 amendments in both papers, 1 has moved.',
         '- 1 amendment is now between NC4 and NC5, under FIRST DAY',
         '  - NC2 was between NC1 and NC3',
     ]
@@ -900,10 +900,8 @@ def test_moved_card_within_a_day():
             ['NC1', 'NC2'],
             ['NC1', 'NC2', 'NC3'],
             [
-                'No amendments have moved. The 2 amendments on both papers are'
+                'No amendments have moved. The 2 amendments in both papers are'
                 ' in the same order.',
-                'Added amendments (1)',
-                'NC3',
             ],
             id='no-moves',
         ),
@@ -917,13 +915,9 @@ def test_moved_card_within_a_day():
             ['NC1', 'NC3'],
             ['NC2'],
             [
-                'No amendments are on both papers.',
-                'Added amendments (1)',
-                'NC2',
-                'Removed amendments (2)',
-                'NC1 NC3',
+                'No amendments are in both papers.',
             ],
-            id='none-on-both',
+            id='none-in-both',
         ),
     ],
 )
@@ -953,7 +947,7 @@ def test_moved_card_real_papers_swap():
     )
 
     assert card_lines(report.render_moved_amdts())[1:] == [
-        'Of the 6 amendments on both papers, 1 has moved.',
+        'Of the 6 amendments in both papers, 1 has moved.',
         '- 1 amendment is now between NC3 and 2',
         '  - 1 was between 2 and 3',
     ]
@@ -977,8 +971,9 @@ def test_moved_card_real_papers_days():
 
     lines = card_lines(report.render_moved_amdts())
 
-    assert lines[1:13] == [
-        'Of the 210 amendments on both papers, 7 have moved.',
+    # lines[0] is the explanation, and nothing comes after the list
+    assert lines[1:] == [
+        'Of the 210 amendments in both papers, 7 have moved.',
         '- 1 amendment is now between NC55 and NC57, under FIRST DAY',
         '  - NC56 was between NC52 and NC58, under SECOND DAY',
         '- 1 amendment is now between NC62 and NC64, under FIRST DAY',
@@ -991,5 +986,313 @@ def test_moved_card_real_papers_days():
         '- 1 amendment is now between NC126 and NC128, under SECOND DAY',
         '  - NC127 was between NC122 and NC129, under FIRST DAY',
     ]
-    assert lines[13] == 'Added amendments (52)'
-    assert len(lines) == 15  # the list of added amendments is the last line
+
+
+# ------------------------ Side-by-side order card ----------------------- #
+
+
+def side_by_side_cell(cell) -> str:
+    """An amendment's number and label, e.g. 'NC2 (moved ↑)', or the text"""
+
+    num = cell.find('span[@class="om-num"]')
+    if num is None:
+        # a heading, or an empty cell
+        return cell.text_content()
+
+    label = cell.find('span[@class="om-label"]')
+    return num.text + (f' ({label.text})' if label is not None else '')
+
+
+def side_by_side_row(row) -> str:
+    """e.g. 'moved |  | NC2 (moved ↑)'"""
+
+    kind = row.get('class').split()[1].removeprefix('om-')
+    old, _gap, new = row
+    return f'{kind} | {side_by_side_cell(old)} | {side_by_side_cell(new)}'
+
+
+def side_by_side(report: compare.Report) -> list[str]:
+    """
+    The rows of the Side-by-side order card as text, one line per row (see
+    side_by_side_row). A fold is shown as 'fold: ' and its summary, and the
+    rows inside it are indented.
+    """
+
+    lines = []
+    order_map = report.render_side_by_side().find('.//div[@class="order-map"]')
+    assert order_map is not None
+
+    for element in order_map:
+        if element.tag == 'details':
+            lines.append(f'fold: {element.findtext("summary", default="")}')
+            lines += [f'  {side_by_side_row(row)}' for row in element.findall('div')]
+        elif 'om-head' not in element.get('class', '').split():
+            lines.append(side_by_side_row(element))
+
+    return lines
+
+
+def paper_of(*nums: str):
+    return make_paper(*(make_amendment(num) for num in nums))
+
+
+def test_side_by_side():
+    """NC2 moved up, NC3 was removed and NC4 was added"""
+
+    report = compare.Report(
+        paper_of('NC1', 'NC2', 'NC3'), paper_of('NC2', 'NC1', 'NC4')
+    )
+
+    assert side_by_side(report) == [
+        'moved |  | NC2 (moved ↑)',
+        'unmoved | NC1 | NC1',
+        'moved | NC2 (moved ↑) | ',
+        'removed | NC3 (removed) | ',
+        'added |  | NC4 (added)',
+    ]
+
+
+def test_side_by_side_links():
+    """→ and ← link a moved amendment's two rows"""
+
+    report = compare.Report(paper_of('NC1', 'NC2'), paper_of('NC2', 'NC1'))
+    root = report.html_root
+
+    old_row = root.get_element_by_id('order-old-NC2')
+    new_row = root.get_element_by_id('order-new-NC2')
+    assert (old_row.get('data-key'), old_row.get('data-side')) == ('NC2', 'old')
+    assert (new_row.get('data-key'), new_row.get('data-side')) == ('NC2', 'new')
+
+    [old_link] = old_row.find_class('om-jump')
+    [new_link] = new_row.find_class('om-jump')
+    assert (old_link.text, old_link.get('href')) == ('→', '#order-new-NC2')
+    assert (new_link.text, new_link.get('href')) == ('←', '#order-old-NC2')
+
+
+def test_side_by_side_cell_details():
+    """The star is shown, and the description, proposer and dnum on hover"""
+
+    report = compare.Report(
+        make_paper(
+            make_amendment(
+                'NC1',
+                star='★',
+                dnum='HoC1',
+                proposer='Ann Example',
+                instruction='Clause 1, page 1, line 1, leave out “a”',
+            ),
+            make_amendment('NC2'),
+        ),
+        paper_of('NC1', 'NC2'),
+    )
+    order_map = report.render_side_by_side().find('.//div[@class="order-map"]')
+    assert order_map is not None
+    first_row, second_row = order_map.find_class('om-unmoved')
+    old_cell = first_row[0]
+
+    assert old_cell.find_class('om-star')[0].text == '★'
+    assert old_cell.find_class('om-desc')[0].text == (
+        'Clause 1, page 1, line 1, leave out “a”'
+    )
+    assert old_cell.get('title') == (
+        'Clause 1, page 1, line 1, leave out “a”\nAnn Example\nHoC1'
+    )
+
+    # no star (and no dnum)
+    assert second_row[0].find_class('om-star')[0].text is None
+    assert second_row[0].get('title') == (
+        'Clause 1, page 1, line 1, leave out “example”\nAnn Example'
+    )
+
+
+@pytest.mark.parametrize(
+    'kinds, context, expected',
+    [
+        ('uuuuuu', 2, []),
+        ('uuuuuuu', 2, [(2, 4)]),
+        # a heading ends a stretch
+        ('uuuuhuuuu', 2, []),
+        ('muuuuuuuua', 2, [(3, 6)]),
+        ('uuuuuuuhuuuuuuu', 2, [(2, 4), (10, 12)]),
+        ('uuuuu', 1, [(1, 3)]),
+    ],
+)
+def test_fold_ranges(kinds, context, expected):
+    """kinds has a letter for each row: u for unmoved, h for a heading..."""
+
+    kind_names: dict[str, RowKind] = {
+        'u': 'unmoved',
+        'h': 'heading',
+        'm': 'moved',
+        'a': 'added',
+    }
+    rows = [Row(kind_names[kind], 'NC1', 'NC1') for kind in kinds]
+
+    assert compare.fold_ranges(rows, context) == expected
+
+
+def test_side_by_side_no_fold():
+    """Six unmoved amendments in a row are all shown"""
+
+    nums = [f'NC{n}' for n in range(1, 7)]
+    report = compare.Report(paper_of(*nums), paper_of(*nums))
+
+    assert side_by_side(report) == [f'unmoved | {num} | {num}' for num in nums]
+
+
+def test_side_by_side_fold():
+    """Seven are folded, leaving two showing at each end"""
+
+    nums = [f'NC{n}' for n in range(1, 8)]
+    report = compare.Report(paper_of(*nums), paper_of(*nums))
+
+    assert side_by_side(report) == [
+        'unmoved | NC1 | NC1',
+        'unmoved | NC2 | NC2',
+        'fold: 3 amendments have not moved: NC3 to NC5',
+        '  unmoved | NC3 | NC3',
+        '  unmoved | NC4 | NC4',
+        '  unmoved | NC5 | NC5',
+        'unmoved | NC6 | NC6',
+        'unmoved | NC7 | NC7',
+    ]
+
+
+def test_side_by_side_papers_differ():
+    report = compare.Report(
+        make_paper(make_amendment('1'), **COMMONS_REPORT_STAGE),
+        make_paper(
+            make_amendment('1'),
+            **(COMMONS_REPORT_STAGE | {'stage': 'Committee Stage'}),
+        ),
+    )
+
+    rendered = report.render_side_by_side()
+    assert rendered.tag == 'div'
+    assert len(rendered) == 0
+
+
+def test_side_by_side_real_papers_swap():
+    report = compare.Report(
+        EXAMPLES / 'victims_prisoners_rm_rep_0906.xml',
+        EXAMPLES / 'victims_prisoners_rm_rep_0908.xml',
+    )
+
+    assert side_by_side(report) == [
+        'unmoved | NC1 | NC1',
+        'unmoved | NC2 | NC2',
+        'unmoved | NC3 | NC3',
+        'moved |  | 1 (moved ↑)',
+        'unmoved | 2 | 2',
+        'moved | 1 (moved ↑) | ',
+        'unmoved | 3 | 3',
+    ]
+
+    # the card is straight after the Moved amendments card
+    labels = [
+        h2.get('data-heading-label')
+        for h2 in report.html_root.iter('h2')
+        if h2.get('data-heading-label')
+    ]
+    assert labels.index('Side-by-side order') == labels.index('Moved amendments') + 1
+
+
+@pytest.mark.parametrize(
+    'old, new',
+    [
+        ('english_dev_rm_rep_1118', 'english_dev_rm_rep_1119'),
+        ('health_rm_rep_0902', 'health_rm_rep_0903'),
+    ],
+)
+def test_side_by_side_real_papers_links(old, new):
+    """Every → and ← goes to a row, and no id is used twice in the report"""
+
+    report = compare.Report(EXAMPLES / f'{old}.xml', EXAMPLES / f'{new}.xml')
+    assert report.order is not None
+
+    ids = report.html_root.xpath('//@id')
+    assert len(ids) == len(set(ids))
+
+    links = report.html_root.find_class('om-jump')
+    assert len(links) == 2 * len(report.order.moved)
+    for link in links:
+        assert link.get('href', '').removeprefix('#') in ids
+
+
+def test_side_by_side_real_papers_headings():
+    """Day One's business has gone, along with its headings"""
+
+    report = compare.Report(
+        EXAMPLES / 'health_day_rep_0907.xml',
+        EXAMPLES / 'health_day_rep_0908.xml',
+    )
+    lines = side_by_side(report)
+
+    assert lines[0] == 'heading | FIRST DAY | '
+    assert lines[1].startswith('heading | NEW CLAUSES AND NEW SCHEDULES RELATING TO')
+    assert lines[1].endswith('THE WORKFORCE OF THE NHS | ')
+
+    # everything between FIRST DAY and SECOND DAY was removed. Removed rows
+    # are never folded.
+    second_day = lines.index('heading | SECOND DAY | SECOND DAY')
+    assert all(line.startswith('removed |') for line in lines[2:second_day])
+    assert sum(line.startswith('removed |') for line in lines) == 166
+
+
+# --------------- Run ids, for the JavaScript in the template ------------ #
+
+
+def test_run_ids_link_the_two_cards():
+    """
+    The Moved amendments card's lines and the side-by-side rows have the
+    same run ids (data-run), so the Highlight buttons can find the rows
+    """
+
+    report = compare.Report(
+        paper_of('NC1', 'NC2', 'NC3', 'NC4', 'NC5', 'NC6', 'NC7'),
+        paper_of('NC1', 'NC3', 'NC4', 'NC6', 'NC7', 'NC2', 'NC5'),
+    )
+
+    summary = report.render_moved_amdts()
+    [summary_list] = summary.find_class('om-summary')
+    [group] = summary_list.xpath('li[@data-group]')
+    assert group.get('data-group') == 'g0'
+    assert [line.get('data-run') for line in group.xpath('.//li')] == ['r0', 'r1']
+
+    rows = report.render_side_by_side().xpath('.//div[@data-run]')
+    assert [
+        (row.get('data-key'), row.get('data-side'), row.get('data-run')) for row in rows
+    ] == [
+        ('NC2', 'old', 'r0'),
+        ('NC5', 'old', 'r1'),
+        ('NC2', 'new', 'r0'),
+        ('NC5', 'new', 'r1'),
+    ]
+
+
+@pytest.mark.parametrize(
+    'old, new',
+    [
+        ('english_dev_rm_rep_1118', 'english_dev_rm_rep_1119'),
+        ('health_rm_rep_0902', 'health_rm_rep_0903'),
+    ],
+)
+def test_run_ids_real_papers(old, new):
+    report = compare.Report(EXAMPLES / f'{old}.xml', EXAMPLES / f'{new}.xml')
+    assert report.order is not None
+    expected = {f'r{i}': run.keys for i, run in enumerate(report.order.runs)}
+
+    # one line in the summary for each run
+    lines = report.render_moved_amdts().xpath('.//li[@data-run]')
+    assert [line.get('data-run') for line in lines] == list(expected)
+
+    # every moved row has its run's id
+    rows = report.render_side_by_side().find_class('om-moved')
+    keys_by_run: dict[str, list[str]] = {}
+    for row in rows:
+        if row.get('data-side') == 'new':
+            keys_by_run.setdefault(row.get('data-run', ''), []).append(
+                row.get('data-key', '')
+            )
+    assert keys_by_run == expected
+    assert len(rows) == 2 * len(report.order.moved)

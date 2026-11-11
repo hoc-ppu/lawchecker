@@ -216,6 +216,241 @@
       max-height: 0;
     }
 
+    /* ---------- Side-by-side order (Check Amendment Papers) ----------- */
+    /* Only the Check Amendment Papers report has this: the "Side-by-side
+       order" card, made by Report.render_side_by_side in
+       compare_amendment_documents.py. Every rule starts with .order-map, so
+       the other reports that use this template are not affected.
+
+       Each row (.om-row) is a grid: the older paper's cell, a gap for
+       arrows, and the newer paper's cell. Long stretches of unmoved rows are
+       inside <details class="om-fold">.
+
+       The JavaScript at the end of this file adds the toolbar (.om-toolbar),
+       the arrows (svg.om-arrows) and the Highlight buttons in the Moved
+       amendments card (.om-summary .om-highlight), and sets .om-active,
+       .om-pinned and .om-flash on rows. */
+    .order-map,
+    .om-summary {
+      --om-moved: #5a3d8a;
+      --om-added: #22663f;
+      --om-removed: #a4262c;
+      --om-line: #e1dfdd;
+      --om-active: #f1ecf8;
+      --om-pinned: #e3d9f2;
+    }
+    .order-map {
+      position: relative;
+      font-size: 0.9rem;
+      margin-top: 1rem;
+    }
+    .order-map .om-row {
+      display: grid;
+      /* the gap in the middle is for the arrows: wider on wider screens */
+      grid-template-columns: minmax(0, 1fr) clamp(3rem, 9vw, 8.5rem) minmax(0, 1fr);
+    }
+    .order-map .om-head {
+      position: sticky;
+      top: 0;
+      z-index: 2; /* above the arrows */
+      background-color: #fff;
+      font-weight: 600;
+    }
+    .order-map .om-head .om-cell {
+      border-bottom: 2px solid #cbc9cd;
+    }
+    .order-map .om-cell {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      min-width: 0;
+      padding: 0.2rem 0.5rem;
+      border-bottom: 1px solid var(--om-line);
+    }
+    .order-map .om-num {
+      flex: none;
+      min-width: 4.5em;
+      font-weight: 600;
+    }
+    .order-map .om-star {
+      flex: none;
+      width: 1em;
+    }
+    /* one line, cut short with … (the full text is in the tooltip) */
+    .order-map .om-desc {
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #4d4d4d;
+    }
+    .order-map .om-label {
+      flex: none;
+      padding: 0 0.4em;
+      border-radius: 0.25em;
+      font-size: 0.85em;
+      color: #fff;
+    }
+    .order-map .om-jump {
+      flex: none;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    /* a coloured bar down the side of moved, added and removed amendments */
+    .order-map .om-moved .om-cell:not(.om-empty) {
+      box-shadow: inset 3px 0 0 var(--om-moved);
+    }
+    .order-map .om-moved .om-label {
+      background-color: var(--om-moved);
+    }
+    .order-map .om-added .om-cell:not(.om-empty) {
+      box-shadow: inset 3px 0 0 var(--om-added);
+    }
+    .order-map .om-added .om-label {
+      background-color: var(--om-added);
+    }
+    .order-map .om-removed .om-cell:not(.om-empty) {
+      box-shadow: inset 3px 0 0 var(--om-removed);
+    }
+    .order-map .om-removed .om-label {
+      background-color: var(--om-removed);
+    }
+    .order-map .om-removed .om-num,
+    .order-map .om-removed .om-desc {
+      text-decoration: line-through;
+    }
+    /* not on this paper */
+    .order-map .om-empty {
+      background: repeating-linear-gradient(
+        135deg, transparent 0 6px, #f3f2f1 6px 12px
+      );
+    }
+    .order-map .om-heading .om-cell {
+      font-style: italic;
+      font-weight: 600;
+    }
+    .order-map .om-fold > summary {
+      padding: 0.2rem 0.5rem;
+      border-bottom: 1px solid var(--om-line);
+      background-color: #faf9f8;
+      color: #4d4d4d;
+      cursor: pointer;
+    }
+
+    /* --- added by the JavaScript --- */
+    .order-map .om-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .order-map .om-toolbar button,
+    .om-summary .om-highlight {
+      padding: 0.05rem 0.5rem;
+      border: 1px solid #cbc9cd;
+      border-radius: 0.25rem;
+      background-color: #fff;
+      font: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .order-map .om-toolbar button[aria-pressed="true"],
+    .om-summary .om-highlight[aria-pressed="true"] {
+      border-color: var(--om-moved);
+      background-color: var(--om-moved);
+      color: #fff;
+    }
+    .om-summary .om-highlight {
+      margin-left: 0.5rem;
+    }
+    /* the arrows: drawn over the whole view, but only in the gaps */
+    .order-map .om-arrows {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      overflow: visible;
+      pointer-events: none;
+    }
+    .order-map .om-arrow {
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .order-map .om-arrow.om-on {
+      opacity: 1;
+    }
+    .order-map .om-line {
+      fill: none;
+      stroke: var(--om-moved);
+      stroke-width: 1.6;
+    }
+    .order-map .om-dot,
+    .order-map .om-tip,
+    .order-map #om-arrowhead path {
+      fill: var(--om-moved);
+    }
+    .order-map .om-band {
+      fill: var(--om-moved);
+      fill-opacity: 0.25;
+    }
+    /* moved rows: hover or focus (.om-active), and kept shown (.om-pinned) */
+    .order-map .om-moved[tabindex] {
+      cursor: pointer;
+    }
+    .order-map .om-moved:focus-visible {
+      outline: 2px solid var(--om-moved);
+      outline-offset: -2px;
+    }
+    .order-map .om-moved.om-active .om-cell:not(.om-empty) {
+      background-color: var(--om-active);
+    }
+    .order-map .om-moved.om-pinned .om-cell:not(.om-empty) {
+      background-color: var(--om-pinned);
+    }
+    /* a brief highlight on the row that → or ← went to */
+    .order-map .om-flash .om-cell:not(.om-empty) {
+      animation: om-flash 1.4s ease-out;
+    }
+    @keyframes om-flash {
+      from {
+        background-color: #c9b8e6;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .order-map .om-arrow {
+        transition: none;
+      }
+      .order-map .om-flash .om-cell:not(.om-empty) {
+        animation: none;
+      }
+    }
+
+    @media print {
+      .order-map .om-head {
+        position: static;
+      }
+      .order-map .om-row {
+        grid-template-columns: minmax(0, 1fr) 1rem minmax(0, 1fr);
+      }
+      /* the whole description, over more than one line if need be */
+      .order-map .om-desc {
+        white-space: normal;
+      }
+      /* the arrows would point at the wrong rows on paper */
+      .order-map .om-jump,
+      .order-map .om-toolbar,
+      .order-map .om-arrows,
+      .om-summary .om-highlight {
+        display: none;
+      }
+      .order-map .om-moved.om-active .om-cell:not(.om-empty),
+      .order-map .om-moved.om-pinned .om-cell:not(.om-empty) {
+        background-color: transparent;
+      }
+    }
+
   </style>
 </head>
 
@@ -331,6 +566,397 @@
       }
       tocbot.refresh(tocbot_settings);
     });
+  </script>
+  <script>
+    // ---------- Side-by-side order (Check Amendment Papers) -----------
+    // Only the Check Amendment Papers report has a .order-map (the
+    // "Side-by-side order" card, made by Report.render_side_by_side in
+    // compare_amendment_documents.py), so this does nothing in the other
+    // reports that use this template. It is in a <script> of its own so that
+    // an error in the script above cannot stop it.
+    //
+    // The report works without JavaScript: → and ← are links, and the folds
+    // are <details>. This adds:
+    // - a toolbar: one arrow per amendment or per run (amendments that moved
+    //   together), Show all / Fold again for the folds, and Clear highlights
+    // - an arrow from each moved amendment's row in the older paper to its
+    //   row in the newer paper, drawn in an SVG over the view
+    // - the arrows are hidden until hover or keyboard focus on a moved row
+    //   shows its arrow, and click (or Enter) keeps it shown
+    // - smooth scrolling for → and ←
+    // - Highlight buttons in the "Moved amendments" card (.om-summary)
+    //
+    // The HTML links things with data attributes: data-key (the amendment
+    // number), data-side ("old" or "new") and data-run (e.g. "r3", the same
+    // in both cards; see run_ids in compare_amendment_documents.py).
+    // The CSS is with the rest of the .order-map CSS above.
+    (function () {
+      const map = document.querySelector('.order-map');
+      if (!map) return;
+
+      const SVG_NS = 'http://www.w3.org/2000/svg';
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // amendment number -> {old: row, new: row, run: 'r3'}
+      const moved = new Map();
+      // run id -> the amendment numbers in it, in newer-paper order
+      const runs = new Map();
+
+      map.querySelectorAll('.om-moved').forEach(function (row) {
+        const key = row.dataset.key;
+        const entry = moved.get(key) || { run: row.dataset.run };
+        entry[row.dataset.side] = row;
+        moved.set(key, entry);
+        if (row.dataset.side === 'new') {
+          if (!runs.has(entry.run)) runs.set(entry.run, []);
+          runs.get(entry.run).push(key);
+        }
+      });
+
+      const options = { per: 'amendment' };
+      const pinned = new Set();  // kept shown by a click
+      let hoverKeys = [];        // shown because of hover or focus
+      const highlightButtons = [];
+
+      // the amendments that hover, click or a Highlight button acts on
+      function keysFor(key) {
+        if (options.per === 'run') return runs.get(moved.get(key).run) || [key];
+        return [key];
+      }
+
+      function makeButton(text, onClick) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = text;
+        button.addEventListener('click', onClick);
+        return button;
+      }
+
+      // ---- toolbar ----
+      const toolbar = document.createElement('div');
+      toolbar.className = 'om-toolbar';
+
+      // e.g. One arrow per: [Amendment] [Run]
+      function choice(label, name, values) {
+        const group = document.createElement('span');
+        group.setAttribute('role', 'group');
+        group.setAttribute('aria-label', label);
+        group.append(label + ': ');
+        values.forEach(function (value) {
+          const button = makeButton(value[1], function () {
+            options[name] = value[0];
+            group.querySelectorAll('button').forEach(function (other) {
+              other.setAttribute('aria-pressed', String(other === button));
+            });
+            hoverKeys = [];
+            draw();
+          });
+          button.setAttribute('aria-pressed', String(options[name] === value[0]));
+          group.append(button, ' ');
+        });
+        return group;
+      }
+
+      if (moved.size) {
+        toolbar.append(
+          choice('One arrow per', 'per', [['amendment', 'Amendment'], ['run', 'Run']])
+        );
+      }
+
+      const folds = Array.from(map.querySelectorAll('details.om-fold'));
+      if (folds.length) {
+        const allOpen = function () {
+          return folds.every(function (fold) { return fold.open; });
+        };
+        const foldButton = makeButton('Show all', function () {
+          const open = !allOpen();
+          folds.forEach(function (fold) { fold.open = open; });
+        });
+        // also when a fold is opened or closed by its own summary line
+        folds.forEach(function (fold) {
+          fold.addEventListener('toggle', function () {
+            foldButton.textContent = allOpen() ? 'Fold again' : 'Show all';
+          });
+        });
+        toolbar.append(foldButton);
+      }
+
+      const clearButton = makeButton('Clear highlights', function () {
+        pinned.clear();
+        applyActive();
+      });
+      clearButton.hidden = true;
+      toolbar.append(clearButton);
+
+      if (moved.size || folds.length) map.prepend(toolbar);
+
+      // ---- arrows ----
+      const svg = document.createElementNS(SVG_NS, 'svg');
+      svg.setAttribute('class', 'om-arrows');
+      svg.setAttribute('aria-hidden', 'true');
+      map.prepend(svg);
+
+      function svgElement(tag, attributes) {
+        const element = document.createElementNS(SVG_NS, tag);
+        Object.keys(attributes).forEach(function (name) {
+          element.setAttribute(name, attributes[name]);
+        });
+        return element;
+      }
+
+      function draw() {
+        svg.replaceChildren();
+        const box = map.getBoundingClientRect();
+        if (!box.width) return;  // the card is hidden
+
+        svg.setAttribute('width', box.width);
+        svg.setAttribute('height', box.height);
+        svg.setAttribute('viewBox', '0 0 ' + box.width + ' ' + box.height);
+
+        const marker = svgElement('marker', {
+          id: 'om-arrowhead', viewBox: '0 0 10 10', refX: 8.5, refY: 5,
+          markerWidth: 7, markerHeight: 7, orient: 'auto',
+        });
+        marker.append(svgElement('path', { d: 'M0 0 L10 5 L0 10 z' }));
+        const defs = svgElement('defs', {});
+        defs.append(marker);
+        svg.append(defs);
+
+        // where a row's cell is, relative to the view: x is the edge next
+        // to the gap (the right of an older cell, the left of a newer one)
+        function cell(row, side) {
+          const r = row.querySelector('.om-' + side).getBoundingClientRect();
+          return {
+            x: (side === 'old' ? r.right : r.left) - box.left,
+            top: r.top - box.top,
+            bottom: r.bottom - box.top,
+          };
+        }
+        const n = function (value) { return value.toFixed(1); };
+
+        if (options.per === 'amendment') {
+          moved.forEach(function (entry, key) {
+            if (!entry.old || !entry.new) return;
+            const from = cell(entry.old, 'old');
+            const to = cell(entry.new, 'new');
+            const y0 = (from.top + from.bottom) / 2;
+            const y1 = (to.top + to.bottom) / 2;
+            const bend = (to.x - from.x) * 0.6;
+            const arrow = svgElement('g', { class: 'om-arrow', 'data-key': key });
+            arrow.append(
+              svgElement('circle', { class: 'om-dot', cx: n(from.x), cy: n(y0), r: 2.6 }),
+              svgElement('path', {
+                class: 'om-line',
+                'marker-end': 'url(#om-arrowhead)',
+                d: 'M' + n(from.x) + ' ' + n(y0)
+                  + ' C' + n(from.x + bend) + ' ' + n(y0) + ' ' + n(to.x - bend) + ' ' + n(y1)
+                  + ' ' + n(to.x - 1) + ' ' + n(y1),
+              })
+            );
+            svg.append(arrow);
+          });
+        } else {
+          // one band per run, from its rows in the older paper to its rows
+          // in the newer paper
+          runs.forEach(function (keys, run) {
+            const olds = [], news = [];
+            keys.forEach(function (key) {
+              const entry = moved.get(key);
+              if (entry.old && entry.new) {
+                olds.push(cell(entry.old, 'old'));
+                news.push(cell(entry.new, 'new'));
+              }
+            });
+            if (!olds.length) return;
+            const top = function (cells) {
+              return Math.min.apply(null, cells.map(function (c) { return c.top; })) + 3;
+            };
+            const bottom = function (cells) {
+              return Math.max.apply(null, cells.map(function (c) { return c.bottom; })) - 3;
+            };
+            const x0 = olds[0].x, x1 = news[0].x, bend = (x1 - x0) * 0.55;
+            const lt = top(olds), lb = bottom(olds), rt = top(news), rb = bottom(news);
+            const middle = (rt + rb) / 2;
+            const arrow = svgElement('g', { class: 'om-arrow', 'data-run': run });
+            arrow.append(
+              svgElement('path', {
+                class: 'om-band',
+                d: 'M' + n(x0) + ' ' + n(lt)
+                  + ' C' + n(x0 + bend) + ' ' + n(lt) + ' ' + n(x1 - bend) + ' ' + n(rt)
+                  + ' ' + n(x1) + ' ' + n(rt)
+                  + ' L' + n(x1) + ' ' + n(rb)
+                  + ' C' + n(x1 - bend) + ' ' + n(rb) + ' ' + n(x0 + bend) + ' ' + n(lb)
+                  + ' ' + n(x0) + ' ' + n(lb) + ' Z',
+              }),
+              svgElement('path', {
+                class: 'om-tip',
+                d: 'M' + n(x1 - 8) + ' ' + n(middle - 5) + ' L' + n(x1) + ' ' + n(middle)
+                  + ' L' + n(x1 - 8) + ' ' + n(middle + 5) + ' Z',
+              })
+            );
+            svg.append(arrow);
+          });
+        }
+
+        applyActive();
+      }
+
+      // redraw (at most once a frame) whenever the view changes size: the
+      // window is resized, a fold opens, or the card is hidden or shown
+      let drawPending = false;
+      function redraw() {
+        if (drawPending) return;
+        drawPending = true;
+        requestAnimationFrame(function () {
+          drawPending = false;
+          draw();
+        });
+      }
+
+      // ---- highlighting ----
+      function applyActive() {
+        const active = new Set(pinned);
+        hoverKeys.forEach(function (key) { active.add(key); });
+
+        moved.forEach(function (entry, key) {
+          [entry.old, entry.new].forEach(function (row) {
+            if (!row) return;
+            row.classList.toggle('om-active', active.has(key));
+            row.classList.toggle('om-pinned', pinned.has(key));
+          });
+        });
+        svg.querySelectorAll('.om-arrow').forEach(function (arrow) {
+          const keys = arrow.dataset.key ? [arrow.dataset.key] : runs.get(arrow.dataset.run);
+          arrow.classList.toggle('om-on', keys.some(function (key) { return active.has(key); }));
+        });
+        highlightButtons.forEach(function (button) {
+          const on = button.keys.every(function (key) { return pinned.has(key); });
+          button.setAttribute('aria-pressed', String(on));
+        });
+        clearButton.hidden = pinned.size === 0;
+      }
+
+      function setHover(keys) {
+        if (keys.join() === hoverKeys.join()) return;
+        hoverKeys = keys;
+        applyActive();
+      }
+
+      // keep the arrows shown, or stop if they all are. Returns true if
+      // they are now shown.
+      function togglePinned(keys) {
+        const allPinned = keys.every(function (key) { return pinned.has(key); });
+        keys.forEach(function (key) {
+          if (allPinned) pinned.delete(key); else pinned.add(key);
+        });
+        applyActive();
+        return !allPinned;
+      }
+
+      function scrollToRow(row) {
+        // show the Side-by-side order card if it has been hidden
+        const card = map.closest('.collapsible');
+        if (card && card.classList.contains('closed')) {
+          card.querySelector('.collapsible-header').click();
+        }
+        row.scrollIntoView({ block: 'center', behavior: reducedMotion ? 'auto' : 'smooth' });
+        row.classList.remove('om-flash');
+        void row.offsetWidth;  // restart the animation
+        row.classList.add('om-flash');
+        setTimeout(function () { row.classList.remove('om-flash'); }, 1500);
+      }
+
+      // ---- moved rows: focusable, with a label for screen readers ----
+      moved.forEach(function (entry, key) {
+        [entry.old, entry.new].forEach(function (row) {
+          if (!row) return;
+          const label = row.querySelector('.om-label');
+          const up = label && label.textContent.indexOf('↑') !== -1;
+          row.tabIndex = 0;
+          row.setAttribute(
+            'aria-label',
+            key + ' moved ' + (up ? 'up' : 'down') + ', in the '
+              + (row.dataset.side === 'old' ? 'older' : 'newer')
+              + ' paper. Press Enter to keep its arrow shown.'
+          );
+        });
+      });
+
+      // ---- events ----
+      map.addEventListener('pointerover', function (event) {
+        const row = event.target.closest('.om-moved');
+        setHover(row ? keysFor(row.dataset.key) : []);
+      });
+      map.addEventListener('pointerleave', function () { setHover([]); });
+      map.addEventListener('focusin', function (event) {
+        const row = event.target.closest('.om-moved');
+        setHover(row ? keysFor(row.dataset.key) : []);
+      });
+      map.addEventListener('focusout', function () { setHover([]); });
+
+      map.addEventListener('click', function (event) {
+        const jump = event.target.closest('.om-jump');
+        if (jump) {
+          // → or ←: go to the amendment's other row, and keep its arrow shown
+          const target = document.getElementById(jump.getAttribute('href').slice(1));
+          if (!target) return;  // let the link work as a link
+          event.preventDefault();
+          keysFor(target.dataset.key).forEach(function (key) { pinned.add(key); });
+          applyActive();
+          scrollToRow(target);
+          target.focus({ preventScroll: true });
+          return;
+        }
+        const row = event.target.closest('.om-moved');
+        if (row) togglePinned(keysFor(row.dataset.key));
+      });
+
+      map.addEventListener('keydown', function (event) {
+        const row = event.target;
+        if ((event.key === 'Enter' || event.key === ' ') && row.classList.contains('om-moved')) {
+          event.preventDefault();
+          togglePinned(keysFor(row.dataset.key));
+        }
+      });
+
+      // ---- Highlight buttons in the Moved amendments card ----
+      function addHighlightButton(text, keys, before, parent) {
+        const button = makeButton(text, function () {
+          if (togglePinned(keys)) scrollToRow(moved.get(keys[0]).old);
+        });
+        button.className = 'om-highlight';
+        button.keys = keys;
+        button.setAttribute('aria-pressed', 'false');
+        parent.insertBefore(button, before);
+        highlightButtons.push(button);
+      }
+
+      document.querySelectorAll('.om-summary li[data-group]').forEach(function (group) {
+        const runLines = group.querySelectorAll('li[data-run]');
+        runLines.forEach(function (line) {
+          const keys = runs.get(line.dataset.run);
+          if (keys) addHighlightButton('Highlight', keys, null, line);
+        });
+        if (runLines.length > 1) {
+          const keys = [];
+          runLines.forEach(function (line) {
+            (runs.get(line.dataset.run) || []).forEach(function (key) { keys.push(key); });
+          });
+          addHighlightButton(
+            'Highlight all ' + runLines.length + ' runs', keys, group.querySelector('ul'), group
+          );
+        }
+      });
+
+      // ---- first draw ----
+      if (window.ResizeObserver) {
+        new ResizeObserver(redraw).observe(map);
+      } else {
+        window.addEventListener('resize', redraw);
+      }
+      window.addEventListener('load', redraw);
+      draw();
+    })();
   </script>
 </body>
 

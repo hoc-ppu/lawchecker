@@ -16,7 +16,7 @@ from lawchecker import lawchecker_logger, templates
 from lawchecker import xpath_helpers as xp
 from lawchecker.amendment_document import Amendment, Heading, SupDocument
 from lawchecker.lawchecker_logger import logger
-from lawchecker.marshalling import Alignment, Item, align
+from lawchecker.marshalling import Alignment, Item, Row, align
 from lawchecker.settings import COMPARE_REPORT_TEMPLATE
 from lawchecker.stars import BLACK_STAR, NO_STAR, WHITE_STAR
 from lawchecker.utils import diff_xml_content, find_duplicates
@@ -53,7 +53,7 @@ class ChangedAmdt(NamedTuple):
 
 
 class PaperWarning(NamedTuple):
-    """A reason the two papers may not be comparable"""
+    """A reasin the two papers may not be comparable"""
 
     summary: str  # one sentence
     detail: str
@@ -109,7 +109,7 @@ def check_papers_match(
                 f'{old_doc.file_name} is from the {stage(old_doc)} and'
                 f' {new_doc.file_name} is from the {stage(new_doc)}. Amendment'
                 ' numbers start again at each stage, so amendments with the same'
-                ' number on the two papers are probably different amendments,'
+                ' number in the two papers are probably different amendments,'
                 ' and this report will compare the wrong amendments.',
                 papers_differ=True,
             )
@@ -136,7 +136,7 @@ def check_papers_match(
 
 
 class AmdtPair(NamedTuple):
-    """The same amendment (or what may be) on the older and newer paper"""
+    """The same amendment (or what may be) in the older and newer paper"""
 
     old: Amendment
     new: Amendment
@@ -151,10 +151,10 @@ def check_numbers_and_dnums(
     HoC72.
 
     Returns two lists, in newer-paper order:
-    - Numbers on both papers with different dnums. These may be different
+    - Numbers in both papers with different dnums. These may be different
       amendments (unusual, but possible in either House), and the report
       would then compare the wrong ones.
-    - Dnums on both papers with different numbers: an amendment that has
+    - Dnums in both papers with different numbers: an amendment that has
       been renumbered, which the report shows as removed and added.
 
     Amendments with no dnum are not checked. Only the first amendment with
@@ -248,6 +248,45 @@ def first_heading(under: tuple[Heading, ...]) -> str:
     return under[0].text if under else ''
 
 
+# ------------------- For the Side-by-side order card ------------------- #
+
+
+def run_ids(order: Alignment) -> dict[str, str]:
+    """
+    Each moved amendment's run id, e.g. 'r3' for the amendments in the
+    fourth run in order.runs. The Moved amendments and Side-by-side order
+    cards both use these ids (as data-run), so that the JavaScript can link
+    a line in the summary to its rows.
+    """
+
+    return {key: f'r{i}' for i, run in enumerate(order.runs) for key in run.keys}
+
+
+def fold_ranges(rows: Sequence[Row], context: int = 2) -> list[tuple[int, int]]:
+    """
+    The stretches of rows to fold away in the side-by-side view, as (first,
+    last) row indexes. A stretch is more than 2 * context + 2 unmoved rows
+    in a row (more than six, by default), and context rows are left showing
+    at each end. Any other row, including a heading, ends a stretch.
+    """
+
+    ranges: list[tuple[int, int]] = []
+    start = None
+
+    # the extra None at the end closes a stretch that reaches the last row
+    for i, row in enumerate([*rows, None]):
+        if row is not None and row.kind == 'unmoved':
+            if start is None:
+                start = i
+            continue
+
+        if start is not None and i - start > 2 * context + 2:
+            ranges.append((start + context, i - 1 - context))
+        start = None
+
+    return ranges
+
+
 class Report:
     """
     Container for Amendment Report.
@@ -331,13 +370,13 @@ class Report:
         if self.same_num_different_dnum:
             nums = ', '.join(pair.new.num for pair in self.same_num_different_dnum)
             logger.warning(
-                'Some amendment numbers are on both papers with different dnums,'
+                'Some amendment numbers are in both papers with different dnums,'
                 f' so they may be different amendments. [{nums}]'
             )
         if self.same_dnum_different_num:
             dnums = ', '.join(pair.new.dnum for pair in self.same_dnum_different_num)
             logger.warning(
-                'Some amendments have the same dnum but a different number on'
+                'Some amendments have the same dnum but a different number in'
                 f' each paper. [{dnums}]'
             )
 
@@ -372,6 +411,7 @@ class Report:
                 self.render_numbers_and_dnums(),
                 self.render_added_and_removed_amdts(),
                 self.render_moved_amdts(),
+                self.render_side_by_side(),
                 self.render_added_and_removed_names(),
                 self.render_stars(),
                 self.render_changed_amdts(),
@@ -507,27 +547,27 @@ class Report:
 
         if self.same_num_different_dnum:
             content += (
-                '<p>These numbers are on both papers with different dnums, so'
+                '<p>These numbers are in both papers with different dnums, so'
                 ' they may be different amendments. This report compares'
                 ' amendments by number, so check them by hand.</p><ul>'
             )
             for old, new in self.same_num_different_dnum:
                 content += (
-                    f'<li>{escape(new.num)}: {escape(old.dnum)} on the older'
-                    f' paper, {escape(new.dnum)} on the newer</li>'
+                    f'<li>{escape(new.num)}: {escape(old.dnum)} in the older'
+                    f' paper, {escape(new.dnum)} in the newer</li>'
                 )
             content += '</ul>'
 
         if self.same_dnum_different_num:
             content += (
                 '<p>These amendments have the same dnum but a different number'
-                ' on each paper, so this report shows each one as removed and'
+                ' in each paper, so this report shows each one as removed and'
                 ' added.</p><ul>'
             )
             for old, new in self.same_dnum_different_num:
                 content += (
-                    f'<li>{escape(new.dnum)}: {escape(old.num)} on the older'
-                    f' paper, {escape(new.num)} on the newer</li>'
+                    f'<li>{escape(new.dnum)}: {escape(old.num)} in the older'
+                    f' paper, {escape(new.num)} in the newer</li>'
                 )
             content += '</ul>'
 
@@ -568,7 +608,8 @@ class Report:
         Summarise how the order of the amendments changed (see
         marshalling.py): which amendments moved, where they are now and
         where they were. The moves are grouped by where they are now. Added
-        and removed amendments are listed too, in paper order.
+        and removed amendments are in their own card (see
+        render_added_and_removed_amdts).
         """
 
         card = templates.Card('Moved amendments')
@@ -590,39 +631,44 @@ class Report:
     def moved_amdts_html(self, order: Alignment) -> str:
         """The content of the Moved amendments card"""
 
-        on_both = len(order.unmoved) + len(order.moved)
+        in_both = len(order.unmoved) + len(order.moved)
         moved = len(order.moved)
 
-        if on_both == 0:
-            content = '<p>No amendments are on both papers.</p>'
+        if in_both == 0:
+            content = '<p>No amendments are in both papers.</p>'
         elif moved == 0:
             content = '<p>No amendments have moved.'
-            if on_both > 1:
+            if in_both > 1:
                 content += (
-                    f' The {on_both} amendments on both papers are in the same order.'
+                    f' The {in_both} amendments in both papers are in the same order.'
                 )
             content += '</p>'
         else:
             content = (
                 '<p>These amendments are in a different place, compared with the'
-                ' amendments around them, from where they were on the older'
+                ' amendments around them, from where they were in the older'
                 ' paper. As few amendments as possible are counted as moved, so'
                 ' when a block of amendments moves, the block is listed, not'
                 ' everything around it. “Between” refers to amendments that'
                 ' have not moved.</p>'
-                f'<p>Of the {on_both} amendments on both papers, {moved}'
+                f'<p>Of the {in_both} amendments in both papers, {moved}'
                 f' {"has" if moved == 1 else "have"} moved.</p>'
-                '<ul>'
+                # om-summary: for the Highlight buttons that the JavaScript in
+                # compare_report_template.html adds
+                '<ul class="om-summary">'
             )
 
-            for group in order.groups:
+            ids = run_ids(order)
+
+            for group_number, group in enumerate(order.groups):
                 count = len(group.keys)
                 now_heading = first_heading(group.now_under)
 
                 # e.g. '2 amendments are now between NC83 and NC88, under
                 # SECOND DAY'
                 content += (
-                    f'<li><strong>{count} amendment{"" if count == 1 else "s"}'
+                    f'<li data-group="g{group_number}">'
+                    f'<strong>{count} amendment{"" if count == 1 else "s"}'
                     f'</strong> {"is" if count == 1 else "are"} now'
                     f' {escape(describe_place(group.now_after, group.now_before))}'
                 )
@@ -635,7 +681,8 @@ class Report:
                     # FIRST DAY'. The heading is only given if it is different.
                     was_heading = first_heading(run.was_under)
                     content += (
-                        f'<li>{escape(join_nums(run.keys))}'
+                        f'<li data-run="{ids[run.keys[0]]}">'
+                        f'{escape(join_nums(run.keys))}'
                         f' {"was" if len(run.keys) == 1 else "were"}'
                         f' {escape(describe_place(run.was_after, run.was_before))}'
                     )
@@ -647,19 +694,169 @@ class Report:
 
             content += '</ul>'
 
-        # the same amendments as the Added and removed amendments card, but in
-        # paper order and folded away
-        for label, nums in (
-            ('Added amendments', order.added),
-            ('Removed amendments', order.removed),
-        ):
-            if nums:
+        return content
+
+    def render_side_by_side(self) -> HtmlElement:
+        """
+        The older and newer papers side by side (see marshalling.py).
+        Amendments that have not moved share a row. An amendment that moved
+        has a row on each side, with links between them. Long stretches of
+        unmoved amendments are folded away in <details> (see fold_ranges).
+
+        The layout is divs, not a <table>, because <details> cannot go
+        between table rows. The CSS is in compare_report_template.html,
+        under .order-map. There is no card when the order was not worked out
+        (the papers are from different stages or bills).
+        """
+
+        if self.order is None:
+            # nothing to show so just return an empty div
+            return html.Element('div')
+
+        rows = self.order.rows
+
+        # each moved amendment's row on each side, e.g. ('old', 'NC2') -> 5,
+        # to tell whether it moved up or down
+        moved_row: dict[tuple[str, Item | None], int] = {}
+        for i, row in enumerate(rows):
+            if row.kind == 'moved':
+                if row.new is None:
+                    moved_row['old', row.old] = i
+                else:
+                    moved_row['new', row.new] = i
+
+        content = (
+            '<p>Amendments that have not moved share a row. An amendment that'
+            ' moved is shown twice, where it was and where it is now: → and ←'
+            ' go from one to the other. Hover over an amendment to see its'
+            ' proposer and dnum.</p>'
+            '<div class="order-map">'
+            '<div class="om-row om-head">'
+            f'<div class="om-cell">Older paper: {escape(self.old_doc.file_name)}</div>'
+            '<div class="om-gutter"></div>'
+            f'<div class="om-cell">Newer paper: {escape(self.new_doc.file_name)}</div>'
+            '</div>'
+        )
+
+        folds = {first: last for first, last in fold_ranges(rows)}
+        fold_end = None
+        ids = run_ids(self.order)
+
+        for i, row in enumerate(rows):
+            if i in folds:
+                fold_end = folds[i]
+                count = fold_end - i + 1
                 content += (
-                    f'<details><summary>{label} ({len(nums)})</summary>'
-                    f'<p>{escape(" ".join(nums))}</p></details>'
+                    '<details class="om-fold"><summary>'
+                    f'{count} amendments have not moved:'
+                    f' {escape(str(row.old))} to {escape(str(rows[fold_end].old))}'
+                    '</summary>'
                 )
 
-        return content
+            run = ''
+            if row.kind == 'moved':
+                key = row.old if row.new is None else row.new
+                moved_down = moved_row['new', key] > moved_row['old', key]
+                label = 'moved ↓' if moved_down else 'moved ↑'
+                run = ids[str(key)]
+            else:
+                label = {'added': 'added', 'removed': 'removed'}.get(row.kind, '')
+
+            content += self.side_by_side_row(row, label, run)
+
+            if i == fold_end:
+                content += '</details>'
+                fold_end = None
+
+        content += '</div>'
+
+        card = templates.Card('Side-by-side order')
+        card.secondary_info.extend(
+            html.fragments_fromstring(content, no_leading_text=True)
+        )
+
+        return card.html
+
+    def side_by_side_row(self, row: Row, label: str, run: str = '') -> str:
+        """
+        One row of the side-by-side view: a cell for each paper, with a gap
+        between them for the arrows.
+
+        Rows for amendments have data-key, and data-side unless the amendment
+        has not moved. A moved amendment's rows have ids, e.g.
+        order-old-NC2 and order-new-NC2, for the → and ← links, and data-run
+        (its run's id, from run_ids) for the JavaScript.
+        """
+
+        attrs = ''
+
+        if row.kind != 'heading':
+            # Moved, added and removed amendments have one side only.
+            # Unmoved ones have the same key on both sides.
+            side = 'old' if row.new is None else 'new'
+            key = escape(str(row.old if row.new is None else row.new))
+            attrs += f' data-key="{key}"'
+            if row.kind != 'unmoved':
+                attrs += f' data-side="{side}"'
+            if row.kind == 'moved':
+                attrs += f' id="order-{side}-{key}" data-run="{run}"'
+
+        return (
+            f'<div class="om-row om-{row.kind}"{attrs}>'
+            f'{self.side_by_side_cell(row.old, "old", row.kind, label)}'
+            '<div class="om-gutter"></div>'
+            f'{self.side_by_side_cell(row.new, "new", row.kind, label)}'
+            '</div>'
+        )
+
+    def side_by_side_cell(
+        self, item: Item | None, side: str, kind: str, label: str
+    ) -> str:
+        """
+        One paper's cell in a row of the side-by-side view: an amendment's
+        number, star, description and label (e.g. 'moved ↑'), a heading, or
+        nothing.
+        """
+
+        if item is None:
+            # not on this paper (the CSS shades it)
+            return f'<div class="om-cell om-{side} om-empty"></div>'
+
+        if isinstance(item, Heading):
+            return f'<div class="om-cell om-{side}">{escape(item.text)}</div>'
+
+        doc = self.old_doc if side == 'old' else self.new_doc
+        amdt = doc[item]
+        star = '' if amdt.star.is_no_star else str(amdt.star)
+
+        # shown on hover: the full description, proposer and dnum
+        proposer = amdt.names[0] if amdt.names else ''
+        tooltip = '\n'.join(
+            text for text in (amdt.description, proposer, amdt.dnum) if text
+        )
+
+        cell = (
+            f'<div class="om-cell om-{side}" title="{escape(tooltip)}">'
+            f'<span class="om-num">{escape(item)}</span>'
+            f'<span class="om-star">{escape(star)}</span>'
+            f'<span class="om-desc">{escape(amdt.description)}</span>'
+        )
+
+        if label:
+            cell += f'<span class="om-label">{label}</span>'
+
+        if kind == 'moved':
+            # a link to the amendment's row on the other paper
+            if side == 'old':
+                arrow, other, where = '→', 'new', 'where it is now'
+            else:
+                arrow, other, where = '←', 'old', 'where it was'
+            cell += (
+                f'<a class="om-jump" href="#order-{other}-{escape(item)}"'
+                f' title="Go to {where}">{arrow}</a>'
+            )
+
+        return cell + '</div>'
 
     def added_and_removed_names_table(self) -> HtmlElement:
         if not self.name_changes:
@@ -859,6 +1056,12 @@ class Report:
     def added_and_removed_amdts(self, old_doc: 'SupDocument', new_doc: 'SupDocument'):
         """Find the amendment numbers which have been added and removed"""
 
+        # TODO: these lists are in no particular order, because they come
+        # from set differences, so the Added and removed amendments card
+        # lists them in no particular order either. If paper order matters,
+        # self.order.added and self.order.removed (see gather_changes) have
+        # them in paper order, but only when the papers are from the same
+        # stage of the same bill. See TODO.md.
         self.removed_amdts = list(old_doc.amdt_set.difference(new_doc.amdt_set))
         self.added_amdts = list(new_doc.amdt_set.difference(old_doc.amdt_set))
 

@@ -6,22 +6,22 @@ Used by the Check Amendment Papers report to show amendments that have moved
 deals with order: it knows nothing about XML or HTML.
 
 Each paper is given as a list of items in paper order. An item is either an
-amendment's key (a string that identifies the same amendment on both papers,
+amendment's key (a string that identifies the same amendment in both papers,
 such as its number) or a Heading (from amendment_document.py, which has
 only the heading's text).
 
-- Unmoved: the amendments on both papers that kept their order. They are
+- Unmoved: the amendments in both papers that kept their order. They are
   found with the longest increasing subsequence of their old positions,
   taken in new-paper order, which leaves as many amendments unmoved as
   possible. So when a block of amendments moves, the block is reported as
   moving, not everything around it. When there is more than one equally
   good answer (e.g. two amendments swapped places), one is picked, and it
   is always the same one for the same papers.
-- Moved: every other amendment that is on both papers.
+- Moved: every other amendment that is in both papers.
 - Run: moved amendments that are next to each other, in the same order, on
   both papers. Added and removed amendments in between are ignored.
 - Group: moved amendments that are now in the same place, i.e. between the
-  same two unmoved amendments on the newer paper. A group has one or more
+  same two unmoved amendments in the newer paper. A group has one or more
   runs.
 - Headings are not matched or counted as moves. A heading belongs with the
   amendment after it, and headings before the same unmoved amendment on
@@ -60,14 +60,14 @@ class Row:
 
 @dataclass
 class Run:
-    """Moved amendments that are next to each other on both papers"""
+    """Moved amendments that are next to each other in both papers"""
 
     keys: list[str]
-    # the nearest unmoved amendments either side of the run on the older
+    # the nearest unmoved amendments either side of the run in the older
     # paper. None means the start (or end) of the paper.
     was_after: str | None
     was_before: str | None
-    # the headings above the run on the older paper
+    # the headings above the run in the older paper
     was_under: tuple[Heading, ...] = ()
 
 
@@ -76,11 +76,11 @@ class Group:
     """Moved amendments that are now between the same unmoved amendments"""
 
     runs: list[Run]
-    # the unmoved amendments either side of the group on the newer paper.
+    # the unmoved amendments either side of the group in the newer paper.
     # None means the start (or end) of the paper.
     now_after: str | None
     now_before: str | None
-    # the headings above the group on the newer paper
+    # the headings above the group in the newer paper
     now_under: tuple[Heading, ...] = ()
 
     @property
@@ -108,7 +108,7 @@ def align(old: Sequence[Item], new: Sequence[Item]) -> Alignment:
     """
     Compare the order of the older paper's items with the newer paper's.
 
-    Each key must only appear once on each paper (raises ValueError), so
+    Each key must only appear once in each paper (raises ValueError), so
     leave out any duplicated amendment numbers before calling this.
     """
 
@@ -116,7 +116,7 @@ def align(old: Sequence[Item], new: Sequence[Item]) -> Alignment:
     new_keys = _keys(new, 'newer')
     old_set, new_set = set(old_keys), set(new_keys)
 
-    # the amendments on both papers, in each paper's order
+    # the amendments in both papers, in each paper's order
     common_old = [key for key in old_keys if key in new_set]
     common_new = [key for key in new_keys if key in old_set]
     old_position = {key: i for i, key in enumerate(common_old)}
@@ -209,7 +209,7 @@ def _groups(
     unmoved: set[str],
     old_position: dict[str, int],
 ) -> list[Group]:
-    # where each amendment was on the older paper
+    # where each amendment was in the older paper
     was_after: dict[str, str | None] = {}
     was_under: dict[str, tuple[Heading, ...]] = {}
     last_unmoved = None
@@ -239,7 +239,7 @@ def _groups(
                 group = None
             last_unmoved = key
 
-        elif key in old_position:  # on both papers, so it has moved
+        elif key in old_position:  # in both papers, so it has moved
             if group is None:
                 group = Group(
                     runs=[], now_after=last_unmoved, now_before=None, now_under=under
@@ -247,7 +247,7 @@ def _groups(
 
             run = group.runs[-1] if group.runs else None
             if run and old_position[key] == old_position[run.keys[-1]] + 1:
-                # next to the previous one on the older paper too
+                # next to the previous one in the older paper too
                 run.keys.append(key)
                 run.was_before = was_before[key]
             else:
@@ -311,7 +311,7 @@ def _rows(
             j = j_next + 1
 
         else:
-            # Unmoved amendments are in the same order on both papers, and
+            # Unmoved amendments are in the same order in both papers, and
             # everything before them has been dealt with, so both papers are
             # at the same unmoved amendment (or both are at the end).
             assert old_key == new_key, (old_key, new_key)
@@ -325,7 +325,7 @@ def _rows(
 
 def _heading_rows(old: Sequence[Item], new: Sequence[Item]) -> list[Row]:
     """
-    Rows for the headings just before the same place on both papers.
+    Rows for the headings just before the same place in both papers.
 
     Headings with the same text share a row. Others at the same point in
     the list are paired up (e.g. FIRST DAY became SECOND DAY), and any left
