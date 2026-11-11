@@ -942,7 +942,7 @@ class Report:
             # might as well not output anything if not necessary
             names_change_context_section.clear()
 
-        card = templates.Card('Added and removed names')
+        card = templates.Card('Added and removed names', expanded=False)
         card.secondary_info.extend(
             (
                 name_changes_table,
